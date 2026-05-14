@@ -224,184 +224,171 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const docIneFrente = selectedExpediente.documentos?.find(d => d.tipo === 'ine_frente')?.url_archivo;
   const docIneReverso = selectedExpediente.documentos?.find(d => d.tipo === 'ine_reverso')?.url_archivo;
   const docComprobante = selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_domicilio')?.url_archivo;
+  const docPago = selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_pago')?.url_archivo;
   const contrato = selectedExpediente.contratos?.[0];
-  const urlContratoOficial = contrato?.url_pdf_doble_firma || contrato?.url_pdf_firmado_cliente;
-  const bitacoraOrdenada = [...(selectedExpediente.bitacora || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const urlContratoFinal = contrato?.url_pdf_doble_firma;
+  const urlContratoCliente = contrato?.url_pdf_firmado_cliente;
+  const urlContratoBorrador = contrato?.url_pdf_generado;
+  const estadoContrato = urlContratoFinal ? 'doble_firma' : urlContratoCliente ? 'firmado_cliente' : urlContratoBorrador ? 'generado' : 'none';
+  const urlContratoMostrar = urlContratoFinal || urlContratoCliente || urlContratoBorrador;
+  const telCliente = (selectedExpediente as any).cliente?.telefono;
+  const waUrl = telCliente ? `https://wa.me/52${telCliente.replace(/\D/g, '')}` : null;
+  const bitacoraOrdenada = [...(selectedExpediente.bitacora || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).get  return (
+    <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <button onClick={closeDetail} className="flex items-center text-slate-400 hover:text-slate-800 font-black text-xs uppercase tracking-widest group transition-colors">
+          <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Panel
+        </button>
+        {activeTab === 'etapa_legal' && (
+          <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg flex items-center gap-2 transition-all uppercase text-[10px] tracking-widest">
+            {isSavingConcentrado ? 'Guardando...' : '✓ Guardar Cambios'}
+          </button>
+        )}
+      </div>
 
-  return (
-    <div className="max-w-[100vw] px-4 md:px-8 py-6">
-      <button onClick={closeDetail} className="flex items-center text-gray-500 hover:text-gray-800 mb-6 font-black text-xs uppercase tracking-widest group">
-        <svg className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Volver al Panel
-      </button>
-
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden mb-8">
-        <div className="bg-slate-900 p-10 text-white flex flex-col md:flex-row justify-between items-center gap-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-4 mb-3">
-              <h1 className="text-4xl font-black uppercase tracking-tighter">{selectedExpediente.nombre_empresa}</h1>
+      <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-8">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-black uppercase tracking-tighter">{selectedExpediente.nombre_empresa}</h1>
               {selectedExpediente.servicios_extra?.includes('REGULARIZACION') && (
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                  Pendiente Cotizar Contabilidad
-                </span>
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">⚠ Cotizar Contabilidad</span>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-6">
-              <p className="text-slate-400 font-black text-[11px] uppercase tracking-widest flex items-center gap-3">
-                CLIENTE: <span className="text-white text-base tracking-normal">{(selectedExpediente as any).cliente?.nombre_completo}</span>
-              </p>
-              <div className="w-1.5 h-1.5 bg-slate-700 rounded-full"></div>
-              <p className="text-slate-400 font-black text-[11px] uppercase tracking-widest flex items-center gap-3">
-                FIGURA: <span className="text-white text-base tracking-normal">{selectedExpediente.figura?.descripcion}</span>
-              </p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[10px]">
+              <span className="text-slate-500 font-black uppercase tracking-widest">Cliente: <span className="text-white text-sm tracking-normal">{(selectedExpediente as any).cliente?.nombre_completo}</span></span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">Figura: <span className="text-sky-400 text-sm tracking-normal">{selectedExpediente.figura?.descripcion}</span></span>
+              <span className="text-slate-500 font-black uppercase tracking-widest">Asesora: <span className="text-white text-sm tracking-normal">{(selectedExpediente as any).asesora?.nombre_completo || 'Sin asignar'}</span></span>
             </div>
           </div>
-          <div className="flex flex-col gap-3 min-w-[280px]">
-            {urlContratoOficial && (
-              <a href={urlContratoOficial} target="_blank" className="bg-blue-600 px-8 py-4 rounded-2xl font-black text-center text-xs uppercase shadow-2xl hover:bg-blue-700 hover:-translate-y-1 transition-all tracking-[0.2em]">
-                Descargar Contrato
-              </a>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-              {docIneFrente && <a href={docIneFrente} target="_blank" className="bg-slate-800 text-[10px] py-3 rounded-xl text-center uppercase font-black hover:bg-slate-700 border-2 border-slate-700 transition-all">INE F</a>}
-              {docIneReverso && <a href={docIneReverso} target="_blank" className="bg-slate-800 text-[10px] py-3 rounded-xl text-center uppercase font-black hover:bg-slate-700 border-2 border-slate-700 transition-all">INE R</a>}
-              {docComprobante && <a href={docComprobante} target="_blank" className="bg-slate-800 text-[10px] py-3 rounded-xl text-center uppercase font-black hover:bg-slate-700 border-2 border-slate-700 transition-all">DOM.</a>}
+          <div className="flex flex-col gap-3 min-w-[240px]">
+            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Contrato</span>
+                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${estadoContrato === 'doble_firma' ? 'bg-emerald-500/20 text-emerald-400' : estadoContrato === 'firmado_cliente' ? 'bg-amber-500/20 text-amber-400' : estadoContrato === 'generado' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {estadoContrato === 'doble_firma' ? '✓ Doble Firma' : estadoContrato === 'firmado_cliente' ? '⏳ Falta Directora' : estadoContrato === 'generado' ? '⏳ Sin Firmas' : '✕ No Generado'}
+                </span>
+              </div>
+              {urlContratoMostrar && (
+                <a href={urlContratoMostrar} target="_blank" className={`block w-full px-4 py-2.5 rounded-xl font-black text-center text-[10px] uppercase tracking-widest transition-all ${estadoContrato === 'doble_firma' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                  {estadoContrato === 'doble_firma' ? 'Descargar Contrato Final' : 'Ver Contrato'}
+                </a>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {docIneFrente && <a href={docIneFrente} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">INE F</a>}
+              {docIneReverso && <a href={docIneReverso} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">INE R</a>}
+              {docComprobante && <a href={docComprobante} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">DOM.</a>}
+              {docPago && <a href={docPago} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">PAGO</a>}
+              {waUrl && <a href={waUrl} target="_blank" rel="noreferrer" className="flex-1 bg-green-600 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-green-700 transition-all">WA</a>}
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="border-b border-gray-100 bg-slate-50/50">
-          <nav className="flex overflow-x-auto px-6">
-            {['etapa_legal', 'cronograma_legal', 'entregables', 'bitacora'].map((tab) => {
-              const labels: Record<string, string> = {
-                etapa_legal: 'Concentración',
-                cronograma_legal: 'Cronograma Legal',
-                entregables: 'Capacitación',
-                bitacora: 'Bitácora',
-              };
-              return (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveTab(tab as any)} 
-                  className={`py-6 px-10 text-xs font-black uppercase tracking-[0.2em] border-b-4 transition-all whitespace-nowrap ${activeTab === tab ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                >
-                  {labels[tab]}
-                </button>
-              );
-            })}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <nav className="flex overflow-x-auto border-b border-slate-100">
+          {['etapa_legal', 'cronograma_legal', 'entregables', 'bitacora'].map((tab) => {
+            const labels: Record<string, string> = { etapa_legal: '📊 Concentración', cronograma_legal: '⚖️ Cronograma Legal', entregables: '🎓 Capacitación', bitacora: '📝 Bitácora' };
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`py-4 px-8 text-[10px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap ${activeTab === tab ? 'border-b-[3px] border-blue-600 text-blue-700 bg-blue-50/50' : 'border-b-[3px] border-transparent text-slate-400 hover:text-slate-600'}`}>
+                {labels[tab]}
+              </button>
+            );
+          })}
           </nav>
-        </div>
 
-        <div className="p-0 bg-white">
+        <div className="bg-white">
           {activeTab === 'etapa_legal' && (
-            <div className="w-full">
-              <div className="p-10 border-b flex justify-between items-center bg-white sticky left-0 z-30">
-                <div>
-                  <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">CONCENTRACIÓN DE CONTRATOS</h2>
-                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.4em] mt-1">Seguimiento Operativo y Financiero</p>
-                </div>
-                <button 
-                  onClick={handleSaveConcentrado} 
-                  disabled={isSavingConcentrado} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-5 rounded-[1.25rem] font-black shadow-2xl flex items-center gap-4 transition-all uppercase text-xs tracking-widest hover:scale-105 active:scale-95"
-                >
-                  {isSavingConcentrado ? 'Procesando...' : 'Guardar Información'}
-                </button>
-              </div>
-              
-              <div className="overflow-x-auto excel-table-container">
-                <table className="min-w-[2600px] border-collapse text-xs">
-                  <thead className="bg-slate-100 text-slate-800 uppercase font-black">
-                    <tr>
-                      <th className="border-2 border-slate-200 p-6 w-[350px] sticky left-0 z-20 bg-slate-200 shadow-2xl">NOMBRE DEL CLIENTE (A.C)</th>
-                      <th className="border-2 border-slate-200 p-6 w-[200px] bg-slate-50">ASESORA ENCARGADA</th>
-                      <th className="border-2 border-slate-200 p-6 w-[150px] bg-blue-100/50 text-blue-900">ESTADO / ENTIDAD</th>
-                      <th className="border-2 border-slate-200 p-6 w-[250px] bg-blue-100/50 text-blue-900">ACTIVIDAD</th>
-                      <th className="border-2 border-slate-200 p-6 w-[150px] bg-blue-100/50 text-blue-900">CLUNI</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-purple-100/50 text-purple-900">ESTATUS RPP</th>
-                      <th className="border-2 border-slate-200 p-6 w-[250px] bg-purple-100/50 text-purple-900">NOTARIA</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-purple-100/50 text-purple-900">PAGO A NOTARIO</th>
-                      <th className="border-2 border-emerald-300 p-6 w-[220px] bg-emerald-100/50 text-emerald-900 font-black">TOTAL DE CONTRATO</th>
-                      <th className="border-2 border-emerald-300 p-6 w-[220px] bg-emerald-100/50 text-emerald-900 font-bold">PERIODICIDAD DE PAGOS</th>
-                      <th className="border-2 border-emerald-300 p-6 w-[220px] bg-emerald-100/50 text-emerald-900 font-bold text-center">CANTIDAD A COBRAR PROXIMO PAGO</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-slate-50 text-center font-bold"># DE PAGOS REALIZADOS</th>
-                      <th className="border-2 border-slate-200 p-6 w-[220px] bg-slate-50 text-green-700 font-black">CANTIDAD PAGADA ACUMULADA</th>
-                      <th className="border-2 border-red-300 p-6 w-[220px] bg-red-100/50 text-red-900 font-black text-sm">SALDO DEL CLIENTE</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-slate-50 font-bold">FECHA DE ULTIMO PAGO</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-slate-50 text-slate-400">QUIEN COBRA</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-slate-50 text-slate-400">VENDEDORA</th>
-                      <th className="border-2 border-slate-200 p-6 w-[180px] bg-slate-50 font-bold">FECHA DE CONTRATO</th>
-                      <th className="border-2 border-slate-200 p-6 w-[350px] bg-blue-100/30 text-blue-800">LINK DE REUNIÓN</th>
-                      <th className="border-2 border-slate-200 p-6 w-[250px] bg-blue-100/30 text-blue-800">FECHA REUNIÓN ACUERDOS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="bg-white">
-                      <td className="border-2 border-slate-200 p-0 sticky left-0 z-10 bg-white shadow-2xl">
-                        <input type="text" readOnly value={selectedExpediente.nombre_empresa} className="w-full p-8 font-black text-slate-900 bg-slate-50/50 outline-none uppercase text-sm tracking-tight" />
-                      </td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" readOnly value={(selectedExpediente as any).asesora?.nombre_completo || 'SIN ASIGNAR'} className="w-full p-8 font-bold text-slate-500 bg-slate-50/50 outline-none uppercase text-xs" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-blue-50/5"><input type="text" value={concentradoForm.estado} onChange={e => handleConcentradoChange('estado', e.target.value)} placeholder="Ej: CDMX" className="w-full p-8 outline-none focus:bg-white text-blue-800 font-bold uppercase" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-blue-50/5"><input type="text" value={concentradoForm.actividad} onChange={e => handleConcentradoChange('actividad', e.target.value)} placeholder="Ej: CONSTRUCCIÓN" className="w-full p-8 outline-none focus:bg-white uppercase font-medium" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-blue-50/5"><input type="text" value={concentradoForm.cluni} onChange={e => handleConcentradoChange('cluni', e.target.value)} placeholder="Ej: CLU12345" className="w-full p-8 outline-none focus:bg-white uppercase font-medium" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-purple-50/5"><input type="text" value={concentradoForm.estatus_rpp} onChange={e => handleConcentradoChange('estatus_rpp', e.target.value)} placeholder="Ej: INSCRITO" className="w-full p-8 outline-none focus:bg-white font-black text-purple-900 uppercase" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-purple-50/5"><input type="text" value={concentradoForm.notaria} onChange={e => handleConcentradoChange('notaria', e.target.value)} placeholder="Ej: NOTARÍA 45" className="w-full p-8 outline-none focus:bg-white uppercase font-medium" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-purple-50/5"><input type="text" value={concentradoForm.pago_notario} onChange={e => handleConcentradoChange('pago_notario', e.target.value)} placeholder="Ej: $3,500" className="w-full p-8 outline-none focus:bg-white uppercase font-bold" /></td>
-                      <td className="border-2 border-emerald-300 p-0 bg-emerald-50/5"><input type="text" value={concentradoForm.total_contrato} onChange={e => handleConcentradoChange('total_contrato', e.target.value)} placeholder="Ej: $150,000" className="w-full p-8 outline-none focus:bg-white font-black text-blue-950 text-base" /></td>
-                      <td className="border-2 border-emerald-300 p-0 bg-emerald-50/5"><input type="text" value={concentradoForm.periodicidad_pagos} onChange={e => handleConcentradoChange('periodicidad_pagos', e.target.value)} placeholder="Ej: MENSUAL" className="w-full p-8 outline-none focus:bg-white uppercase font-bold" /></td>
-                      <td className="border-2 border-emerald-300 p-0 bg-emerald-50/5"><input type="text" value={concentradoForm.cantidad_cobrar_proximo} onChange={e => handleConcentradoChange('cantidad_cobrar_proximo', e.target.value)} placeholder="Ej: $10,000" className="w-full p-8 outline-none focus:bg-white text-emerald-800 font-black text-center" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.num_pagos_realizados} onChange={e => handleConcentradoChange('num_pagos_realizados', e.target.value)} placeholder="Ej: 3" className="w-full p-8 outline-none focus:bg-white text-center font-black text-slate-800" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.cantidad_pagada_acumulada} onChange={e => handleConcentradoChange('cantidad_pagada_acumulada', e.target.value)} placeholder="Ej: $45,000" className="w-full p-8 outline-none focus:bg-white text-green-700 font-black text-center" /></td>
-                      <td className="border-2 border-red-300 p-0 bg-red-50/5"><input type="text" value={concentradoForm.saldo_cliente} onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} placeholder="Ej: $105,000" className="w-full p-8 outline-none focus:bg-white text-red-600 font-black text-base text-center" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.fecha_ultimo_pago} onChange={e => handleConcentradoChange('fecha_ultimo_pago', e.target.value)} placeholder="DD/MM/AAAA" className="w-full p-8 outline-none focus:bg-white font-black text-center" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.quien_cobra} onChange={e => handleConcentradoChange('quien_cobra', e.target.value)} placeholder="NOMBRE" className="w-full p-8 outline-none focus:bg-white uppercase" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.vendedora} onChange={e => handleConcentradoChange('vendedora', e.target.value)} placeholder="NOMBRE" className="w-full p-8 outline-none focus:bg-white uppercase" /></td>
-                      <td className="border-2 border-slate-200 p-0"><input type="text" value={concentradoForm.fecha_contrato} onChange={e => handleConcentradoChange('fecha_contrato', e.target.value)} placeholder="DD/MM/AAAA" className="w-full p-8 outline-none focus:bg-white font-black text-center" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-blue-50/10"><input type="text" value={concentradoForm.link_reunion} onChange={e => handleConcentradoChange('link_reunion', e.target.value)} placeholder="URL REUNIÓN" className="w-full p-8 outline-none focus:bg-white text-blue-600 underline font-black" /></td>
-                      <td className="border-2 border-slate-200 p-0 bg-blue-50/10"><input type="text" value={concentradoForm.fecha_reunion_acuerdos} onChange={e => handleConcentradoChange('fecha_reunion_acuerdos', e.target.value)} placeholder="Ej: 20 MAY 11AM" className="w-full p-8 outline-none focus:bg-white uppercase font-black" /></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* SECCIÓN DE ESTATUS Y ACCIONES (PROMINENTES) */}
-              <div className="p-12 bg-slate-50 border-t-8 border-white space-y-12 sticky left-0 z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-4">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-[0.3em] flex items-center gap-4">
-                      <span className="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.6)] animate-pulse"></span>
-                      Estatus del Seguimiento del Cliente
-                    </label>
-                    <textarea 
-                      value={concentradoForm.estatus_detalle} 
-                      onChange={e => handleConcentradoChange('estatus_detalle', e.target.value)}
-                      placeholder="Escribe el estado actual detallado..."
-                      className="w-full h-48 p-8 rounded-[2rem] border-4 border-white shadow-2xl focus:border-blue-500 focus:ring-0 outline-none text-lg font-bold text-slate-800 resize-none transition-all placeholder:text-slate-200"
-                    ></textarea>
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-[0.3em] flex items-center gap-4">
-                      <span className="w-4 h-4 bg-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.6)]"></span>
-                      Acción Inmediata a Realizar
-                    </label>
-                    <textarea 
-                      value={concentradoForm.accion_realizar} 
-                      onChange={e => handleConcentradoChange('accion_realizar', e.target.value)}
-                      placeholder="Escribe la siguiente tarea clave..."
-                      className="w-full h-48 p-8 rounded-[2rem] border-4 border-white shadow-2xl focus:border-blue-500 focus:ring-0 outline-none text-lg font-bold text-blue-900 resize-none transition-all placeholder:text-slate-200"
-                    ></textarea>
+            <div className="p-6 md:p-8 space-y-6">
+              {/* FILA 1: Trámite + Finanzas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-2"><span className="w-2 h-2 bg-blue-500 rounded-full"></span> Datos del Trámite</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { l: 'Estado / Entidad', c: 'estado', p: 'Ej: CDMX' },
+                      { l: 'Actividad', c: 'actividad', p: 'Ej: Construcción' },
+                      { l: 'CLUNI', c: 'cluni', p: 'SÍ / NO' },
+                      { l: 'Estatus RPP', c: 'estatus_rpp', p: 'Ej: Inscrito' },
+                      { l: 'Notaría', c: 'notaria', p: 'Ej: Notaría 45' },
+                      { l: 'Pago a Notario', c: 'pago_notario', p: 'Ej: $3,500' },
+                    ].map(f => (
+                      <div key={f.c} className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                      </div>
+                    ))}
                   </div>
                 </div>
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span> Finanzas del Contrato</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { l: 'Total de Contrato', c: 'total_contrato', p: '$75,000' },
+                      { l: 'Periodicidad', c: 'periodicidad_pagos', p: 'Mensual' },
+                      { l: 'Próximo Cobro', c: 'cantidad_cobrar_proximo', p: '$10,000' },
+                      { l: '# Pagos Realizados', c: 'num_pagos_realizados', p: '0' },
+                      { l: 'Pagado Acumulado', c: 'cantidad_pagada_acumulada', p: '$0' },
+                    ].map(f => (
+                      <div key={f.c} className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-emerald-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                      </div>
+                    ))}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-red-500">Saldo del Cliente</label>
+                      <input type="text" value={concentradoForm.saldo_cliente || ''} onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} placeholder="$0" className="w-full px-3 py-2.5 rounded-xl border-2 border-red-100 bg-red-50/50 focus:border-red-400 outline-none text-sm font-black text-red-600 uppercase transition-all" />
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                <div className="flex justify-center pt-6">
-                  <button 
-                    onClick={handleSaveConcentrado} 
-                    disabled={isSavingConcentrado} 
-                    className="bg-blue-600 text-white px-32 py-8 rounded-[2.5rem] font-black uppercase tracking-[0.4em] shadow-[0_30px_60px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 transition-all text-base border-b-[12px] border-blue-800"
-                  >
-                    {isSavingConcentrado ? 'SINCRONIZANDO...' : 'Finalizar y Guardar Cambios'}
-                  </button>
+              {/* FILA 2: Operación + Reuniones + Estatus */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><span className="w-2 h-2 bg-slate-400 rounded-full"></span> Operación</h3>
+                  <div className="space-y-3">
+                    {[
+                      { l: 'Fecha Último Pago', c: 'fecha_ultimo_pago', p: 'DD/MM/AAAA' },
+                      { l: 'Quién Cobra', c: 'quien_cobra', p: 'Nombre' },
+                      { l: 'Vendedora', c: 'vendedora', p: 'Nombre' },
+                      { l: 'Fecha Contrato', c: 'fecha_contrato', p: 'DD/MM/AAAA' },
+                    ].map(f => (
+                      <div key={f.c} className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-slate-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span> Reuniones</h3>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Link de Reunión</label>
+                      <input type="text" value={concentradoForm.link_reunion || ''} onChange={e => handleConcentradoChange('link_reunion', e.target.value)} placeholder="URL" className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-blue-600 transition-all placeholder:text-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha Reunión</label>
+                      <input type="text" value={concentradoForm.fecha_reunion_acuerdos || ''} onChange={e => handleConcentradoChange('fecha_reunion_acuerdos', e.target.value)} placeholder="Ej: 20 May 11AM" className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-amber-600 flex items-center gap-2"><span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Seguimiento</h3>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Estatus del Cliente</label>
+                      <textarea value={concentradoForm.estatus_detalle || ''} onChange={e => handleConcentradoChange('estatus_detalle', e.target.value)} placeholder="Estado actual..." className="w-full h-24 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-amber-400 outline-none text-sm font-bold text-slate-800 resize-none transition-all placeholder:text-slate-300"></textarea>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Acción Inmediata</label>
+                      <textarea value={concentradoForm.accion_realizar || ''} onChange={e => handleConcentradoChange('accion_realizar', e.target.value)} placeholder="Siguiente tarea..." className="w-full h-24 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-blue-900 resize-none transition-all placeholder:text-slate-300"></textarea>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
