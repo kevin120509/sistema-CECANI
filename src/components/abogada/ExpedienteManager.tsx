@@ -304,12 +304,16 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
 
         <div className="bg-white">
           {activeTab === 'etapa_legal' && (
-            <div className="p-6 md:p-8 space-y-6">
-              {/* FILA 1: Trámite + Finanzas */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-2"><span className="w-2 h-2 bg-blue-500 rounded-full"></span> Datos del Trámite</h3>
-                  <div className="grid grid-cols-2 gap-4">
+            <div className="p-6 md:p-8 space-y-5">
+              {/* SECCIÓN 1 y 2: Trámite + Finanzas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* 1. Datos del Trámite */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
+                    Datos del Trámite
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { l: 'Estado / Entidad', c: 'estado', p: 'Ej: CDMX' },
                       { l: 'Actividad', c: 'actividad', p: 'Ej: Construcción' },
@@ -319,15 +323,20 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                       { l: 'Pago a Notario', c: 'pago_notario', p: 'Ej: $3,500' },
                     ].map(f => (
                       <div key={f.c} className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
-                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span> Finanzas del Contrato</h3>
-                  <div className="grid grid-cols-2 gap-4">
+
+                {/* 2. Finanzas */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
+                    Finanzas del Contrato
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { l: 'Total de Contrato', c: 'total_contrato', p: '$75,000' },
                       { l: 'Periodicidad', c: 'periodicidad_pagos', p: 'Mensual' },
@@ -336,22 +345,26 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                       { l: 'Pagado Acumulado', c: 'cantidad_pagada_acumulada', p: '$0' },
                     ].map(f => (
                       <div key={f.c} className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
-                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-emerald-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
                       </div>
                     ))}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-red-500">Saldo del Cliente</label>
-                      <input type="text" value={concentradoForm.saldo_cliente || ''} onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} placeholder="$0" className="w-full px-3 py-2.5 rounded-xl border-2 border-red-100 bg-red-50/50 focus:border-red-400 outline-none text-sm font-black text-red-600 uppercase transition-all" />
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-red-500">Saldo Pendiente</label>
+                      <input type="text" value={concentradoForm.saldo_cliente || ''} onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} placeholder="$0" className="w-full px-3 py-2.5 rounded-lg border border-red-200 bg-red-50 focus:border-red-400 outline-none text-sm font-black text-red-600 uppercase transition-all" />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* FILA 2: Operación + Reuniones + Estatus */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><span className="w-2 h-2 bg-slate-400 rounded-full"></span> Operación</h3>
+              {/* SECCIÓN 3, 4, 5: Operación + Reuniones + Seguimiento */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* 3. Operación */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
+                    Operación
+                  </h3>
                   <div className="space-y-3">
                     {[
                       { l: 'Fecha Último Pago', c: 'fecha_ultimo_pago', p: 'DD/MM/AAAA' },
@@ -360,35 +373,45 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                       { l: 'Fecha Contrato', c: 'fecha_contrato', p: 'DD/MM/AAAA' },
                     ].map(f => (
                       <div key={f.c} className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.l}</label>
-                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-slate-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{f.l}</label>
+                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span> Reuniones</h3>
+
+                {/* 4. Reuniones */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
+                    Reuniones
+                  </h3>
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Link de Reunión</label>
-                      <input type="text" value={concentradoForm.link_reunion || ''} onChange={e => handleConcentradoChange('link_reunion', e.target.value)} placeholder="URL" className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-blue-600 transition-all placeholder:text-slate-300" />
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Link de Reunión</label>
+                      <input type="text" value={concentradoForm.link_reunion || ''} onChange={e => handleConcentradoChange('link_reunion', e.target.value)} placeholder="URL" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-blue-600 transition-all placeholder:text-slate-300" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha Reunión</label>
-                      <input type="text" value={concentradoForm.fecha_reunion_acuerdos || ''} onChange={e => handleConcentradoChange('fecha_reunion_acuerdos', e.target.value)} placeholder="Ej: 20 May 11AM" className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Fecha Reunión</label>
+                      <input type="text" value={concentradoForm.fecha_reunion_acuerdos || ''} onChange={e => handleConcentradoChange('fecha_reunion_acuerdos', e.target.value)} placeholder="Ej: 20 May 11AM" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
                     </div>
                   </div>
                 </div>
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-amber-600 flex items-center gap-2"><span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Seguimiento</h3>
+
+                {/* 5. Seguimiento */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
+                    Seguimiento
+                  </h3>
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Estatus del Cliente</label>
-                      <textarea value={concentradoForm.estatus_detalle || ''} onChange={e => handleConcentradoChange('estatus_detalle', e.target.value)} placeholder="Estado actual..." className="w-full h-24 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-amber-400 outline-none text-sm font-bold text-slate-800 resize-none transition-all placeholder:text-slate-300"></textarea>
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Estatus del Cliente</label>
+                      <textarea value={concentradoForm.estatus_detalle || ''} onChange={e => handleConcentradoChange('estatus_detalle', e.target.value)} placeholder="Estado actual..." className="w-full h-24 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 resize-none transition-all placeholder:text-slate-300"></textarea>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Acción Inmediata</label>
-                      <textarea value={concentradoForm.accion_realizar || ''} onChange={e => handleConcentradoChange('accion_realizar', e.target.value)} placeholder="Siguiente tarea..." className="w-full h-24 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-white focus:border-blue-400 outline-none text-sm font-bold text-blue-900 resize-none transition-all placeholder:text-slate-300"></textarea>
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Acción Inmediata</label>
+                      <textarea value={concentradoForm.accion_realizar || ''} onChange={e => handleConcentradoChange('accion_realizar', e.target.value)} placeholder="Siguiente tarea..." className="w-full h-24 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 resize-none transition-all placeholder:text-slate-300"></textarea>
                     </div>
                   </div>
                 </div>
