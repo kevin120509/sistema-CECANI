@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { crearExpedienteCompleto, actualizarExpedienteCompleto } from '@/actions/expediente';
 import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato, TipoTramite } from '@/types/database';
 import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS } from '@/lib/constants';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
   Phone, 
