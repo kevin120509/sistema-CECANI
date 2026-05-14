@@ -31,10 +31,11 @@ export default async function DirectoraPage() {
   }
 
   // 1. Obtener Abogadas (Para el <select> de Asignación)
+  // Buscamos asesora, abogada o incluso admin para asegurar que la lista tenga opciones si se crearon con roles distintos
   const { data: abogadasData } = await supabaseAdmin
     .from('perfiles')
     .select('id, nombre_completo')
-    .eq('rol', 'asesora');
+    .or('rol.eq.asesora,rol.eq.abogada,rol.eq.admin');
 
   // 2. Obtener Expedientes Pendientes de Asignar (Cliente ya firmó o está por firmar)
   const { data: asignarData } = await supabaseAdmin

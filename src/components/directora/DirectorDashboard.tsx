@@ -302,6 +302,7 @@ export default function DirectorDashboard({
                       <p className="text-sm font-medium text-blue-800 mb-4">Selecciona a la abogada que se encargará del seguimiento para <span className="font-black uppercase">{selectedExpediente.nombre_empresa}</span>:</p>
                       <select value={asesoraId} onChange={e => setAsesoraId(e.target.value)} required className="w-full p-4 bg-white border-2 border-blue-200 rounded-2xl font-bold text-gray-800 outline-none focus:border-blue-500 hover:bg-blue-50 transition-all">
                         <option value="">-- Seleccionar una abogada --</option>
+                        {abogadas.length === 0 && <option value="" disabled>No hay abogadas registradas</option>}
                         {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
                       </select>
                       <p className="text-[10px] text-blue-600 mt-3 font-bold uppercase text-center">⚠️ Al confirmar, se notificará automáticamente a la abogada elegida.</p>
