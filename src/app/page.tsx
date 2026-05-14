@@ -128,7 +128,7 @@ export default function HomePage() {
 
       {/* Stepper Moderno */}
       <div className="w-full px-6 md:px-12 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="flex items-center justify-between relative">
             {/* Línea de fondo */}
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
@@ -163,7 +163,7 @@ export default function HomePage() {
 
       {/* Main Content - Full Width */}
       <main className="flex-1 w-full px-6 md:px-12 py-12 mt-4">
-        <div className="max-w-6xl mx-auto h-full">
+        <div className="max-w-[1600px] mx-auto h-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}

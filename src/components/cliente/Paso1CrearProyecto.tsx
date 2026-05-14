@@ -196,26 +196,26 @@ export default function Paso1CrearProyecto({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      {/* Columna de Información */}
-      <div className="lg:col-span-4 space-y-6">
-        <div className="glass-card rounded-3xl p-8 bg-blue-600 text-white overflow-hidden relative">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start w-full">
+      {/* Columna de Información - Oculta en pantallas medianas si estorba, o más estrecha */}
+      <div className="xl:col-span-3 space-y-6">
+        <div className="glass-card rounded-3xl p-8 bg-sky-600 text-white overflow-hidden relative shadow-xl">
           <div className="relative z-10">
             <h2 className="text-2xl font-bold mb-4">Registro Legal</h2>
-            <p className="text-blue-100 text-sm leading-relaxed mb-6">
-              Para generar un contrato con validez plena, es necesario proporcionar la información legal completa del representante y la organización.
+            <p className="text-sky-100 text-sm leading-relaxed mb-6">
+              Completa la información legal para generar tu contrato con validez oficial ante notario.
             </p>
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <FileText size={16} className="text-blue-200" />
+                <FileText size={16} className="text-sky-200" />
                 Declaraciones oficiales
               </li>
               <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <Briefcase size={16} className="text-blue-200" />
+                <Briefcase size={16} className="text-sky-200" />
                 Personalidad jurídica
               </li>
               <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <MapPin size={16} className="text-blue-200" />
+                <MapPin size={16} className="text-sky-200" />
                 Domicilio legal verificado
               </li>
             </ul>
@@ -224,9 +224,9 @@ export default function Paso1CrearProyecto({
         </div>
       </div>
 
-      {/* Columna del Formulario */}
-      <div className="lg:col-span-8">
-        <div className="glass-card rounded-3xl p-8 md:p-10">
+      {/* Columna del Formulario y Calculadora */}
+      <div className="xl:col-span-9 space-y-8">
+        <div className="glass-card rounded-3xl p-6 md:p-12 shadow-sm border border-slate-100 bg-white">
           {error && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
@@ -238,16 +238,16 @@ export default function Paso1CrearProyecto({
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-10">
+          <form onSubmit={handleSubmit} className="space-y-12">
             {/* Sección: Identidad del Representante */}
             <section>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                  <User size={20} />
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl">
+                  <User size={24} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">Identidad del Representante</h3>
-                  <p className="text-xs text-slate-500">Datos para declaraciones contractuales</p>
+                  <h3 className="text-xl font-bold text-slate-800">Identidad del Representante</h3>
+                  <p className="text-sm text-slate-500">Datos para declaraciones contractuales</p>
                 </div>
               </div>
 
@@ -421,25 +421,33 @@ export default function Paso1CrearProyecto({
               </div>
             </section>
 
-            <hr className="border-slate-100" />
+            <hr className="border-slate-200" />
 
             {/* CALCULADORA DE PRESUPUESTO MODULAR */}
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
-                  <Calculator size={20} />
+            <section className="w-full">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-sky-100 text-sky-600 rounded-2xl shadow-sm">
+                  <Calculator size={24} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">Servicios a Contratar</h3>
-                  <p className="text-xs text-slate-500">Configura tu contrato de forma modular</p>
+                  <h3 className="text-xl font-bold text-slate-800">Presupuesto Modular</h3>
+                  <p className="text-sm text-slate-500">Configuración inteligente de servicios</p>
                 </div>
               </div>
 
-              <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-2xl space-y-8">
-                <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                  <h3 className="text-lg font-black uppercase tracking-widest text-indigo-400">Cotización Total</h3>
-                  <div className="bg-indigo-600 px-6 py-2 rounded-full font-black text-xl shadow-[0_0_20px_rgba(79,70,229,0.4)]">
-                    ${presupuestoTotal.toLocaleString()} <span className="text-[10px] opacity-60">MXN</span>
+              <div className="bg-slate-900 p-8 md:p-12 rounded-[3rem] text-white shadow-[0_20px_50px_rgba(15,23,42,0.3)] space-y-10 border border-white/5 relative overflow-hidden">
+                {/* Decoración Pastel */}
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-sky-500/10 rounded-full blur-[80px]"></div>
+                
+                <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-6 border-b border-white/10 pb-10">
+                  <div className="text-center sm:text-left">
+                    <h3 className="text-xl font-black uppercase tracking-[0.2em] text-sky-400">Cotización Total</h3>
+                    <p className="text-xs text-slate-400 mt-2 font-medium opacity-60">MONTO TOTAL DE INVERSIÓN (IVA INCLUIDO)</p>
+                  </div>
+                  <div className="bg-sky-500/20 px-10 py-5 rounded-[2rem] font-black text-4xl text-sky-300 shadow-[inset_0_0_20px_rgba(56,189,248,0.1)] border border-sky-400/30 flex items-baseline gap-3">
+                    <span className="text-lg opacity-40">$</span>
+                    {presupuestoTotal.toLocaleString()}
+                    <span className="text-xs opacity-50 tracking-widest font-bold">MXN</span>
                   </div>
                 </div>
 
@@ -452,26 +460,26 @@ export default function Paso1CrearProyecto({
                       <div className="space-y-4">
                         <div className="bg-slate-800 p-4 rounded-2xl border border-white/5">
                           <p className="text-sm font-medium mb-3 text-white">¿Tu organización ya cuenta con Acta Constitutiva?</p>
-                          <div className="flex gap-4">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <button
                               type="button"
                               disabled={isLoading}
                               onClick={() => { setTieneActa(true); }}
-                              className={`flex-1 py-2 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                                tieneActa === true ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-600 text-slate-400 hover:border-indigo-500/50'
+                              className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                tieneActa === true ? 'bg-sky-600 border-sky-500 text-white shadow-lg shadow-sky-900/40' : 'border-slate-700 text-slate-500 hover:border-sky-500/50 hover:bg-sky-500/5'
                               }`}
                             >
-                              Sí
+                              Sí, ya la tengo
                             </button>
                             <button
                               type="button"
                               disabled={isLoading}
                               onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}
-                              className={`flex-1 py-2 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                                tieneActa === false ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-600 text-slate-400 hover:border-indigo-500/50'
+                              className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                tieneActa === false ? 'bg-sky-600 border-sky-500 text-white shadow-lg shadow-sky-900/40' : 'border-slate-700 text-slate-500 hover:border-sky-500/50 hover:bg-sky-500/5'
                               }`}
                             >
-                              No
+                              No, aún no
                             </button>
                           </div>
                         </div>
@@ -522,30 +530,32 @@ export default function Paso1CrearProyecto({
                   {/* Fila 2: Extras (Ancho Completo) */}
                   <div className="space-y-6">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 text-center md:text-left">2. ¿Deseas agregar servicios extra?</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {Object.values(SERVICIOS_EXTRAS).map(extra => {
                         const isSelected = extrasSeleccionados.includes(extra.id);
                         return (
                           <div 
                             key={extra.id} 
                             onClick={() => !isLoading && toggleExtra(extra.id)}
-                            className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer gap-3 ${
                               isSelected 
-                                ? 'bg-indigo-600/20 border-indigo-500/50' 
+                                ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.15)]' 
                                 : 'bg-slate-800/50 border-white/5 hover:border-white/20'
                             } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                                isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600'
+                              <div className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                isSelected ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'border-slate-600'
                               }`}>
                                 {isSelected && <span className="text-[10px] text-white">✓</span>}
                               </div>
-                              <span className="text-[11px] font-black uppercase tracking-tight text-slate-200">{extra.nombre}</span>
+                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-200 leading-tight">
+                                {extra.nombre}
+                              </span>
                             </div>
-                            <span className="text-[11px] font-bold text-indigo-300 text-right ml-4">
+                            <span className={`text-[9px] sm:text-[10px] font-bold text-indigo-400 sm:text-right shrink-0 ${extra.precioVariable ? 'bg-indigo-500/10 py-1 px-2 rounded-lg border border-indigo-500/20' : ''}`}>
                               {extra.precioVariable 
-                                ? 'REQUIERE COTIZACIÓN PERSONALIZADA' 
+                                ? 'REQUIERE COTIZACIÓN' 
                                 : extra.esRegalo 
                                   ? 'GRATIS' 
                                   : extra.id === 'web' 
