@@ -233,7 +233,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const urlContratoMostrar = urlContratoFinal || urlContratoCliente || urlContratoBorrador;
   const telCliente = (selectedExpediente as any).cliente?.telefono;
   const waUrl = telCliente ? `https://wa.me/52${telCliente.replace(/\D/g, '')}` : null;
-  const bitacoraOrdenada = [...(selectedExpediente.bitacora || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).get  return (
+  const bitacoraOrdenada = [...(selectedExpediente.bitacora || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return (
     <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <button onClick={closeDetail} className="flex items-center text-slate-400 hover:text-slate-800 font-black text-xs uppercase tracking-widest group transition-colors">
