@@ -45,7 +45,6 @@ export default function Paso1CrearProyecto({
   const [ocupacion, setOcupacion] = useState(perfil?.ocupacion || '');
   const [estadoCivil, setEstadoCivil] = useState(perfil?.estado_civil || '');
   const [domicilioCompleto, setDomicilioCompleto] = useState(perfil?.domicilio_completo || '');
-  const [folioIne, setFolioIne] = useState(perfil?.folio_ine || '');
 
   // Datos de la Empresa
   const [nombreEmpresa, setNombreEmpresa] = useState(expediente?.nombre_empresa || '');
@@ -128,7 +127,6 @@ export default function Paso1CrearProyecto({
         ocupacion,
         estado_civil: estadoCivil,
         domicilio_completo: domicilioCompleto,
-        folio_ine: folioIne,
       };
 
       const serviciosExtraMapped = [];

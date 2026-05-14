@@ -198,6 +198,46 @@ export async function enviarContratoCliente(formData: FormData): Promise<{ succe
   }
 }
 
+export async function aprobarContratoGeneradoCliente(expedienteId: string, contratoId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // Obtener perfil_id para notificación
+    const { data: expData } = await adminSupabase
+      .from('expedientes')
+      .select('cliente_id')
+      .eq('id', expedienteId)
+      .single();
+
+    // Actualizar Expediente y asignar estatus
+    const { error: expError } = await adminSupabase
+      .from('expedientes')
+      .update({
+        estatus: 'en_proceso'
+      })
+      .eq('id', expedienteId);
+
+    if (expError) throw new Error(`Fallo actualizando el expediente: ${expError.message}`);
+
+    // NOTIFICACIÓN AL CLIENTE
+    if (expData?.cliente_id) {
+      await sendPushNotification({
+        userIds: [expData.cliente_id],
+        title: '¡Contrato Aprobado!',
+        message: 'Tu contrato ha sido verificado y está listo. Por favor, revísalo y fírmalo para continuar.',
+        url: '/documentacion'
+      });
+    }
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+
+    return { success: true };
+  } catch (error: unknown) {
+    return { error: (error as Error).message || 'Error de servidor desconocido' };
+  }
+}
+
 export async function asignarAbogada(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   try {
     const supabase = await createClient();

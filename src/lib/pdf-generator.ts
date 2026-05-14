@@ -198,7 +198,7 @@ export async function generarContratoPDF(datos: DatosContrato): Promise<Uint8Arr
 
   drawParagraph('**II. “EL CLIENTE” manifiesta bajo protesta de decir verdad:**', 12, 'left');
   drawParagraph(
-    `a) Que es una persona física, mayor de edad, con RFC **${datos.rfc || '_______'}** y CURP **${datos.curp || '_______'}**, de ocupación **${datos.ocupacion || '_______'}** y estado civil **${datos.estadoCivil || '_______'}**, quien se identifica con el INE con número de folio **${datos.folioIne || '_______'}**.`, 
+    `a) Que es una persona física, mayor de edad, con RFC **${datos.rfc || '_______'}** y CURP **${datos.curp || '_______'}**, de ocupación **${datos.ocupacion || '_______'}** y estado civil **${datos.estadoCivil || '_______'}**, quien se identifica con credencial para votar vigente.`, 
     11, 'justify', 15
   );
   drawParagraph(

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { enviarContratoCliente, asignarAbogada, subirContratoDobleFirma } from '@/actions/directora';
+import { enviarContratoCliente, asignarAbogada, subirContratoDobleFirma, aprobarContratoGeneradoCliente } from '@/actions/directora';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
 export type ExpedienteDirector = Record<string, unknown> & {
@@ -61,7 +61,22 @@ export default function DirectorDashboard({
     if (!isSubmitting) {
       setSelectedExpediente(null);
       setModalType(null);
+      setFileOficial(null);
     }
+  };
+
+  const handleAprobarGenerado = async () => {
+    if (!selectedExpediente || !selectedExpediente.contratos?.[0]?.id) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    const result = await aprobarContratoGeneradoCliente(selectedExpediente.id, selectedExpediente.contratos[0].id);
+    if (result.error) {
+      setSubmitError(result.error);
+    } else {
+      setSubmitSuccess(true);
+      setTimeout(() => { closeModal(); setActiveTab('por_asignar'); }, 2000);
+    }
+    setIsSubmitting(false);
   };
 
   const handleValidarSubmit = async (e: React.FormEvent) => {
@@ -179,27 +194,54 @@ export default function DirectorDashboard({
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Empresa / Cliente</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Figura Legal</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Servicios Elegidos</th>
                   <th className="px-6 py-4 text-center text-xs font-black text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {pendientes.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-6 py-4 text-center text-gray-500 font-bold">No hay expedientes pendientes de validar.</td>
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500 font-bold">No hay expedientes pendientes de validar.</td>
                   </tr>
-                ) : pendientes.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900 uppercase">{exp.nombre_empresa}</div>
-                      <div className="text-xs text-gray-500 font-medium">{exp.perfiles?.nombre_completo}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center">
-                        <button onClick={() => handleOpenModal(exp, 'validar')} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-black text-[10px] uppercase hover:bg-blue-100 border border-blue-200 transition-all">👁️ Ver Detalles y Mandar Contrato</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                ) : pendientes.map((exp) => {
+                  const contrato = exp.contratos?.[0];
+                  // Map de servicio_base a algo legible
+                  const servBaseStr = contrato?.servicio_base === 'constitucion' ? 'Constitución' : 
+                                      contrato?.servicio_base === 'acta_extra' ? 'Acta Extraordinaria' : 
+                                      contrato?.servicio_base === 'recuperacion' ? 'Recuperación Donataria' : 
+                                      contrato?.servicio_base || 'Sin servicio base';
+                  
+                  // Modulos extra
+                  const extras = (contrato?.modulos_extra || []) as string[];
+                  const extrasStr = extras.map(ex => ex.replace(/_/g, ' ')).join(', ');
+
+                  return (
+                    <tr key={exp.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-900 uppercase">{exp.nombre_empresa}</div>
+                        <div className="text-xs text-gray-500 font-medium">{exp.perfiles?.nombre_completo}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-blue-700 bg-blue-50 px-3 py-1 rounded-full font-black uppercase inline-block">
+                          {exp.figura?.descripcion || 'No seleccionada'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs font-bold text-slate-800 uppercase">{servBaseStr}</div>
+                        {extrasStr && <div className="text-[10px] text-slate-500 font-medium uppercase mt-1">Extras: {extrasStr}</div>}
+                        {exp.servicios_extra?.includes('REGULARIZACION') && (
+                          <div className="text-[10px] text-amber-600 font-black uppercase mt-1">⚠️ Requiere Cotización Contable</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <button onClick={() => handleOpenModal(exp, 'validar')} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-black text-[10px] uppercase hover:bg-blue-100 border border-blue-200 transition-all">👁️ Ver Detalles y Mandar Contrato</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -292,14 +334,21 @@ export default function DirectorDashboard({
                         </div>
                       </div>
 
-                      <div className="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-100 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl mb-2">📑</span>
-                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-tight mb-2">1. Contrato Firmado (Cliente)</h3>
-                        <p className="text-xs text-emerald-700 mb-4 px-2">Descarga y revisa el PDF que el cliente ya firmó y autorizó.</p>
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex flex-col items-center justify-center text-center">
+                      <span className="text-3xl mb-2">📑</span>
+                      <h3 className="text-xs font-black text-emerald-900 uppercase tracking-tight mb-2">1. Contrato Firmado (Cliente)</h3>
+                      <p className="text-xs text-emerald-700 mb-4 px-2">Descarga y revisa el PDF que el cliente ya firmó y autorizó.</p>
+                      <div className="flex flex-col gap-2 w-full">
                         <a href={selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente} target="_blank" className="w-full bg-white text-emerald-700 py-3 rounded-xl font-black text-xs uppercase shadow-sm border border-emerald-200 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2">
-                          📥 Descargar PDF
+                          📥 Descargar PDF Firmado
                         </a>
+                        {selectedExpediente.contratos?.[0]?.url_pdf_generado && (
+                          <a href={selectedExpediente.contratos?.[0]?.url_pdf_generado} target="_blank" className="w-full bg-white text-blue-700 py-2 rounded-xl font-bold text-[10px] uppercase shadow-sm border border-blue-200 hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
+                            📄 Ver Contrato Original Generado
+                          </a>
+                        )}
                       </div>
+                    </div>
                       
                       <div className="bg-purple-50 p-4 rounded-2xl border-2 border-purple-100 flex flex-col justify-center">
                         <span className="text-3xl mb-2 text-center">✍️</span>
@@ -355,14 +404,29 @@ export default function DirectorDashboard({
                     </div>
 
                     <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                      <h3 className="text-sm font-black text-emerald-900 uppercase mb-3 border-b border-emerald-200 pb-2">Subir Contrato Oficial y Enviar</h3>
+                      <h3 className="text-sm font-black text-emerald-900 uppercase mb-3 border-b border-emerald-200 pb-2">Revisión y Aprobación del Contrato</h3>
+                      
                       {selectedExpediente.contratos?.[0]?.url_pdf_generado && (
-                        <a href={selectedExpediente.contratos?.[0]?.url_pdf_generado} target="_blank" className="w-full mb-4 bg-white text-emerald-700 py-3 rounded-xl font-black text-xs uppercase shadow-sm border border-emerald-200 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2">
-                          📄 Ver Contrato Generado por el Cliente
-                        </a>
+                        <div className="mb-6 p-4 bg-white rounded-xl border border-emerald-200 shadow-sm">
+                          <h4 className="text-[11px] font-black text-emerald-800 uppercase mb-2">Opción A: Aprobar contrato automático</h4>
+                          <p className="text-[10px] text-gray-500 mb-3">Revisa el PDF que el sistema generó. Si toda la información es correcta, puedes aprobarlo directamente para que el cliente lo firme.</p>
+                          <a href={selectedExpediente.contratos?.[0]?.url_pdf_generado} target="_blank" className="w-full mb-3 bg-emerald-100 text-emerald-800 py-2 rounded-lg font-black text-xs uppercase hover:bg-emerald-200 transition-all flex items-center justify-center gap-2">
+                            📄 1. Ver Contrato Generado
+                          </a>
+                          <button type="button" onClick={handleAprobarGenerado} disabled={isSubmitting} className="w-full bg-emerald-600 text-white py-2 rounded-lg font-black text-xs uppercase hover:bg-emerald-700 transition-all shadow-md">
+                            ✅ 2. Aprobar sin subir cambios
+                          </button>
+                        </div>
                       )}
-                      <p className="text-xs text-emerald-700 mb-3 font-medium">Sube el contrato validado. El cliente será notificado para que pueda firmarlo en su portal.</p>
-                      <input type="file" accept=".pdf" required onChange={e => setFileOficial(e.target.files?.[0] || null)} className="w-full text-xs text-gray-500 file:bg-emerald-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded-lg file:font-black file:uppercase file:mr-4 hover:file:bg-emerald-700 transition-all cursor-pointer" />
+
+                      <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                        <h4 className="text-[11px] font-black text-gray-800 uppercase mb-2">Opción B: Reemplazar contrato</h4>
+                        <p className="text-[10px] text-gray-500 mb-3">Si hiciste correcciones o cambios manuales al contrato, sube el nuevo PDF validado aquí.</p>
+                        <input type="file" accept=".pdf" onChange={e => setFileOficial(e.target.files?.[0] || null)} className="w-full text-xs text-gray-500 file:bg-gray-200 file:text-gray-700 file:border-0 file:px-4 file:py-2 file:rounded-lg file:font-black file:uppercase file:mr-4 hover:file:bg-gray-300 transition-all cursor-pointer mb-3" />
+                        <button type="submit" disabled={isSubmitting || !fileOficial} className="w-full bg-slate-800 text-white py-2 rounded-lg font-black text-xs uppercase hover:bg-slate-700 disabled:opacity-50 transition-all">
+                          ⬆️ Subir y Enviar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -371,9 +435,11 @@ export default function DirectorDashboard({
 
                 <div className="flex gap-3 pt-4 shrink-0 mt-auto border-t border-gray-100 pt-6">
                   <button type="button" onClick={closeModal} className="flex-1 py-4 font-black uppercase text-xs tracking-widest text-gray-400 hover:text-gray-600 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">Cancelar</button>
-                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-slate-800 disabled:opacity-50 transition-all">
-                    {isSubmitting ? 'Procesando...' : 'Confirmar'}
-                  </button>
+                  {modalType === 'asignar_y_doble_firma' && (
+                    <button type="submit" disabled={isSubmitting} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-slate-800 disabled:opacity-50 transition-all">
+                      {isSubmitting ? 'Procesando...' : 'Confirmar Asignación'}
+                    </button>
+                  )}
                 </div>
               </form>
             )}
