@@ -261,6 +261,37 @@ export default function DirectorDashboard({
                 {modalType === 'asignar_y_doble_firma' && (
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-6">
+                      <div className="col-span-2 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <h3 className="text-sm font-black text-gray-800 uppercase mb-3 border-b pb-2">Información del Cliente</h3>
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div><span className="block text-gray-500 font-bold mb-1">Empresa:</span> <span className="font-medium text-gray-900">{selectedExpediente.nombre_empresa}</span></div>
+                          <div><span className="block text-gray-500 font-bold mb-1">Representante:</span> <span className="font-medium text-gray-900">{selectedExpediente.perfiles?.nombre_completo || 'N/A'}</span></div>
+                          <div className="col-span-2"><span className="block text-gray-500 font-bold mb-1">Figura Legal:</span> <span className="font-medium text-gray-900">{selectedExpediente.figura?.descripcion || 'No seleccionada'}</span></div>
+                          {selectedExpediente.servicios_extra?.includes('REGULARIZACION') && (
+                            <div className="col-span-2">
+                              <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-md text-[10px] font-black tracking-widest border border-amber-200 mt-2">
+                                ⚠️ REQUIERE COTIZACIÓN CONTABLE
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <h3 className="text-sm font-black text-blue-900 uppercase mb-3 border-b border-blue-200 pb-2">Documentos del Cliente</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {selectedExpediente.documentos && selectedExpediente.documentos.length > 0 ? (
+                            selectedExpediente.documentos.map((doc, idx) => (
+                              <a key={idx} href={doc.url_archivo} target="_blank" className="flex items-center gap-2 bg-white text-blue-700 p-2 rounded-lg text-[10px] font-black uppercase hover:bg-blue-100 border border-blue-200 transition-all" title={doc.tipo}>
+                                <span>📄</span> <span className="truncate">{doc.tipo.replace(/_/g, ' ')}</span>
+                              </a>
+                            ))
+                          ) : (
+                            <p className="text-xs text-blue-600 font-medium col-span-4">El cliente no ha subido documentos aún.</p>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-100 flex flex-col items-center justify-center text-center">
                         <span className="text-3xl mb-2">📑</span>
                         <h3 className="text-xs font-black text-emerald-900 uppercase tracking-tight mb-2">1. Contrato Firmado (Cliente)</h3>
@@ -298,6 +329,13 @@ export default function DirectorDashboard({
                         <div><span className="block text-gray-500 font-bold mb-1">Empresa:</span> <span className="font-medium text-gray-900">{selectedExpediente.nombre_empresa}</span></div>
                         <div><span className="block text-gray-500 font-bold mb-1">Representante:</span> <span className="font-medium text-gray-900">{selectedExpediente.perfiles?.nombre_completo || 'N/A'}</span></div>
                         <div className="col-span-2"><span className="block text-gray-500 font-bold mb-1">Figura Legal:</span> <span className="font-medium text-gray-900">{selectedExpediente.figura?.descripcion || 'No seleccionada'}</span></div>
+                        {selectedExpediente.servicios_extra?.includes('REGULARIZACION') && (
+                          <div className="col-span-2">
+                            <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-md text-[10px] font-black tracking-widest border border-amber-200 mt-2">
+                              ⚠️ REQUIERE COTIZACIÓN CONTABLE
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -318,7 +356,12 @@ export default function DirectorDashboard({
 
                     <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
                       <h3 className="text-sm font-black text-emerald-900 uppercase mb-3 border-b border-emerald-200 pb-2">Subir Contrato Oficial y Enviar</h3>
-                      <p className="text-xs text-emerald-700 mb-3 font-medium">Al subir el contrato validado, el cliente será notificado para que pueda firmarlo en su portal.</p>
+                      {selectedExpediente.contratos?.[0]?.url_pdf_generado && (
+                        <a href={selectedExpediente.contratos?.[0]?.url_pdf_generado} target="_blank" className="w-full mb-4 bg-white text-emerald-700 py-3 rounded-xl font-black text-xs uppercase shadow-sm border border-emerald-200 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2">
+                          📄 Ver Contrato Generado por el Cliente
+                        </a>
+                      )}
+                      <p className="text-xs text-emerald-700 mb-3 font-medium">Sube el contrato validado. El cliente será notificado para que pueda firmarlo en su portal.</p>
                       <input type="file" accept=".pdf" required onChange={e => setFileOficial(e.target.files?.[0] || null)} className="w-full text-xs text-gray-500 file:bg-emerald-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded-lg file:font-black file:uppercase file:mr-4 hover:file:bg-emerald-700 transition-all cursor-pointer" />
                     </div>
                   </div>
