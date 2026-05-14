@@ -51,7 +51,7 @@ export default async function AbogadaPage() {
     .from('expedientes')
     .select(`
       *,
-      cliente:perfiles!cliente_id(nombre_completo, telefono),
+      cliente:perfiles!cliente_id(nombre_completo, telefono, estado),
       asesora:perfiles!asesora_id(nombre_completo),
       figura:catalogo_figuras(descripcion),
       contratos(*),

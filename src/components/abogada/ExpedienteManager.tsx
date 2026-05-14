@@ -44,8 +44,74 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   useEffect(() => {
     if (selectedExpediente) {
       const dbData = selectedExpediente.datos_concentrado?.[0] || {};
+      
+      // --- Calcular datos automáticos desde la información del expediente ---
+      const cliente = (selectedExpediente as any).cliente;
+      const contrato = selectedExpediente.contratos?.[0];
+      const pagos = selectedExpediente.pagos || [];
+      const asesora = (selectedExpediente as any).asesora;
+
+      // Pagos: cálculos financieros
+      const pagosVerificados = pagos.filter(p => p.verificado);
+      const totalPagado = pagosVerificados.reduce((sum, p) => sum + (p.monto || 0), 0);
+      const montoContrato = contrato?.monto_total || 0;
+      const saldo = montoContrato - totalPagado;
+      const ultimoPago = pagosVerificados.length > 0
+        ? pagosVerificados.sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime())[0]
+        : null;
+
+      // Plan de pagos a texto legible
+      const planTexto: Record<string, string> = {
+        'unico': 'PAGO ÚNICO (CONTADO)',
+        '2_meses': '2 MENSUALIDADES',
+        '4_meses': '4 MENSUALIDADES',
+      };
+      const periodicidad = contrato?.plan_pagos ? (planTexto[contrato.plan_pagos] || contrato.plan_pagos) : '';
+
+      // Cantidad a cobrar próximo pago
+      let cantidadProximo = '';
+      if (contrato?.plan_pagos === '2_meses' && saldo > 0) {
+        cantidadProximo = `$${saldo.toLocaleString()}`;
+      } else if (contrato?.plan_pagos === '4_meses' && saldo > 0) {
+        const pagosRestantes = 4 - pagosVerificados.length;
+        cantidadProximo = pagosRestantes > 0 ? `$${Math.ceil(saldo / pagosRestantes).toLocaleString()}` : '$0';
+      }
+
+      // CLUNI: si el servicio extra incluye CLUNI
+      const tieneCLUNI = selectedExpediente.servicios_extra?.includes('CLUNI');
+
+      // Fecha de contrato
+      const fechaContrato = contrato?.created_at 
+        ? new Date(contrato.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
+
+      // Fecha último pago
+      const fechaUltimoPago = ultimoPago
+        ? new Date(ultimoPago.fecha_pago).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
+
+      // Valores automáticos (solo se usan si la celda está vacía en la DB)
+      const defaults: Record<string, string> = {
+        estado: cliente?.estado || '',
+        telefono_cliente: cliente?.telefono || '',
+        total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
+        periodicidad_pagos: periodicidad,
+        cluni: tieneCLUNI ? 'SÍ - INCLUIDO' : 'NO APLICA',
+        num_pagos_realizados: pagosVerificados.length > 0 ? pagosVerificados.length.toString() : '',
+        cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
+        saldo_cliente: montoContrato > 0 ? `$${saldo.toLocaleString()}` : '',
+        fecha_ultimo_pago: fechaUltimoPago,
+        cantidad_cobrar_proximo: cantidadProximo,
+        vendedora: asesora?.nombre_completo || '',
+        fecha_contrato: fechaContrato,
+      };
+
+      // Merge: dato de DB tiene prioridad, si está vacío usa el calculado
       const newForm: Record<string, string> = {};
-      CAMPOS_CONCENTRADO.forEach(campo => { newForm[campo] = (dbData as any)[campo] || ''; });
+      CAMPOS_CONCENTRADO.forEach(campo => {
+        const dbValue = (dbData as any)[campo] || '';
+        newForm[campo] = dbValue || defaults[campo] || '';
+      });
       setConcentradoForm(newForm);
     }
   }, [selectedExpedienteId, expedientes]);
