@@ -134,6 +134,9 @@ export default function Paso1CrearProyecto({
       const serviciosExtraMapped = [];
       if (extrasSeleccionados.includes('web')) serviciosExtraMapped.push('WEB');
       if (extrasSeleccionados.includes('cluni')) serviciosExtraMapped.push('CLUNI');
+      if (extrasSeleccionados.includes('regularizacion')) serviciosExtraMapped.push('REGULARIZACION');
+      if (extrasSeleccionados.includes('informe_anual')) serviciosExtraMapped.push('INFORME_ANUAL');
+      if (extrasSeleccionados.includes('cambio_rep')) serviciosExtraMapped.push('CAMBIO_REPRESENTANTE');
 
       const formData = {
         nombre_empresa: nombreEmpresa,
@@ -571,10 +574,28 @@ export default function Paso1CrearProyecto({
               </div>
             </section>
 
+            {extrasSeleccionados.includes('regularizacion') && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex items-start gap-4"
+              >
+                <div className="p-2 bg-amber-100 text-amber-600 rounded-full shrink-0">
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <h4 className="text-amber-800 font-bold text-sm mb-1">Aviso sobre Regularización Contable</h4>
+                  <p className="text-amber-700 text-xs leading-relaxed">
+                    Al finalizar este registro, el área contable se comunicará contigo para evaluar tu caso y darte una <strong>cotización personalizada</strong> por este servicio extra. Tu contrato principal se generará solo por los trámites legales y la contabilidad se manejará como un servicio por separado.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-3 py-4 shadow-xl shadow-blue-200"
+              className="btn-primary w-full flex items-center justify-center gap-3 py-4 shadow-xl shadow-sky-200"
             >
               {isLoading ? (
                 <>

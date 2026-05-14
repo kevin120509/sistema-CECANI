@@ -98,8 +98,16 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 return (
                   <tr key={exp.id} className="hover:bg-blue-50/50 transition-all group">
                     <td className="px-8 py-6">
-                      <div className="font-black text-slate-900 uppercase tracking-tighter text-base group-hover:text-blue-600 transition-colors">
-                        {exp.nombre_empresa}
+                      <div className="flex items-center gap-3">
+                        <div className="font-black text-slate-900 uppercase tracking-tighter text-base group-hover:text-blue-600 transition-colors">
+                          {exp.nombre_empresa}
+                        </div>
+                        {exp.servicios_extra?.includes('REGULARIZACION') && (
+                          <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-200 shadow-sm flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            Cotizar Contabilidad
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -163,7 +171,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden mb-8">
         <div className="bg-slate-900 p-10 text-white flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex-1">
-            <h1 className="text-4xl font-black mb-3 uppercase tracking-tighter">{selectedExpediente.nombre_empresa}</h1>
+            <div className="flex items-center gap-4 mb-3">
+              <h1 className="text-4xl font-black uppercase tracking-tighter">{selectedExpediente.nombre_empresa}</h1>
+              {selectedExpediente.servicios_extra?.includes('REGULARIZACION') && (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  Pendiente Cotizar Contabilidad
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-6">
               <p className="text-slate-400 font-black text-[11px] uppercase tracking-widest flex items-center gap-3">
                 CLIENTE: <span className="text-white text-base tracking-normal">{(selectedExpediente as any).cliente?.nombre_completo}</span>

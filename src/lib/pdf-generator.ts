@@ -252,9 +252,8 @@ export async function generarContratoPDF(datos: DatosContrato): Promise<Uint8Arr
   if (datos.modulosExtraIds.includes('cambio_rep')) {
     areasServicio.push('Actualización de Representante Legal en CLUNI.');
   }
-  if (datos.modulosExtraIds.includes('regularizacion')) {
-    areasServicio.push('Regularización Contable y Declaraciones (Sujeto a cotización).');
-  }
+  // La regularización contable NO se agrega aquí, ya que se cotiza por separado 
+  // y está especificada en la cláusula Cuarta inciso e.
 
   // Dibujar lista numerada
   areasServicio.forEach((servicio, index) => {
