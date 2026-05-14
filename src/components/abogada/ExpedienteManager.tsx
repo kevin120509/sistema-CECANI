@@ -265,26 +265,31 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               <span className="text-slate-500 font-black uppercase tracking-widest">Asesora: <span className="text-white text-sm tracking-normal">{(selectedExpediente as any).asesora?.nombre_completo || 'Sin asignar'}</span></span>
             </div>
           </div>
-          <div className="flex flex-col gap-3 min-w-[240px]">
-            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-2">
+          <div className="flex flex-col gap-3 min-w-[280px]">
+            {/* Contrato */}
+            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Contrato</span>
-                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${estadoContrato === 'doble_firma' ? 'bg-emerald-500/20 text-emerald-400' : estadoContrato === 'firmado_cliente' ? 'bg-amber-500/20 text-amber-400' : estadoContrato === 'generado' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">📄 Contrato</span>
+                <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${estadoContrato === 'doble_firma' ? 'bg-emerald-500/20 text-emerald-400' : estadoContrato === 'firmado_cliente' ? 'bg-amber-500/20 text-amber-400' : estadoContrato === 'generado' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
                   {estadoContrato === 'doble_firma' ? '✓ Doble Firma' : estadoContrato === 'firmado_cliente' ? '⏳ Falta Directora' : estadoContrato === 'generado' ? '⏳ Sin Firmas' : '✕ No Generado'}
                 </span>
               </div>
               {urlContratoMostrar && (
-                <a href={urlContratoMostrar} target="_blank" className={`block w-full px-4 py-2.5 rounded-xl font-black text-center text-[10px] uppercase tracking-widest transition-all ${estadoContrato === 'doble_firma' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {estadoContrato === 'doble_firma' ? 'Descargar Contrato Final' : 'Ver Contrato'}
+                <a href={urlContratoMostrar} target="_blank" className={`block w-full px-4 py-3 rounded-xl font-black text-center text-[10px] uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 ${estadoContrato === 'doble_firma' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-900/30' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/30'}`}>
+                  {estadoContrato === 'doble_firma' ? '↓ Descargar Contrato Final' : '↗ Ver Contrato'}
                 </a>
               )}
             </div>
-            <div className="flex gap-2">
-              {docIneFrente && <a href={docIneFrente} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">INE F</a>}
-              {docIneReverso && <a href={docIneReverso} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">INE R</a>}
-              {docComprobante && <a href={docComprobante} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">DOM.</a>}
-              {docPago && <a href={docPago} target="_blank" className="flex-1 bg-slate-800 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-slate-700 border border-slate-700 transition-all">PAGO</a>}
-              {waUrl && <a href={waUrl} target="_blank" rel="noreferrer" className="flex-1 bg-green-600 text-[9px] py-2 rounded-xl text-center uppercase font-black hover:bg-green-700 transition-all">WA</a>}
+            {/* Documentos del Expediente */}
+            <div className="space-y-1.5">
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 pl-1">Documentos del expediente</span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {docIneFrente && <a href={docIneFrente} target="_blank" className="bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[8px] py-2 rounded-lg text-center uppercase font-black hover:bg-sky-500/20 transition-all">🪪 INE Frente</a>}
+                {docIneReverso && <a href={docIneReverso} target="_blank" className="bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[8px] py-2 rounded-lg text-center uppercase font-black hover:bg-sky-500/20 transition-all">🪪 INE Reverso</a>}
+                {docComprobante && <a href={docComprobante} target="_blank" className="bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[8px] py-2 rounded-lg text-center uppercase font-black hover:bg-violet-500/20 transition-all">🏠 Domicilio</a>}
+                {docPago && <a href={docPago} target="_blank" className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[8px] py-2 rounded-lg text-center uppercase font-black hover:bg-emerald-500/20 transition-all">💰 Pago</a>}
+                {waUrl && <a href={waUrl} target="_blank" rel="noreferrer" className="bg-green-500/10 text-green-300 border border-green-500/20 text-[8px] py-2 rounded-lg text-center uppercase font-black hover:bg-green-500/20 transition-all">💬 WhatsApp</a>}
+              </div>
             </div>
           </div>
         </div>
@@ -308,9 +313,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 1 y 2: Trámite + Finanzas */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 1. Datos del Trámite */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-blue-500 space-y-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
+                    <span className="w-5 h-5 bg-blue-500 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
                     Datos del Trámite
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -331,9 +336,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 2. Finanzas */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-emerald-500 space-y-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
+                    <span className="w-5 h-5 bg-emerald-500 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
                     Finanzas del Contrato
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -360,9 +365,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 3, 4, 5: Operación + Reuniones + Seguimiento */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* 3. Operación */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-slate-400 space-y-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
+                    <span className="w-5 h-5 bg-slate-400 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
                     Operación
                   </h3>
                   <div className="space-y-3">
@@ -381,9 +386,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 4. Reuniones */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-indigo-500 space-y-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
+                    <span className="w-5 h-5 bg-indigo-500 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
                     Reuniones
                   </h3>
                   <div className="space-y-3">
@@ -399,9 +404,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 5. Seguimiento */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-amber-500 space-y-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-900 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
+                    <span className="w-5 h-5 bg-amber-500 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
                     Seguimiento
                   </h3>
                   <div className="space-y-3">
