@@ -77,6 +77,7 @@ export default function Paso1CrearProyecto({
     else setServicioBaseId('');
   }, [tipoTramite]);
 
+  const [subStep, setSubStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -118,20 +119,39 @@ export default function Paso1CrearProyecto({
     );
   };
 
+  const validateSubStep = (step: number) => {
+    setError(null);
+    if (step === 1) {
+      if (!nombreCompleto.trim()) { setError('El nombre completo es requerido.'); return false; }
+      if (!telefono.trim()) { setError('El teléfono es necesario para contactarte.'); return false; }
+      if (!rfc.trim()) { setError('El RFC es obligatorio para el contrato.'); return false; }
+      if (!curp.trim()) { setError('La CURP es obligatoria.'); return false; }
+      if (!domicilioCompleto.trim()) { setError('El domicilio completo es necesario para las declaraciones.'); return false; }
+    } else if (step === 2) {
+      if (!nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido.'); return false; }
+      if (!figuraId) { setError('Selecciona un tipo de figura legal.'); return false; }
+      if (!planPagos) { setError('Selecciona un plan de pagos.'); return false; }
+    } else if (step === 3) {
+      if (!servicioBaseId) { setError('Selecciona el servicio principal antes de finalizar.'); return false; }
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateSubStep(subStep)) {
+      setSubStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrev = () => {
+    setSubStep(prev => prev - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    // Validaciones básicas
-    if (!nombreCompleto.trim()) { setError('El nombre completo es requerido.'); return; }
-    if (!telefono.trim()) { setError('El teléfono es necesario para contactarte.'); return; }
-    if (!rfc.trim()) { setError('El RFC es obligatorio para el contrato.'); return; }
-    if (!curp.trim()) { setError('La CURP es obligatoria.'); return; }
-    if (!domicilioCompleto.trim()) { setError('El domicilio completo es necesario para las declaraciones.'); return; }
-    if (!nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido.'); return; }
-    if (!figuraId) { setError('Selecciona un tipo de figura legal.'); return; }
-    if (!servicioBaseId) { setError('Selecciona el servicio principal.'); return; }
-    if (!planPagos) { setError('Selecciona un plan de pagos.'); return; }
+    if (!validateSubStep(3)) return;
 
     setIsLoading(true);
 
@@ -214,435 +234,418 @@ export default function Paso1CrearProyecto({
     );
   }
 
+  const subStepsLabels = ['Identidad', 'Organización', 'Presupuesto'];
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start w-full">
-      {/* Columna de Información - Oculta en pantallas medianas si estorba, o más estrecha */}
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start w-full max-w-[1600px] mx-auto">
+      {/* Columna de Información / Progreso Lateral */}
       <div className="xl:col-span-3 space-y-6">
-        <div className="glass-card rounded-3xl p-8 bg-sky-600 text-white overflow-hidden relative shadow-xl">
+        <div className="glass-card rounded-[2.5rem] p-8 bg-slate-900 text-white overflow-hidden relative shadow-2xl border border-white/5">
           <div className="relative z-10">
-            <h2 className="text-2xl font-bold mb-4">Registro Legal</h2>
-            <p className="text-sky-100 text-sm leading-relaxed mb-6">
-              Completa la información legal para generar tu contrato con validez oficial ante notario.
-            </p>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <FileText size={16} className="text-sky-200" />
-                Declaraciones oficiales
-              </li>
-              <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <Briefcase size={16} className="text-sky-200" />
-                Personalidad jurídica
-              </li>
-              <li className="flex items-center gap-3 text-xs font-medium bg-white/10 p-3 rounded-xl border border-white/10">
-                <MapPin size={16} className="text-sky-200" />
-                Domicilio legal verificado
-              </li>
-            </ul>
+            <h2 className="text-xl font-black uppercase tracking-widest mb-6 text-sky-400">Progreso de Registro</h2>
+            
+            <div className="space-y-8">
+              {subStepsLabels.map((label, idx) => {
+                const stepNum = idx + 1;
+                const isCurrent = subStep === stepNum;
+                const isPast = subStep > stepNum;
+                
+                return (
+                  <div key={label} className="flex items-center gap-4 group">
+                    <div className={`
+                      w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all
+                      ${isCurrent ? 'bg-sky-500 text-white shadow-[0_0_15px_rgba(14,165,233,0.5)] scale-110' : 
+                        isPast ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500 border border-slate-700'}
+                    `}>
+                      {isPast ? '✓' : stepNum}
+                    </div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isCurrent ? 'text-white' : isPast ? 'text-emerald-400' : 'text-slate-600'}`}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-white/5">
+              <p className="text-slate-400 text-[10px] leading-relaxed italic">
+                {subStep === 1 && "Ingresa tus datos personales tal cual aparecen en tu identificación oficial."}
+                {subStep === 2 && "Define el nombre y la figura legal bajo la cual operará tu organización."}
+                {subStep === 3 && "Personaliza los servicios adicionales y verifica tu inversión total."}
+              </p>
+            </div>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-sky-500/10 rounded-full blur-3xl"></div>
         </div>
       </div>
 
-      {/* Columna del Formulario y Calculadora */}
+      {/* Columna del Formulario */}
       <div className="xl:col-span-9 space-y-8">
-        <div className="glass-card rounded-3xl p-6 md:p-12 shadow-sm border border-slate-100 bg-white">
+        <div className="glass-card rounded-[3rem] p-6 md:p-12 shadow-2xl border border-slate-100 bg-white relative overflow-hidden">
+          {/* Barra de progreso superior sutil */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-50">
+            <motion.div 
+              className="h-full bg-sky-500"
+              initial={{ width: '0%' }}
+              animate={{ width: `${(subStep / 3) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+
           {error && (
             <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="bg-red-50 border border-red-100 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border-2 border-red-100 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 shadow-sm"
             >
-              <div className="bg-red-100 p-2 rounded-full"><Scale size={16} /></div>
-              <span className="text-sm font-medium">{error}</span>
+              <AlertCircle size={20} className="shrink-0" />
+              <span className="text-xs font-bold uppercase tracking-tight">{error}</span>
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-12">
-            {/* Sección: Identidad del Representante */}
-            <section>
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl">
-                  <User size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Identidad del Representante</h3>
-                  <p className="text-sm text-slate-500">Datos para declaraciones contractuales</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="input-label">Nombre completo (Como aparece en INE) *</label>
-                  <div className="relative group">
-                    <User className="input-icon" size={18} />
-                    <input
-                      type="text"
-                      value={nombreCompleto}
-                      onChange={(e) => setNombreCompleto(e.target.value)}
-                      placeholder="Ej. Juan Pérez López"
-                      className="input-field pl-11"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">RFC (con homoclave) *</label>
-                  <div className="relative group">
-                    <FileText className="input-icon" size={18} />
-                    <input
-                      type="text"
-                      value={rfc}
-                      onChange={(e) => setRfc(e.target.value.toUpperCase())}
-                      placeholder="ABCD900101XXX"
-                      className="input-field pl-11 uppercase"
-                      maxLength={13}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">Teléfono de Contacto (WhatsApp) *</label>
-                  <div className="relative group">
-                    <Phone className="input-icon" size={18} />
-                    <input
-                      type="tel"
-                      value={telefono}
-                      onChange={(e) => setTelefono(e.target.value)}
-                      placeholder="Ej. 5512345678"
-                      className="input-field pl-11"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">CURP *</label>
-                  <div className="relative group">
-                    <FileText className="input-icon" size={18} />
-                    <input
-                      type="text"
-                      value={curp}
-                      onChange={(e) => setCurp(e.target.value.toUpperCase())}
-                      placeholder="ABCD900101HXXXXX00"
-                      className="input-field pl-11 uppercase"
-                      maxLength={18}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">Ocupación / Profesión</label>
-                  <div className="relative group">
-                    <Briefcase className="input-icon" size={18} />
-                    <input
-                      type="text"
-                      value={ocupacion}
-                      onChange={(e) => setOcupacion(e.target.value)}
-                      placeholder="Ej. Abogado, Comerciante, etc."
-                      className="input-field pl-11"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="input-label">Estado Civil</label>
-                  <div className="relative group">
-                    <Users className="input-icon" size={18} />
-                    <select
-                      value={estadoCivil}
-                      onChange={(e) => setEstadoCivil(e.target.value)}
-                      className="input-field pl-11"
-                      disabled={isLoading}
-                    >
-                      <option value="">Selecciona...</option>
-                      <option value="Soltero(a)">Soltero(a)</option>
-                      <option value="Casado(a)">Casado(a)</option>
-                      <option value="Divorciado(a)">Divorciado(a)</option>
-                      <option value="Viudo(a)">Viudo(a)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="input-label">Domicilio Completo (Calle, Núm, Col, CP, Ciudad) *</label>
-                  <div className="relative group">
-                    <MapPin className="input-icon" size={18} />
-                    <textarea
-                      value={domicilioCompleto}
-                      onChange={(e) => setDomicilioCompleto(e.target.value)}
-                      placeholder="Calle Falsa 123, Col. Centro, CP 01000, CDMX"
-                      className="input-field pl-11 pt-3 min-h-[80px]"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <hr className="border-slate-100" />
-
-            {/* Sección: Organización */}
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                  <Building2 size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">Datos de la Organización</h3>
-                  <p className="text-xs text-slate-500">Configuración legal y comercial</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="input-label">Nombre de la Empresa / Asociación *</label>
-                  <div className="relative group">
-                    <Building2 className="input-icon" size={18} />
-                    <input
-                      type="text"
-                      value={nombreEmpresa}
-                      onChange={(e) => setNombreEmpresa(e.target.value)}
-                      placeholder="Ej. Fundación de Ayuda A.C."
-                      className="input-field pl-11"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="input-label">Figura Legal Deseada *</label>
-                    <div className="relative group">
-                      <Scale className="input-icon" size={18} />
-                      <select
-                        value={figuraId}
-                        onChange={(e) => setFiguraId(Number(e.target.value))}
-                        className="input-field pl-11 appearance-none"
-                        disabled={isLoading}
-                      >
-                        <option value="">Selecciona...</option>
-                        {figuras.map((fig) => (
-                          <option key={fig.id} value={fig.id}>
-                            {fig.siglas} — {fig.descripcion}
-                          </option>
-                        ))}
-                      </select>
+          <div className="min-h-[400px]">
+            <AnimatePresence mode="wait">
+              {/* SUB-PASO 1: Identidad */}
+              {subStep === 1 && (
+                <motion.section
+                  key="substep1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-10"
+                >
+                  <div className="flex items-center gap-4 mb-10">
+                    <div className="p-4 bg-sky-50 text-sky-600 rounded-3xl shadow-sm">
+                      <User size={32} />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="input-label">Modalidad de Pago *</label>
-                    <div className="relative group">
-                      <CreditCard className="input-icon" size={18} />
-                      <select
-                        value={planPagos}
-                        onChange={(e) => setPlanPagos(e.target.value as PlanPagos)}
-                        className="input-field pl-11 appearance-none"
-                        disabled={isLoading}
-                      >
-                        <option value="">Selecciona un plan...</option>
-                        <option value="unico">Pago Único de Contado (-15%)</option>
-                        <option value="2_meses">A 2 Mensualidades</option>
-                        <option value="4_meses">A 4 Mensualidades</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <hr className="border-slate-200" />
-
-            {/* CALCULADORA DE PRESUPUESTO MODULAR */}
-            <section className="w-full">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-sky-100 text-sky-600 rounded-2xl shadow-sm">
-                  <Calculator size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Presupuesto Modular</h3>
-                  <p className="text-sm text-slate-500">Configuración inteligente de servicios</p>
-                </div>
-              </div>
-
-              <div className="bg-slate-900 p-8 md:p-12 rounded-[3rem] text-white shadow-[0_20px_50px_rgba(15,23,42,0.3)] space-y-10 border border-white/5 relative overflow-hidden">
-                {/* Decoración Pastel */}
-                <div className="absolute -top-24 -right-24 w-64 h-64 bg-sky-500/10 rounded-full blur-[80px]"></div>
-                
-                <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-6 border-b border-white/10 pb-10">
-                  <div className="text-center sm:text-left">
-                    <h3 className="text-xl font-black uppercase tracking-[0.2em] text-sky-400">Cotización Total</h3>
-                    <p className="text-xs text-slate-400 mt-2 font-medium opacity-60">MONTO TOTAL DE INVERSIÓN (IVA INCLUIDO)</p>
-                  </div>
-                  <div className="bg-sky-500/20 px-10 py-5 rounded-[2rem] font-black text-4xl text-sky-300 shadow-[inset_0_0_20px_rgba(56,189,248,0.1)] border border-sky-400/30 flex items-baseline gap-3">
-                    <span className="text-lg opacity-40">$</span>
-                    {presupuestoTotal.toLocaleString()}
-                    <span className="text-xs opacity-50 tracking-widest font-bold">MXN</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-10">
-                  {/* Fila 1: Selección de Trámite (Ancho Completo) */}
-                  <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">1. Tipo de Trámite *</label>
-                      
-                      <div className="space-y-4">
-                        <div className="bg-slate-800 p-4 rounded-2xl border border-white/5">
-                          <p className="text-sm font-medium mb-3 text-white">¿Tu organización ya cuenta con Acta Constitutiva?</p>
-                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <button
-                              type="button"
-                              disabled={isLoading}
-                              onClick={() => { setTieneActa(true); }}
-                              className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                                tieneActa === true ? 'bg-sky-600 border-sky-500 text-white shadow-lg shadow-sky-900/40' : 'border-slate-700 text-slate-500 hover:border-sky-500/50 hover:bg-sky-500/5'
-                              }`}
-                            >
-                              Sí, ya la tengo
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isLoading}
-                              onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}
-                              className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                                tieneActa === false ? 'bg-sky-600 border-sky-500 text-white shadow-lg shadow-sky-900/40' : 'border-slate-700 text-slate-500 hover:border-sky-500/50 hover:bg-sky-500/5'
-                              }`}
-                            >
-                              No, aún no
-                            </button>
-                          </div>
-                        </div>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Identidad del Representante</h3>
+                      <p className="text-sm text-slate-500 font-medium">Información para declaraciones del contrato</p>
+                    </div>
+                  </div>
 
-                        {tieneActa === true && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: -10 }} 
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-slate-800 p-4 rounded-2xl border border-white/5 mt-4"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="md:col-span-2">
+                      <label className="input-label">Nombre completo (Como aparece en INE) *</label>
+                      <div className="relative group">
+                        <User className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={nombreCompleto}
+                          onChange={(e) => setNombreCompleto(e.target.value)}
+                          placeholder="Ej. Juan Pérez López"
+                          className="input-field pl-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label">Teléfono (WhatsApp) *</label>
+                      <div className="relative group">
+                        <Phone className="input-icon" size={18} />
+                        <input
+                          type="tel"
+                          value={telefono}
+                          onChange={(e) => setTelefono(e.target.value)}
+                          placeholder="Ej. 5512345678"
+                          className="input-field pl-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label">RFC (con homoclave) *</label>
+                      <div className="relative group">
+                        <FileText className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={rfc}
+                          onChange={(e) => setRfc(e.target.value.toUpperCase())}
+                          placeholder="ABCD900101XXX"
+                          className="input-field pl-12 uppercase"
+                          maxLength={13}
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label">CURP *</label>
+                      <div className="relative group">
+                        <FileText className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={curp}
+                          onChange={(e) => setCurp(e.target.value.toUpperCase())}
+                          placeholder="ABCD900101HXXXXX00"
+                          className="input-field pl-12 uppercase"
+                          maxLength={18}
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label">Ocupación / Profesión</label>
+                      <div className="relative group">
+                        <Briefcase className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={ocupacion}
+                          onChange={(e) => setOcupacion(e.target.value)}
+                          placeholder="Ej. Abogado, Comerciante, etc."
+                          className="input-field pl-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="input-label">Domicilio Completo *</label>
+                      <div className="relative group">
+                        <MapPin className="input-icon" size={18} />
+                        <textarea
+                          value={domicilioCompleto}
+                          onChange={(e) => setDomicilioCompleto(e.target.value)}
+                          placeholder="Calle, Núm, Col, CP, Ciudad, Estado"
+                          className="input-field pl-12 pt-4 min-h-[100px]"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.section>
+              )}
+
+              {/* SUB-PASO 2: Organización */}
+              {subStep === 2 && (
+                <motion.section
+                  key="substep2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-10"
+                >
+                  <div className="flex items-center gap-4 mb-10">
+                    <div className="p-4 bg-blue-50 text-blue-600 rounded-3xl shadow-sm">
+                      <Building2 size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Datos de la Organización</h3>
+                      <p className="text-sm text-slate-500 font-medium">Configuración legal y financiera</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                    <div>
+                      <label className="input-label">Nombre de la Empresa / Asociación *</label>
+                      <div className="relative group">
+                        <Building2 className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={nombreEmpresa}
+                          onChange={(e) => setNombreEmpresa(e.target.value)}
+                          placeholder="Ej. Fundación de Ayuda A.C."
+                          className="input-field pl-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <label className="input-label">Figura Legal Deseada *</label>
+                        <div className="relative group">
+                          <Scale className="input-icon" size={18} />
+                          <select
+                            value={figuraId}
+                            onChange={(e) => setFiguraId(Number(e.target.value))}
+                            className="input-field pl-12 appearance-none"
+                            disabled={isLoading}
                           >
-                            <p className="text-sm font-medium mb-3 text-white">¿Qué necesitas hacer ahora?</p>
-                            <div className="flex flex-col gap-3">
-                              <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => setNecesitaRenovar(false)}
-                                className={`w-full py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all text-left ${
-                                  necesitaRenovar === false ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'border-slate-600 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-700/50'
-                                }`}
-                              >
-                                Necesito modificar mi acta para que el SAT me acepte
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => setNecesitaRenovar(true)}
-                                className={`w-full py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all text-left ${
-                                  necesitaRenovar === true ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'border-slate-600 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-700/50'
-                                }`}
-                              >
-                                Perdí mi permiso de Donataria o necesito renovarlo
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
+                            <option value="">Selecciona...</option>
+                            {figuras.map((fig) => (
+                              <option key={fig.id} value={fig.id}>
+                                {fig.siglas} — {fig.descripcion}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
-                      <p className="text-[11px] text-indigo-300 mt-4 ml-2 italic font-medium">
-                        {servicioBaseId 
-                          ? `Servicio asignado: ${Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId)?.nombre}`
-                          : 'Por favor, responde las preguntas para asignar tu trámite automáticamente.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <hr className="border-white/5" />
-
-                  {/* Fila 2: Extras (Ancho Completo) */}
-                  <div className="space-y-6">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 text-center md:text-left">2. ¿Deseas agregar servicios extra?</label>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {Object.values(SERVICIOS_EXTRAS).map(extra => {
-                        const isSelected = extrasSeleccionados.includes(extra.id);
-                        return (
-                          <div 
-                            key={extra.id} 
-                            onClick={() => !isLoading && toggleExtra(extra.id)}
-                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer gap-3 ${
-                              isSelected 
-                                ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.15)]' 
-                                : 'bg-slate-800/50 border-white/5 hover:border-white/20'
-                            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      <div>
+                        <label className="input-label">Modalidad de Pago *</label>
+                        <div className="relative group">
+                          <CreditCard className="input-icon" size={18} />
+                          <select
+                            value={planPagos}
+                            onChange={(e) => setPlanPagos(e.target.value as PlanPagos)}
+                            className="input-field pl-12 appearance-none"
+                            disabled={isLoading}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                                isSelected ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'border-slate-600'
-                              }`}>
-                                {isSelected && <span className="text-[10px] text-white">✓</span>}
-                              </div>
-                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-200 leading-tight">
-                                {extra.nombre}
-                              </span>
-                            </div>
-                            <span className={`text-[9px] sm:text-[10px] font-bold text-indigo-400 sm:text-right shrink-0 ${extra.precioVariable ? 'bg-indigo-500/10 py-1 px-2 rounded-lg border border-indigo-500/20' : ''}`}>
-                              {extra.precioVariable 
-                                ? 'REQUIERE COTIZACIÓN' 
-                                : extra.esRegalo 
-                                  ? 'GRATIS' 
-                                  : extra.id === 'web' 
-                                    ? `+$${extra.precio.toLocaleString()} (+ IVA)` 
-                                    : extra.id === 'cluni' && ['constitucion', 'acta_extra'].includes(servicioBaseId)
-                                      ? `+$10,000 (PRECIO PAQUETE)`
-                                      : `+$${extra.precio.toLocaleString()}`}
-                            </span>
-                          </div>
-                        );
-                      })}
+                            <option value="">Selecciona un plan...</option>
+                            <option value="unico">Pago Único de Contado (Precio Especial)</option>
+                            <option value="2_meses">A 2 Mensualidades</option>
+                            <option value="4_meses">A 4 Mensualidades</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </section>
-
-            {extrasSeleccionados.includes('regularizacion') && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex items-start gap-4"
-              >
-                <div className="p-2 bg-amber-100 text-amber-600 rounded-full shrink-0">
-                  <AlertCircle size={20} />
-                </div>
-                <div>
-                  <h4 className="text-amber-800 font-bold text-sm mb-1">Aviso sobre Regularización Contable</h4>
-                  <p className="text-amber-700 text-xs leading-relaxed">
-                    Al finalizar este registro, el área contable se comunicará contigo para evaluar tu caso y darte una <strong>cotización personalizada</strong> por este servicio extra. Tu contrato principal se generará solo por los trámites legales y la contabilidad se manejará como un servicio por separado.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-3 py-4 shadow-xl shadow-sky-200"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  <span>Procesando...</span>
-                </>
-              ) : (
-                <>
-                  <span>{expediente?.id ? 'Actualizar Expediente' : 'Continuar con el Registro'}</span>
-                  <ArrowRight size={20} />
-                </>
+                </motion.section>
               )}
-            </button>
-          </form>
+
+              {/* SUB-PASO 3: Presupuesto */}
+              {subStep === 3 && (
+                <motion.section
+                  key="substep3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-10"
+                >
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-4 bg-sky-100 text-sky-600 rounded-3xl shadow-sm">
+                      <Calculator size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Presupuesto Modular</h3>
+                      <p className="text-sm text-slate-500 font-medium">Personalización de servicios y trámites</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-8 md:p-12 rounded-[3.5rem] text-white shadow-2xl space-y-12 border border-white/5 relative overflow-hidden">
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-sky-500/10 rounded-full blur-[80px]"></div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8 border-b border-white/5 pb-10">
+                      <div className="text-center md:text-left">
+                        <h3 className="text-lg font-black uppercase tracking-[0.3em] text-sky-400">Total Inversión</h3>
+                        <p className="text-[10px] text-slate-400 mt-2 font-black uppercase tracking-widest opacity-60">IVA INCLUIDO SEGÚN CORRESPONDA</p>
+                      </div>
+                      <div className="bg-sky-500/10 px-12 py-6 rounded-[2.5rem] font-black text-5xl text-sky-300 border border-sky-400/20 flex items-baseline gap-4 shadow-[0_0_40px_rgba(14,165,233,0.1)]">
+                        <span className="text-xl opacity-30">$</span>
+                        {presupuestoTotal.toLocaleString()}
+                        <span className="text-xs opacity-50 tracking-[0.2em] font-bold">MXN</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-10 relative z-10">
+                      {/* Trámite Principal */}
+                      <div className="space-y-6">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">1. Selección de Trámite Principal *</label>
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <p className="text-sm font-bold mb-4 text-slate-200">¿Tu organización ya cuenta con Acta Constitutiva?</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <button
+                                type="button"
+                                onClick={() => setTieneActa(true)}
+                                className={`py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${tieneActa === true ? 'bg-sky-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
+                              >
+                                Sí, ya existe
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}
+                                className={`py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${tieneActa === false ? 'bg-sky-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
+                              >
+                                No, desde cero
+                              </button>
+                            </div>
+                          </div>
+
+                          {tieneActa === true && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                              <p className="text-sm font-bold mb-4 text-slate-200">Objetivo del trámite:</p>
+                              <div className="space-y-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setNecesitaRenovar(false)}
+                                  className={`w-full py-4 px-6 rounded-2xl text-[10px] text-left font-black uppercase tracking-widest transition-all ${necesitaRenovar === false ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
+                                >
+                                  Actualización de Estatutos / Donataria
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setNecesitaRenovar(true)}
+                                  className={`w-full py-4 px-6 rounded-2xl text-[10px] text-left font-black uppercase tracking-widest transition-all ${necesitaRenovar === true ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
+                                >
+                                  Recuperación / Renovación de Donataria
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Extras */}
+                      <div className="space-y-6">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">2. Servicios Adicionales</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.values(SERVICIOS_EXTRAS).map(extra => {
+                            const isSelected = extrasSeleccionados.includes(extra.id);
+                            return (
+                              <div 
+                                key={extra.id} 
+                                onClick={() => toggleExtra(extra.id)}
+                                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group ${isSelected ? 'bg-sky-500/10 border-sky-500/50' : 'bg-slate-900 border-white/5'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'bg-sky-500 border-sky-500' : 'border-slate-700 group-hover:border-slate-500'}`} />
+                                  <span className="text-[10px] font-black uppercase tracking-tighter text-slate-300">{extra.nombre}</span>
+                                </div>
+                                <span className="text-[9px] font-black text-sky-400 opacity-80">
+                                  {extra.id === 'web' ? '+$4,999 (+ IVA)' : 
+                                   extra.id === 'cluni' && ['constitucion', 'acta_extra'].includes(servicioBaseId) ? '+$10,000 (OFERTA)' :
+                                   extra.precio > 0 ? `+$${extra.precio.toLocaleString()}` : 'COTIZAR'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.section>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Navegación de Sub-pasos */}
+          <div className="mt-12 pt-10 border-t border-slate-100 flex items-center justify-between gap-4">
+            {subStep > 1 ? (
+              <button
+                onClick={handlePrev}
+                className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
+              >
+                Anterior
+              </button>
+            ) : <div />}
+
+            {subStep < 3 ? (
+              <button
+                onClick={handleNext}
+                className="bg-slate-900 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition shadow-xl shadow-slate-200 flex items-center gap-3"
+              >
+                Siguiente Paso
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-sky-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-700 transition shadow-xl shadow-sky-200 flex items-center gap-3 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <><Loader2 className="animate-spin" size={16} /> Procesando...</>
+                ) : (
+                  <>Finalizar Registro <CheckCircle2 size={16} /></>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
