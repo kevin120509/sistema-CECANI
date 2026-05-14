@@ -9,12 +9,18 @@ interface DatosPersonales {
   nombre_completo: string;
   telefono?: string;
   estado?: string;
+  rfc?: string;
+  curp?: string;
+  ocupacion?: string;
+  estado_civil?: string;
+  domicilio_completo?: string;
+  folio_ine?: string;
 }
 
 /**
  * Crea un expediente completo:
- * 1. Crea usuario auth (pasa nombre_completo en user_metadata para que el trigger funcione)
- * 2. Actualiza perfil con telefono/estado (el trigger ya insertó el perfil)
+ * 1. Crea usuario auth (pasa metadatos legales para el trigger)
+ * 2. Actualiza perfil con toda la información legal
  * 3. Crea expediente + contrato
  */
 export async function crearExpedienteCompleto(
@@ -28,6 +34,15 @@ export async function crearExpedienteCompleto(
     if (!datosPersonales.nombre_completo?.trim()) {
       return { success: false, error: 'El nombre completo es requerido.' };
     }
+    if (!datosPersonales.rfc?.trim()) {
+      return { success: false, error: 'El RFC es obligatorio para el contrato.' };
+    }
+    if (!datosPersonales.curp?.trim()) {
+      return { success: false, error: 'La CURP es obligatoria para el contrato.' };
+    }
+    if (!datosPersonales.domicilio_completo?.trim()) {
+      return { success: false, error: 'El domicilio completo es necesario para las declaraciones.' };
+    }
     if (!form.nombre_empresa?.trim()) {
       return { success: false, error: 'El nombre de la empresa es requerido.' };
     }
@@ -39,8 +54,6 @@ export async function crearExpedienteCompleto(
     }
 
     // 1. Crear usuario en auth.users
-    //    Pasamos nombre_completo, telefono, estado, rol en user_metadata
-    //    para que el trigger on_auth_user_created pueda poblar perfiles
     const nombre = datosPersonales.nombre_completo.trim();
     const fakeEmail = `${nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)}_${Date.now()}@cecani.temp`;
 
@@ -65,8 +78,18 @@ export async function crearExpedienteCompleto(
 
     const userId = authData.user.id;
 
-    // 2. Verificar/actualizar perfil
-    //    El trigger ya debió crear el perfil, pero actualizamos con datos adicionales
+    // 2. Verificar/actualizar perfil con TODOS los campos legales
+    const updateData = {
+      telefono: datosPersonales.telefono?.trim() || null,
+      estado: datosPersonales.estado?.trim() || null,
+      rfc: datosPersonales.rfc?.trim().toUpperCase() || null,
+      curp: datosPersonales.curp?.trim().toUpperCase() || null,
+      ocupacion: datosPersonales.ocupacion?.trim() || null,
+      estado_civil: datosPersonales.estado_civil?.trim() || null,
+      domicilio_completo: datosPersonales.domicilio_completo?.trim() || null,
+      folio_ine: datosPersonales.folio_ine?.trim() || null,
+    };
+
     const { data: perfilExiste } = await supabase
       .from('perfiles')
       .select('id')
@@ -74,30 +97,18 @@ export async function crearExpedienteCompleto(
       .maybeSingle();
 
     if (perfilExiste) {
-      // Perfil creado por trigger — actualizar campos opcionales
-      await supabase
-        .from('perfiles')
-        .update({
-          telefono: datosPersonales.telefono?.trim() || null,
-          estado: datosPersonales.estado?.trim() || null,
-        })
-        .eq('id', userId);
+      await supabase.from('perfiles').update(updateData).eq('id', userId);
     } else {
-      // Trigger no creó perfil — crearlo manualmente
       const { error: perfilError } = await supabase.from('perfiles').insert({
         id: userId,
         rol: 'cliente',
         nombre_completo: nombre,
-        telefono: datosPersonales.telefono?.trim() || null,
-        estado: datosPersonales.estado?.trim() || null,
+        ...updateData
       });
 
       if (perfilError) {
         await supabase.auth.admin.deleteUser(userId);
-        return {
-          success: false,
-          error: `Error al crear perfil: ${perfilError.message}`,
-        };
+        return { success: false, error: `Error al crear perfil: ${perfilError.message}` };
       }
     }
 
@@ -126,7 +137,9 @@ export async function crearExpedienteCompleto(
     const { error: contratoError } = await supabase.from('contratos').insert({
       expediente_id: expediente.id,
       plan_pagos: form.plan_pagos,
-      monto_total: 0,
+      monto_total: form.monto_total || 0,
+      servicio_base: form.servicio_base,
+      modulos_extra: form.modulos_extra,
     });
 
     if (contratoError) {
@@ -246,6 +259,102 @@ export async function obtenerDashboardData(clienteId: string) {
     return {
       success: false,
       error: `Error inesperado al cargar datos: ${error instanceof Error ? error.message : 'Desconocido'}`
+    };
+  }
+}
+
+/**
+ * Actualiza un expediente completo:
+ * 1. Actualiza perfil
+ * 2. Actualiza auth.users metadata
+ * 3. Actualiza expediente
+ * 4. Actualiza contrato
+ */
+export async function actualizarExpedienteCompleto(
+  userId: string,
+  expedienteId: string,
+  datosPersonales: DatosPersonales,
+  form: CrearExpedienteForm
+): Promise<ActionResult> {
+  try {
+    const supabase = createAdminClient();
+
+    // Validaciones
+    if (!datosPersonales.nombre_completo?.trim()) {
+      return { success: false, error: 'El nombre completo es requerido.' };
+    }
+    if (!form.nombre_empresa?.trim()) {
+      return { success: false, error: 'El nombre de la empresa es requerido.' };
+    }
+    if (!form.figura_id) {
+      return { success: false, error: 'Debes seleccionar un tipo de figura legal.' };
+    }
+    if (!form.plan_pagos) {
+      return { success: false, error: 'Debes seleccionar un plan de pagos.' };
+    }
+
+    // 1. Actualizar perfil
+    const { error: perfilError } = await supabase
+      .from('perfiles')
+      .update({
+        nombre_completo: datosPersonales.nombre_completo.trim(),
+        telefono: datosPersonales.telefono?.trim() || null,
+        estado: datosPersonales.estado?.trim() || null,
+        rfc: datosPersonales.rfc?.trim().toUpperCase() || null,
+        curp: datosPersonales.curp?.trim().toUpperCase() || null,
+        ocupacion: datosPersonales.ocupacion?.trim() || null,
+        estado_civil: datosPersonales.estado_civil?.trim() || null,
+        domicilio_completo: datosPersonales.domicilio_completo?.trim() || null,
+        folio_ine: datosPersonales.folio_ine?.trim() || null,
+      })
+      .eq('id', userId);
+
+    if (perfilError) {
+      return { success: false, error: `Error al actualizar perfil: ${perfilError.message}` };
+    }
+
+    // 2. Actualizar user_metadata en auth.users
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        nombre_completo: datosPersonales.nombre_completo.trim(),
+        telefono: datosPersonales.telefono?.trim() || '',
+        estado: datosPersonales.estado?.trim() || '',
+      }
+    });
+
+    // 3. Actualizar expediente
+    const { error: expError } = await supabase
+      .from('expedientes')
+      .update({
+        figura_id: form.figura_id,
+        nombre_empresa: form.nombre_empresa.trim(),
+      })
+      .eq('id', expedienteId);
+
+    if (expError) {
+      return { success: false, error: `Error al actualizar expediente: ${expError.message}` };
+    }
+
+    // 4. Actualizar contrato (plan_pagos)
+    const { error: contratoError } = await supabase
+      .from('contratos')
+      .update({
+        plan_pagos: form.plan_pagos,
+        monto_total: form.monto_total || 0,
+        servicio_base: form.servicio_base,
+        modulos_extra: form.modulos_extra,
+      })
+      .eq('expediente_id', expedienteId);
+
+    if (contratoError) {
+      return { success: false, error: `Error al actualizar contrato: ${contratoError.message}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
     };
   }
 }

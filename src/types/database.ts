@@ -20,7 +20,7 @@ export type TipoDocumento =
 
 export type EstatusContrato = 'generado' | 'firmado_cliente' | 'doble_firma' | 'vigente';
 
-export type RolUsuario = 'cliente' | 'abogada' | 'directora' | 'admin';
+export type RolUsuario = 'cliente' | 'asesora' | 'directora' | 'admin';
 
 export type EstatusTarea = 'pendiente' | 'en_progreso' | 'completada';
 
@@ -33,13 +33,18 @@ export interface CatalogoFigura {
   siglas: string;
   descripcion: string;
 }
-
 export interface Perfil {
   id: string;
   rol: RolUsuario;
   nombre_completo: string;
   telefono: string | null;
   estado: string | null;
+  rfc: string | null;
+  curp: string | null;
+  ocupacion: string | null;
+  estado_civil: string | null;
+  domicilio_completo: string | null;
+  folio_ine: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +58,12 @@ export interface Expediente {
   estatus: EstatusExpediente;
   created_at: string;
   updated_at: string;
+
+  // Relaciones (Opcionales)
+  perfil?: Perfil;
+  figura?: CatalogoFigura;
+  contratos?: Contrato[];
+  documentos?: Documento[];
 }
 
 export interface Contrato {
@@ -60,6 +71,8 @@ export interface Contrato {
   expediente_id: string;
   plan_pagos: PlanPagos;
   monto_total: number;
+  servicio_base?: string;
+  modulos_extra?: string[];
   url_pdf_generado: string | null;
   url_pdf_firmado_cliente: string | null;
   url_pdf_doble_firma: string | null;
@@ -166,16 +179,9 @@ export interface DatosConcentrado {
 }
 
 export interface ExpedienteAvanzado extends Expediente {
-  perfiles?: {
-    nombre_completo: string;
-    telefono?: string;
-  };
-  figura?: {
-    descripcion: string;
-  };
-  contratos?: Contrato[];
+  // Las relaciones base ya están en Expediente, 
+  // aquí extendemos con relaciones adicionales específicas de vistas complejas
   pagos?: Pago[];
-  documentos?: Documento[];
   seguimiento_tareas?: SeguimientoTarea[];
   bitacora?: NotaBitacora[];
   datos_concentrado?: DatosConcentrado[];
@@ -189,6 +195,9 @@ export interface CrearExpedienteForm {
   nombre_empresa: string;
   figura_id: number;
   plan_pagos: PlanPagos;
+  servicio_base?: string;
+  modulos_extra?: string[];
+  monto_total?: number;
 }
 
 export interface SubirDocumentosForm {

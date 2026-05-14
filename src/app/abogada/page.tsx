@@ -33,7 +33,7 @@ export default async function AbogadaPage() {
     .eq('id', user.id)
     .single();
 
-  if (!perfilData || perfilData.rol !== 'abogada') {
+  if (!perfilData || perfilData.rol !== 'asesora') {
     return <AbogadaAuth />;
   }
 

@@ -1,6 +1,6 @@
 import { createAdminClient } from './supabase/admin';
 
-export async function getIdsByRol(rol: 'directora' | 'abogada' | 'cliente'): Promise<string[]> {
+export async function getIdsByRol(rol: 'directora' | 'asesora' | 'cliente'): Promise<string[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('perfiles')

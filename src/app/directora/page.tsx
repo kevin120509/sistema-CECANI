@@ -34,7 +34,7 @@ export default async function DirectoraPage() {
   const { data: abogadasData } = await supabaseAdmin
     .from('perfiles')
     .select('id, nombre_completo')
-    .eq('rol', 'abogada');
+    .eq('rol', 'asesora');
 
   // 2. Obtener Expedientes Pendientes de Validar (Contratos por subir)
   const { data: pendientesData } = await supabaseAdmin

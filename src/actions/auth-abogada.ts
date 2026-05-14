@@ -30,7 +30,7 @@ export async function loginAbogada(formData: FormData) {
     .eq('id', data.user.id)
     .single();
 
-  if (!perfilData || perfilData.rol !== 'abogada') {
+  if (!perfilData || perfilData.rol !== 'asesora') {
     await supabase.auth.signOut();
     return { error: 'Esta cuenta no tiene permisos de Abogada/Asesora.' };
   }

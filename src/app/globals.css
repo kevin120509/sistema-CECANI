@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-accent: #f59e0b;
+  --color-glass: rgba(255, 255, 255, 0.7);
+  --color-glass-dark: rgba(15, 23, 42, 0.8);
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(221, 83%, 93%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(221, 83%, 95%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(199, 89%, 94%, 1) 0, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+  
+  .input-field {
+    @apply w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-sm transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200
+           hover:bg-blue-700 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-slate-700 border border-slate-200 font-semibold py-3 px-6 rounded-xl transition-all duration-200
+           hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm active:scale-[0.98];
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

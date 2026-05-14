@@ -109,6 +109,16 @@ export async function enviarContratoCliente(formData: FormData): Promise<{ succe
       return { error: 'No autorizado / Sesión expirada' };
     }
 
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil || perfil.rol !== 'directora') {
+      return { error: 'Acceso denegado: Se requiere rol de directora.' };
+    }
+
     const adminSupabase = createAdminClient();
 
     const expedienteId = formData.get('expediente_id') as string;
@@ -198,6 +208,16 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
       return { error: 'No autorizado / Sesión expirada' };
     }
 
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil || perfil.rol !== 'directora') {
+      return { error: 'Acceso denegado: Se requiere rol de directora.' };
+    }
+
     const adminSupabase = createAdminClient();
 
     const expedienteId = formData.get('expediente_id') as string;
@@ -244,6 +264,16 @@ export async function subirContratoDobleFirma(formData: FormData): Promise<{ suc
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return { error: 'No autorizado' };
+    }
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+
+    if (!perfil || perfil.rol !== 'directora') {
+      return { error: 'Acceso denegado: Se requiere rol de directora.' };
     }
 
     const adminSupabase = createAdminClient();

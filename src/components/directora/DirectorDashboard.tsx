@@ -39,6 +39,7 @@ export default function DirectorDashboard({
   const [activeTab, setActiveTab] = useState<'pendientes' | 'por_asignar' | 'concentrado'>('pendientes');
   const [selectedExpediente, setSelectedExpediente] = useState<ExpedienteDirector | null>(null);
   const [modalType, setModalType] = useState<'validar' | 'asignar_y_doble_firma' | null>(null);
+  
   const [fileOficial, setFileOficial] = useState<File | null>(null);
   const [fileDobleFirma, setFileDobleFirma] = useState<File | null>(null);
   const [asesoraId, setAsesoraId] = useState<string>('');
@@ -71,6 +72,11 @@ export default function DirectorDashboard({
     formData.append('expediente_id', selectedExpediente.id);
     formData.append('contrato_id', selectedExpediente.contratos?.[0]?.id || '');
     formData.append('file', fileOficial);
+    
+    // Aquí podríamos mandar también el presupuestoTotal y los extras elegidos
+    // formData.append('monto_total', presupuestoTotal.toString());
+    // formData.append('modulos', JSON.stringify(extrasSeleccionados));
+
     const result = await enviarContratoCliente(formData);
     if (result.error) setSubmitError(result.error);
     else { setSubmitSuccess(true); setTimeout(() => { closeModal(); setActiveTab('por_asignar'); }, 2000); }

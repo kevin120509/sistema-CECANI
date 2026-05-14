@@ -91,6 +91,18 @@ export async function agregarNotaBitacora(
     return { success: false, error: 'Faltan campos obligatorios.' };
   }
 
+  // Verificar que el expediente pertenece a esta abogada
+  const { data: exp } = await supabase
+    .from('expedientes')
+    .select('id')
+    .eq('id', expedienteId)
+    .eq('asesora_id', user.id)
+    .single();
+
+  if (!exp) {
+    return { success: false, error: 'No tienes permisos sobre este expediente.' };
+  }
+
   try {
     const { error } = await supabase.from('bitacora').insert({
       expediente_id: expedienteId,
@@ -126,6 +138,18 @@ export async function guardarDatosConcentrado(
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return { success: false, error: 'No autorizado' };
+  }
+
+  // Verificar que el expediente pertenece a esta abogada
+  const { data: exp } = await supabase
+    .from('expedientes')
+    .select('id')
+    .eq('id', expedienteId)
+    .eq('asesora_id', user.id)
+    .single();
+
+  if (!exp) {
+    return { success: false, error: 'No tienes permisos sobre este expediente.' };
   }
 
   const adminClient = createAdminClient();

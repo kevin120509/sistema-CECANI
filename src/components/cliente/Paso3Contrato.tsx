@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { guardarContratoFirmado } from '@/actions/contrato';
-import { subirArchivo } from '@/actions/upload';
+import { subirArchivoR2Action } from '@/actions/r2-actions';
 import { registrarDocumento, registrarPago } from '@/actions/documentos';
 import { actualizarEstatusExpediente } from '@/actions/expediente';
 import type { Contrato, Expediente } from '@/types/database';
@@ -72,25 +72,9 @@ export default function Paso3Contrato({
 
   const isWaitingForDirector = !contrato.url_pdf_generado;
 
-  // Polling para revisar si la directora ya generó el contrato
-  useEffect(() => {
-    if (isWaitingForDirector) {
-      const interval = setInterval(() => {
-        onComplete();
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [isWaitingForDirector, onComplete]);
-
   const handleDescargar = () => {
     if (isWaitingForDirector) return;
-    const a = document.createElement('a');
-    a.href = contrato.url_pdf_generado!;
-    a.target = "_blank";
-    a.download = `CONTRATO_AC_borrador.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.open(contrato.url_pdf_generado!, '_blank');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: ArchivoSeleccionado) => void) => {
@@ -117,26 +101,27 @@ export default function Paso3Contrato({
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '');
 
-      // Subir Contrato Firmado
-      setProgress('Subiendo contrato firmado...');
+      // Subir Contrato Firmado a Cloudflare R2
+      setProgress('Subiendo contrato firmado a R2...');
       
       const extContrato = contratoFirmado.file.name.split('.').pop() || 'pdf';
       const fileRenombradoContrato = new File(
         [contratoFirmado.file], 
-        `Contrato_Firmado_${carpetaEmpresa}.${extContrato}`, 
+        `Contrato_FIRMADO_POR_CLIENTE_${carpetaEmpresa}.${extContrato}`, 
         { type: contratoFirmado.file.type }
       );
 
-      const formDataContrato = new FormData();
-      formDataContrato.append('file', fileRenombradoContrato);
-      const resContrato = await subirArchivo('documentos_cliente', carpetaEmpresa, formDataContrato);
+      const fdContrato = new FormData();
+      fdContrato.append('file', fileRenombradoContrato);
       
-      if (!resContrato.success || !resContrato.data) throw new Error(resContrato.error);
+      const resContrato = await subirArchivoR2Action(fdContrato, `expedientes/${carpetaEmpresa}/contratos`);
+      
+      if (!resContrato.success || !resContrato.data) throw new Error(resContrato.error || 'Error al subir contrato');
       await registrarDocumento(expediente.id, 'contrato_firmado', resContrato.data.url);
       await guardarContratoFirmado(contrato.id, resContrato.data.url);
 
-      // Subir Comprobante de Pago
-      setProgress('Subiendo comprobante de pago...');
+      // Subir Comprobante de Pago a Cloudflare R2
+      setProgress('Subiendo comprobante de pago a R2...');
 
       const extPago = comprobantePago.file.name.split('.').pop() || 'bin';
       const fileRenombradoPago = new File(
@@ -145,14 +130,15 @@ export default function Paso3Contrato({
         { type: comprobantePago.file.type }
       );
 
-      const formDataPago = new FormData();
-      formDataPago.append('file', fileRenombradoPago);
-      const resPago = await subirArchivo('documentos_cliente', carpetaEmpresa, formDataPago);
+      const fdPago = new FormData();
+      fdPago.append('file', fileRenombradoPago);
       
-      if (!resPago.success || !resPago.data) throw new Error(resPago.error);
+      const resPago = await subirArchivoR2Action(fdPago, `expedientes/${carpetaEmpresa}/documentacion`);
       
-      // Registrar el pago
-      setProgress('Registrando pago...');
+      if (!resPago.success || !resPago.data) throw new Error(resPago.error || 'Error al subir comprobante');
+      
+      // Registrar el pago en Supabase
+      setProgress('Registrando pago en Base de Datos...');
       await registrarPago(expediente.id, Number(montoPago), resPago.data.url);
 
       setProgress('Actualizando estatus...');

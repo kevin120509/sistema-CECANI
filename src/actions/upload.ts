@@ -89,3 +89,46 @@ export async function subirArchivo(
     };
   }
 }
+
+/**
+ * Sube un buffer (Uint8Array) a Supabase Storage y retorna la URL pública.
+ */
+export async function subirArchivoBuffer(
+  bucket: string,
+  carpetaUsuario: string,
+  nombreArchivo: string,
+  buffer: Uint8Array,
+  contentType: string
+): Promise<ActionResult<{ url: string }>> {
+  try {
+    const supabase = createAdminClient();
+
+    const nombreSanitizado = sanitizarNombreArchivo(nombreArchivo);
+    const filePath = `${carpetaUsuario}/${nombreSanitizado}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, buffer, {
+        contentType: contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return {
+        success: false,
+        error: `Error al subir archivo: ${uploadError.message}`,
+      };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucket).getPublicUrl(filePath);
+
+    return { success: true, data: { url: publicUrl } };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
+    };
+  }
+}

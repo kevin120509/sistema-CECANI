@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { subirArchivo } from '@/actions/upload';
+import { subirArchivoR2Action } from '@/actions/r2-actions';
 import { registrarDocumento } from '@/actions/documentos';
 import { actualizarEstatusExpediente } from '@/actions/expediente';
-import type { Expediente, TipoDocumento } from '@/types/database';
+import { generarContratoAutomatico } from '@/actions/contrato';
+import type { Expediente, TipoDocumento, Contrato } from '@/types/database';
 
 interface Paso2Props {
   expediente: Expediente;
@@ -102,7 +103,7 @@ export default function Paso2Documentacion({
   };
 
   const subirYRegistrar = async (file: File, tipo: TipoDocumento, descripcion: string, nombreClave: string): Promise<string> => {
-    setProgress(`Subiendo ${descripcion}...`);
+    setProgress(`Subiendo ${descripcion} a Cloudflare R2...`);
     
     // Crear un nombre de carpeta amigable basado en la empresa
     const carpetaEmpresa = expediente.nombre_empresa
@@ -110,24 +111,29 @@ export default function Paso2Documentacion({
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
 
-    // Generar un nuevo archivo con el nombre deseado
+    // Generar un nuevo archivo con el nombre deseado para mantener orden en R2
     const extension = file.name.split('.').pop() || 'bin';
     const nuevoNombre = `${nombreClave}_${carpetaEmpresa}.${extension}`;
     const fileRenombrado = new File([file], nuevoNombre, { type: file.type });
     
+    // USAR SERVER ACTION PARA R2
     const formData = new FormData();
     formData.append('file', fileRenombrado);
-    const uploadResult = await subirArchivo('documentos_cliente', carpetaEmpresa, formData);
+    
+    const uploadResult = await subirArchivoR2Action(formData, `expedientes/${carpetaEmpresa}/documentacion`);
+    
     if (!uploadResult.success || !uploadResult.data) {
       throw new Error(`Error al subir ${descripcion}: ${uploadResult.error}`);
     }
 
-    setProgress(`Registrando ${descripcion}...`);
-    const registerResult = await registrarDocumento(expediente.id, tipo, uploadResult.data.url);
+    const urlPublicaR2 = uploadResult.data.url;
+
+    setProgress(`Registrando ${descripcion} en Base de Datos...`);
+    const registerResult = await registrarDocumento(expediente.id, tipo, urlPublicaR2);
     if (!registerResult.success) {
-      throw new Error(`Error al registrar ${descripcion}: ${registerResult.error}`);
+      throw new Error(`Error al registrar ${descripcion} en BD: ${registerResult.error}`);
     }
-    return uploadResult.data.url;
+    return urlPublicaR2;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,6 +152,14 @@ export default function Paso2Documentacion({
       await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante de Domicilio', 'Comprobante_Domicilio');
 
       await actualizarEstatusExpediente(expediente.id, 'revision_directora');
+
+      setProgress('Generando contrato inteligente...');
+      const contratoId = expediente.contratos?.[0]?.id;
+      if (contratoId) {
+        await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+      } else {
+        console.warn('No se encontró ID de contrato para generar PDF.');
+      }
 
       await onComplete();
     } catch (err) {

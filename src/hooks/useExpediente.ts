@@ -102,7 +102,7 @@ export function useExpediente(): UseExpedienteReturn {
       if (expedienteRaw) {
         // @ts-ignore - The action returns this embedded
         const { contratos: contratosArr, ...exp } = expedienteRaw;
-        expedienteFinal = exp as Expediente;
+        expedienteFinal = { ...exp, contratos: contratosArr } as any;
         contratoFinal = (contratosArr?.[0] as Contrato) || null;
       }
 
