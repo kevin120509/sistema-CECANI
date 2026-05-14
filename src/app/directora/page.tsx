@@ -36,21 +36,7 @@ export default async function DirectoraPage() {
     .select('id, nombre_completo')
     .eq('rol', 'asesora');
 
-  // 2. Obtener Expedientes Pendientes de Validar (Contratos por subir)
-  const { data: pendientesData } = await supabaseAdmin
-    .from('expedientes')
-    .select(`
-      *,
-      perfiles!cliente_id(nombre_completo),
-      figura:catalogo_figuras(descripcion),
-      contratos(*),
-      documentos(*),
-      pagos(*)
-    `)
-    .eq('estatus', 'revision_directora')
-    .order('created_at', { ascending: false });
-
-  // 3. Obtener Expedientes Pendientes de Asignar (Cliente ya firmó o está por firmar)
+  // 2. Obtener Expedientes Pendientes de Asignar (Cliente ya firmó o está por firmar)
   const { data: asignarData } = await supabaseAdmin
     .from('expedientes')
     .select(`
@@ -82,7 +68,6 @@ export default async function DirectoraPage() {
     <main className="min-h-screen bg-gray-50 text-gray-900 py-8">
       <DirectorDashboard 
         abogadas={abogadasData || []} 
-        pendientes={pendientesData || []}
         porAsignar={asignarData || []}
         concentrado={concentradoData || []} 
       />

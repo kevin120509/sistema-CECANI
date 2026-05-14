@@ -16,7 +16,8 @@ import {
   Calculator,
   FileText,
   Briefcase,
-  Users
+  Users,
+  AlertCircle
 } from 'lucide-react';
 
 interface Paso1Props {
