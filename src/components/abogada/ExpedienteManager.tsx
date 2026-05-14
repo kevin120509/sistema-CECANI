@@ -23,7 +23,7 @@ function SubmitButton({ label = 'Guardar', className = "" }: { label?: string, c
 
 export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: ExpedienteManagerProps) {
   const [selectedExpedienteId, setSelectedExpedienteId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'etapa_legal' | 'entregables' | 'bitacora'>('etapa_legal');
+  const [activeTab, setActiveTab] = useState<'etapa_legal' | 'cronograma_legal' | 'entregables' | 'bitacora'>('etapa_legal');
   const [updatingHitoId, setUpdatingHitoId] = useState<string | null>(null);
   
   const CAMPOS_CONCENTRADO = [
@@ -70,6 +70,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   };
 
   const closeDetail = () => { setSelectedExpedienteId(null); setActiveTab('etapa_legal'); };
+  const hitosLegales = hitos.filter(h => h.orden < 100);
   const hitosCapacitacion = hitos.filter(h => h.orden >= 101);
 
   // VISTA 1: DASHBOARD
@@ -206,15 +207,23 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
 
         <div className="border-b border-gray-100 bg-slate-50/50">
           <nav className="flex overflow-x-auto px-6">
-            {['etapa_legal', 'entregables', 'bitacora'].map((tab) => (
-              <button 
-                key={tab} 
-                onClick={() => setActiveTab(tab as any)} 
-                className={`py-6 px-12 text-xs font-black uppercase tracking-[0.25em] border-b-4 transition-all ${activeTab === tab ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-              >
-                {tab === 'etapa_legal' ? 'Concentración' : tab === 'entregables' ? 'Capacitación' : 'Bitácora'}
-              </button>
-            ))}
+            {['etapa_legal', 'cronograma_legal', 'entregables', 'bitacora'].map((tab) => {
+              const labels: Record<string, string> = {
+                etapa_legal: 'Concentración',
+                cronograma_legal: 'Cronograma Legal',
+                entregables: 'Capacitación',
+                bitacora: 'Bitácora',
+              };
+              return (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveTab(tab as any)} 
+                  className={`py-6 px-10 text-xs font-black uppercase tracking-[0.2em] border-b-4 transition-all whitespace-nowrap ${activeTab === tab ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -328,6 +337,84 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                     {isSavingConcentrado ? 'SINCRONIZANDO...' : 'Finalizar y Guardar Cambios'}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'cronograma_legal' && (
+            <div className="max-w-4xl p-12">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Cronograma Legal</h2>
+                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.4em] mt-1">Seguimiento de Proceso SAT / RPP / CLUNI</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-emerald-50 border-2 border-emerald-200 px-6 py-3 rounded-2xl">
+                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Avance</p>
+                    <p className="text-2xl font-black text-emerald-700">
+                      {hitosLegales.length > 0 
+                        ? Math.round((hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100)
+                        : 0}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de Progreso Visual */}
+              <div className="w-full h-3 bg-slate-100 rounded-full mb-12 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-700"
+                  style={{ width: `${hitosLegales.length > 0 ? (hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100 : 0}%` }}
+                />
+              </div>
+
+              <div className="space-y-4">
+                {hitosLegales.map((h, index) => {
+                  const s = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id);
+                  const done = s?.estatus === 'completado';
+                  const isUpdating = updatingHitoId === h.id.toString();
+                  return (
+                    <div key={h.id} className={`flex items-center gap-6 p-6 border-4 rounded-3xl transition-all ${done ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/30'}`}>
+                      {/* Número de Paso */}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 transition-all ${
+                        done ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {done ? '✓' : index + 1}
+                      </div>
+                      
+                      {/* Nombre del Hito */}
+                      <label className="flex-1 cursor-pointer">
+                        <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-emerald-700/50' : 'text-slate-800'}`}>
+                          {h.nombre}
+                        </span>
+                        {done && s?.fecha_completado && (
+                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                            Completado: {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                      </label>
+
+                      {/* Toggle */}
+                      <button
+                        onClick={() => handleToggleHito(h.id.toString(), !done)}
+                        disabled={isUpdating}
+                        className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${
+                          done 
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 border-2 border-emerald-200 hover:border-red-200' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
+                        } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+                      >
+                        {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
+                      </button>
+                    </div>
+                  );
+                })}
+                {hitosLegales.length === 0 && (
+                  <div className="text-center py-20">
+                    <p className="text-slate-300 font-black uppercase text-lg tracking-widest">No hay hitos legales configurados</p>
+                    <p className="text-slate-400 text-xs mt-2">Contacta al administrador para agregar el catálogo de hitos legales.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
