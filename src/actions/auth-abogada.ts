@@ -50,33 +50,36 @@ export async function registerAbogada(formData: FormData) {
 
   const supabaseAdmin = createAdminClient();
 
-  // Usar admin auth para crear usuario y evitar que automáticamente se loguee en el cliente si falla el perfil
-  // o crear con admin auth
+  // 1. Crear el usuario en Auth con metadata para que el trigger de la DB cree el perfil automáticamente
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
+    user_metadata: {
+      nombre_completo: nombre,
+      rol: 'asesora',
+    }
   });
 
   if (authError || !authData.user) {
     return { error: authError?.message || 'Error al crear el usuario en Auth.' };
   }
 
-  const userId = authData.user.id;
-
-  // Insertar en perfiles como 'asesora'
+  // El perfil ya debería estar creado por el trigger 'on_auth_user_created'
+  // pero podemos hacer un upsert por si acaso o para asegurar que los datos sean correctos
   const { error: profileError } = await supabaseAdmin
     .from('perfiles')
-    .insert({
-      id: userId,
+    .upsert({
+      id: authData.user.id,
       nombre_completo: nombre,
       rol: 'asesora',
     });
 
   if (profileError) {
-    // Intentar limpiar el auth user si falla el perfil
-    await supabaseAdmin.auth.admin.deleteUser(userId);
-    return { error: 'Error al crear el perfil de asesora.' };
+    console.error('Error upsert perfil:', profileError);
+    // No borramos el usuario aquí porque el trigger podría haber fallado por otra razón
+    // pero el usuario de auth ya existe.
+    return { error: 'Usuario creado pero hubo un problema con el perfil.' };
   }
 
   // Iniciar sesión automáticamente después de registrar

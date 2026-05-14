@@ -18,6 +18,7 @@ export type TipoDocumento =
   | 'ine_reverso'
   | 'comprobante_domicilio'
   | 'contrato_firmado'
+  | 'comprobante_pago'
   | 'otro';
 
 export type EstatusContrato = 'generado' | 'firmado_cliente' | 'doble_firma' | 'vigente';

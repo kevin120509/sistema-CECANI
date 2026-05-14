@@ -85,15 +85,31 @@ export default function Paso1CrearProyecto({
 
   const presupuestoTotal = useMemo(() => {
     let total = 0;
+    
+    // 1. Calcular Base
     const base = Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId);
     if (base) {
       total += esPagoContado ? base.precioEspecial : base.precioLista;
     }
+
+    // 2. Calcular Extras con reglas lógicas
     extrasSeleccionados.forEach(extraId => {
       const extra = Object.values(SERVICIOS_EXTRAS).find(e => e.id === extraId);
-      if (extra) total += extra.precio;
+      if (!extra) return;
+
+      if (extraId === 'cluni') {
+        // Regla: $10,000 si es paquete con trámite mayor, $11,600 independiente
+        const esPaquete = ['constitucion', 'acta_extra'].includes(servicioBaseId);
+        total += esPaquete ? 10000 : 11600;
+      } else if (extraId === 'web') {
+        // Regla: $4,999 + 16% IVA
+        total += 4999 * 1.16;
+      } else {
+        total += extra.precio;
+      }
     });
-    return total;
+
+    return Math.round(total);
   }, [servicioBaseId, extrasSeleccionados, esPagoContado]);
 
   const toggleExtra = (id: string) => {
@@ -108,6 +124,7 @@ export default function Paso1CrearProyecto({
 
     // Validaciones básicas
     if (!nombreCompleto.trim()) { setError('El nombre completo es requerido.'); return; }
+    if (!telefono.trim()) { setError('El teléfono es necesario para contactarte.'); return; }
     if (!rfc.trim()) { setError('El RFC es obligatorio para el contrato.'); return; }
     if (!curp.trim()) { setError('La CURP es obligatoria.'); return; }
     if (!domicilioCompleto.trim()) { setError('El domicilio completo es necesario para las declaraciones.'); return; }
@@ -280,6 +297,21 @@ export default function Paso1CrearProyecto({
                       placeholder="ABCD900101XXX"
                       className="input-field pl-11 uppercase"
                       maxLength={13}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Teléfono de Contacto (WhatsApp) *</label>
+                  <div className="relative group">
+                    <Phone className="input-icon" size={18} />
+                    <input
+                      type="tel"
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value)}
+                      placeholder="Ej. 5512345678"
+                      className="input-field pl-11"
                       disabled={isLoading}
                     />
                   </div>
@@ -561,8 +593,10 @@ export default function Paso1CrearProyecto({
                                 : extra.esRegalo 
                                   ? 'GRATIS' 
                                   : extra.id === 'web' 
-                                    ? `+$${extra.precio.toLocaleString()} (MÁS IVA)` 
-                                    : `+$${extra.precio.toLocaleString()}`}
+                                    ? `+$${extra.precio.toLocaleString()} (+ IVA)` 
+                                    : extra.id === 'cluni' && ['constitucion', 'acta_extra'].includes(servicioBaseId)
+                                      ? `+$10,000 (PRECIO PAQUETE)`
+                                      : `+$${extra.precio.toLocaleString()}`}
                             </span>
                           </div>
                         );

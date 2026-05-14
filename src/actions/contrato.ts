@@ -123,7 +123,6 @@ export async function generarContratoAutomatico(
       ocupacion: perfilData.ocupacion,
       estadoCivil: perfilData.estado_civil,
       domicilioCompleto: perfilData.domicilio_completo,
-      folioIne: perfilData.folio_ine,
     });
 
     // 3. Subir el PDF a Cloudflare R2

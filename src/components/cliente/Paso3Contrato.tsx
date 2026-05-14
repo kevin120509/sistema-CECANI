@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { guardarContratoFirmado } from '@/actions/contrato';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
-import { registrarDocumento, registrarPago } from '@/actions/documentos';
+import { registrarDocumento, registrarPago, subirYRegistrarPago } from '@/actions/documentos';
 import { actualizarEstatusExpediente } from '@/actions/expediente';
 import type { Contrato, Expediente } from '@/types/database';
 
@@ -120,26 +120,14 @@ export default function Paso3Contrato({
       await registrarDocumento(expediente.id, 'contrato_firmado', resContrato.data.url);
       await guardarContratoFirmado(contrato.id, resContrato.data.url);
 
-      // Subir Comprobante de Pago a Cloudflare R2
-      setProgress('Subiendo comprobante de pago a R2...');
-
-      const extPago = comprobantePago.file.name.split('.').pop() || 'bin';
-      const fileRenombradoPago = new File(
-        [comprobantePago.file], 
-        `Comprobante_Pago_${carpetaEmpresa}.${extPago}`, 
-        { type: comprobantePago.file.type }
-      );
-
+      // Subir Comprobante de Pago y Registrar
+      setProgress('Procesando comprobante de pago...');
       const fdPago = new FormData();
-      fdPago.append('file', fileRenombradoPago);
+      fdPago.append('file', comprobantePago.file);
       
-      const resPago = await subirArchivoR2Action(fdPago, `expedientes/${carpetaEmpresa}/documentacion`);
+      const resPago = await subirYRegistrarPago(fdPago, expediente.id, Number(montoPago), expediente.nombre_empresa);
       
-      if (!resPago.success || !resPago.data) throw new Error(resPago.error || 'Error al subir comprobante');
-      
-      // Registrar el pago en Supabase
-      setProgress('Registrando pago en Base de Datos...');
-      await registrarPago(expediente.id, Number(montoPago), resPago.data.url);
+      if (!resPago.success) throw new Error(resPago.error || 'Error al procesar el pago');
 
       setProgress('Actualizando estatus...');
       await actualizarEstatusExpediente(expediente.id, 'en_proceso');

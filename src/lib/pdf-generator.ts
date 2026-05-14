@@ -16,7 +16,6 @@ interface DatosContrato {
   ocupacion?: string | null;
   estadoCivil?: string | null;
   domicilioCompleto?: string | null;
-  folioIne?: string | null;
 }
 
 export async function generarContratoPDF(datos: DatosContrato): Promise<Uint8Array> {

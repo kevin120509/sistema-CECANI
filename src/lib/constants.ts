@@ -24,30 +24,23 @@ export const SERVICIOS_PRINCIPALES: Record<string, ServicioBase> = {
   CONSTITUCION: {
     id: 'constitucion',
     nombre: 'Constitución de A.C. + Trámite de Donataria',
-    precioEspecial: 49500,
-    precioLista: 75000,
+    precioEspecial: 65000, // Contado
+    precioLista: 75000,    // Plazos (Promoción)
     descripcion: 'Creación de asociación civil desde cero con registro ante el SAT.'
   },
   ACTA_EXTRAORDINARIA: {
     id: 'acta_extra',
     nombre: 'Acta Extraordinaria + Donataria',
-    precioEspecial: 49500,
-    precioLista: 70000,
+    precioEspecial: 65000, // Contado
+    precioLista: 70000,    // Plazos (Promoción)
     descripcion: 'Actualización de estatutos para asociaciones existentes.'
   },
   RECUPERACION_DONATARIA: {
     id: 'recuperacion',
-    nombre: 'Recuperación de Donataria Autorizada',
+    nombre: 'Recuperación / Renovación de Donataria',
     precioEspecial: 35000,
     precioLista: 35000,
-    descripcion: 'Trámite para recuperar el estatus de donataria perdido.'
-  },
-  RENOVACION_CONSTANCIA: {
-    id: 'renovacion',
-    nombre: 'Renovación de Constancia y Donataria',
-    precioEspecial: 38000,
-    precioLista: 44000,
-    descripcion: 'Mantenimiento anual del estatus de donataria.'
+    descripcion: 'Trámite para recuperar o renovar el estatus de donataria.'
   }
 };
 

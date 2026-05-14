@@ -13,6 +13,7 @@ const TIPO_LABELS: Record<string, string> = {
   ine_reverso: 'INE (Reverso)',
   comprobante_domicilio: 'Comprobante de Domicilio',
   contrato_firmado: 'Contrato Firmado',
+  comprobante_pago: 'Comprobante de Pago',
   otro: 'Otro',
 };
 
@@ -207,6 +208,28 @@ export default function Paso4SoloLectura({
                   <span className="text-sm font-medium text-gray-700">Contrato Firmado</span>
                 </div>
                 <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </a>
+            )}
+
+            {/* Buscar comprobante de pago en la lista de documentos */}
+            {documentos.find(d => d.tipo === 'comprobante_pago') && (
+              <a
+                href={documentos.find(d => d.tipo === 'comprobante_pago')?.url_archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 rounded-lg bg-sky-50/50 border border-sky-100 hover:bg-sky-50 hover:border-sky-200 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded shadow-sm text-sky-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Comprobante de Pago</span>
+                </div>
+                <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </a>

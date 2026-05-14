@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { sendPushNotification } from '@/lib/onesignal-server';
+import { subirArchivoR2 } from '@/lib/r2';
 
 export async function loginDirectora(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   try {
@@ -136,27 +137,8 @@ export async function enviarContratoCliente(formData: FormData): Promise<{ succe
       .eq('id', expedienteId)
       .single();
 
-    // Subir a Storage
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const timeHash = Date.now().toString().slice(-6);
-    const newFileName = `ContratoOficial_${expedienteId}_${timeHash}_${cleanFileName}`;
-    
-    const { data: uploadData, error: uploadError } = await adminSupabase.storage
-      .from('contratos_oficiales')
-      .upload(newFileName, file, {
-        contentType: file.type,
-        upsert: true
-      });
-
-    if (uploadError) {
-      return { error: `Error al almacenar el PDF oficial: ${uploadError.message}` };
-    }
-
-    const { data: publicUrlData } = adminSupabase.storage
-      .from('contratos_oficiales')
-      .getPublicUrl(uploadData.path);
-    
-    const urlPdfOficial = publicUrlData.publicUrl;
+    // Subir a R2 (Bodega)
+    const urlPdfOficial = await subirArchivoR2(file, `expedientes/${expedienteId}/contratos`);
 
     // Transacción: Actualizar Contrato
     const { error: contratoError } = await adminSupabase
@@ -326,25 +308,8 @@ export async function subirContratoDobleFirma(formData: FormData): Promise<{ suc
       return { error: 'Falta el archivo de la Doble Firma.' };
     }
 
-    // 1. Subir PDF a Storage
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const timeHash = Date.now().toString().slice(-6);
-    const newFileName = `DobleFirma_${expedienteId}_${timeHash}_${cleanFileName}`;
-    
-    const { data: uploadData, error: uploadError } = await adminSupabase.storage
-      .from('contratos_oficiales')
-      .upload(newFileName, file, {
-        contentType: file.type,
-        upsert: true
-      });
-
-    if (uploadError) throw new Error(`Error upload: ${uploadError.message}`);
-
-    const { data: publicUrlData } = adminSupabase.storage
-      .from('contratos_oficiales')
-      .getPublicUrl(uploadData.path);
-    
-    const urlDobleFirma = publicUrlData.publicUrl;
+    // 1. Subir a R2 (Bodega)
+    const urlDobleFirma = await subirArchivoR2(file, `expedientes/${expedienteId}/contratos`);
 
     // 2. Actualizar Contrato
     const { error: contratoError } = await adminSupabase
