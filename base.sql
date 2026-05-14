@@ -35,6 +35,8 @@ CREATE TABLE public.contratos (
   estatus USER-DEFINED DEFAULT 'generado'::estatus_contrato,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  servicio_base text,
+  modulos_extra jsonb,
   CONSTRAINT contratos_pkey PRIMARY KEY (id),
   CONSTRAINT contratos_expediente_id_fkey FOREIGN KEY (expediente_id) REFERENCES public.expedientes(id)
 );
@@ -88,6 +90,8 @@ CREATE TABLE public.expedientes (
   estatus USER-DEFINED DEFAULT 'en_registro'::estatus_expediente,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  tipo_tramite text,
+  servicios_extra jsonb DEFAULT '[]'::jsonb,
   CONSTRAINT expedientes_pkey PRIMARY KEY (id),
   CONSTRAINT expedientes_cliente_id_fkey FOREIGN KEY (cliente_id) REFERENCES public.perfiles(id),
   CONSTRAINT expedientes_asesora_id_fkey FOREIGN KEY (asesora_id) REFERENCES public.perfiles(id),
@@ -113,6 +117,12 @@ CREATE TABLE public.perfiles (
   estado character varying,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  rfc text,
+  curp text,
+  ocupacion text,
+  estado_civil text,
+  domicilio_completo text,
+  folio_ine text,
   CONSTRAINT perfiles_pkey PRIMARY KEY (id),
   CONSTRAINT perfiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
