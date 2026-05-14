@@ -120,6 +120,8 @@ export async function crearExpedienteCompleto(
         figura_id: form.figura_id,
         nombre_empresa: form.nombre_empresa.trim(),
         estatus: 'en_registro',
+        tipo_tramite: form.tipo_tramite,
+        servicios_extra: form.servicios_extra || [],
       })
       .select('id')
       .single();
@@ -328,6 +330,8 @@ export async function actualizarExpedienteCompleto(
       .update({
         figura_id: form.figura_id,
         nombre_empresa: form.nombre_empresa.trim(),
+        tipo_tramite: form.tipo_tramite,
+        servicios_extra: form.servicios_extra || [],
       })
       .eq('id', expedienteId);
 

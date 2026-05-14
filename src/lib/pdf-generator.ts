@@ -217,20 +217,49 @@ export async function generarContratoPDF(datos: DatosContrato): Promise<Uint8Arr
   drawParagraph('**CLÁUSULAS**', 13, 'center');
 
   // --- PRIMERA ---
-  const servicioBase = Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === datos.servicioBaseId);
-  const nombresExtras = datos.modulosExtraIds
-    .map(id => Object.values(SERVICIOS_EXTRAS).find(e => e.id === id)?.nombre)
-    .filter(Boolean);
-
   drawParagraph(
     `**Primera.** “LA EMPRESA” se compromete a prestar sus servicios a “EL CLIENTE” en las áreas siguientes:`,
     11, 'justify'
   );
 
-  drawBullet(`• **${servicioBase?.nombre}**`);
-  for (const extra of nombresExtras) {
-    drawBullet(`• **${extra}**`);
+  let areasServicio = [];
+  if (datos.servicioBaseId === 'constitucion') {
+    areasServicio = [
+      'Constitución de la Asociación Civil.',
+      'Proceso de Autorización para Donataria Nacional.'
+    ];
+  } else if (datos.servicioBaseId === 'acta_extra') {
+    areasServicio = [
+      'Elaboración y protocolización de Acta Extraordinaria.',
+      'Actualización de estatutos sociales y trámite de Donataria.'
+    ];
+  } else {
+    areasServicio = [
+      'Recuperación o Renovación del estatus de Donataria Autorizada.'
+    ];
   }
+
+  // Inyectar extras dinámicamente
+  if (datos.modulosExtraIds.includes('web')) {
+    areasServicio.push('Diseño y desarrollo de Página Web Profesional.');
+  }
+  if (datos.modulosExtraIds.includes('cluni')) {
+    areasServicio.push('Trámite de CLUNI ante el Registro Federal de OSC.');
+  }
+  if (datos.modulosExtraIds.includes('informe_anual')) {
+    areasServicio.push('Elaboración de Informe Anual CLUNI.');
+  }
+  if (datos.modulosExtraIds.includes('cambio_rep')) {
+    areasServicio.push('Actualización de Representante Legal en CLUNI.');
+  }
+  if (datos.modulosExtraIds.includes('regularizacion')) {
+    areasServicio.push('Regularización Contable y Declaraciones (Sujeto a cotización).');
+  }
+
+  // Dibujar lista numerada
+  areasServicio.forEach((servicio, index) => {
+    drawParagraph(`${index + 1}. ${servicio}`, 11, 'left', 15);
+  });
 
   drawParagraph(
     `Así como otros que requiera y pueda pagar “EL CLIENTE”; y “LA EMPRESA” esté en posibilidad de prestar por disponer de recursos humanos y técnicos para ello.`,
@@ -240,25 +269,75 @@ export async function generarContratoPDF(datos: DatosContrato): Promise<Uint8Arr
   // --- SEGUNDA ---
   const montoLetras = numeroALetras(datos.montoTotal);
   drawParagraph(
-    `**Segunda.** Las partes convienen en que los honorarios por los servicios que “LA EMPRESA” prestará a “EL CLIENTE” corresponden a un monto total de **$${datos.montoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })} (${montoLetras.toUpperCase()}) incluye IVA.**`,
+    `**Segunda.** Las partes convienen en que los honorarios por los servicios que “LA EMPRESA” prestará a “EL CLIENTE” corresponden a un monto total de **$${datos.montoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })} (${montoLetras.toUpperCase()} M.N.) incluye IVA.**`,
     11, 'justify'
   );
+
+  // Desglose de pagos si no es de contado
+  if (datos.planPagos !== 'unico') {
+    const numCuotas = datos.planPagos === '2_meses' ? 2 : 4;
+    const montoCuota = datos.montoTotal / numCuotas;
+    drawParagraph(
+      `Dicho monto se cubrirá en **${numCuotas} pagos mensuales** de **$${montoCuota.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN** cada uno, debiendo liquidarse de manera consecutiva para dar continuidad al trámite.`,
+      11, 'justify'
+    );
+  } else {
+    drawParagraph(
+      'Dicho monto ha sido pactado bajo la modalidad de **Pago Único de Contado**, otorgando un beneficio preferencial en el costo total del servicio.',
+      11, 'justify'
+    );
+  }
   
   checkPageBreak(150); // Keep "Nuestro servicio incluye" and the list together
   drawParagraph('**Nuestro servicio incluye:**', 12, 'left');
 
-  const inclusiones = [
-    '• Acompañamiento legal durante el proceso de constitución.',
-    '• Elaboración del acta constitutiva y asesoramiento general en derecho corporativo.',
-    '• Solicitud de denominación social ante la Secretaría de Economía.',
-    '• Asesoría para realizar la inscripción en el Registro Público de la Propiedad.',
-    '• Trámite de cita en línea para inscripción de persona moral en el SAT y obtención de RFC y E.Firma.',
-    '• Ingreso del trámite de Donataria ante el SAT con los requerimientos de la Ley del ISR vigente para 2026.',
-    '• Seguimiento al trámite ante el SAT hasta la aprobación de la Donataria Nacional.',
-    '• Asesoría para la obtención de la Constancia de Acreditación de Actividades.',
-    '• Correcciones de errores en caso de que existan, sin costo para el cliente (siempre y cuando hayan sido errores de LA EMPRESA).',
-    '• Membresía Cecani 2026: Acceso a 11 cursos, 10 diplomados y 10 webinars de capacitación especializada.'
-  ];
+  let inclusiones: string[] = [];
+
+  switch (datos.servicioBaseId) {
+    case 'constitucion':
+      inclusiones = [
+        '• Acompañamiento legal durante el proceso de constitución.',
+        '• Elaboración del acta constitutiva y asesoramiento general en derecho corporativo.',
+        '• Solicitud de denominación social ante la Secretaría de Economía.',
+        '• Asesoría para realizar la inscripción en el Registro Público de la Propiedad.',
+        '• Trámite de cita en línea para inscripción de persona moral en el SAT y obtención de RFC y E.Firma.',
+        '• Ingreso del trámite de Donataria ante el SAT con los requerimientos de la Ley del ISR vigente para 2026.',
+        '• Seguimiento al trámite ante el SAT hasta la aprobación de la Donataria Nacional.',
+        '• Asesoría para la obtención de la Constancia de Acreditación de Actividades.',
+        '• Correcciones de errores en caso de que existan, sin costo para el cliente (siempre y cuando hayan sido errores de LA EMPRESA).',
+        '• Membresía Cecani 2026: Acceso a 11 cursos, 10 diplomados y 10 webinars de capacitación especializada.'
+      ];
+      break;
+    case 'acta_extra':
+      inclusiones = [
+        '• Acompañamiento legal y asesoramiento general en derecho corporativo.',
+        '• Elaboración de proyecto de Acta de Asamblea Extraordinaria.',
+        '• Actualización y adecuación de estatutos sociales alineados a los requerimientos del SAT.',
+        '• Ingreso del trámite de Donataria ante el SAT con los requerimientos de la Ley del ISR vigente para 2026.',
+        '• Seguimiento al trámite ante el SAT hasta la aprobación de la Donataria Nacional.',
+        '• Asesoría para la obtención de la Constancia de Acreditación de Actividades.',
+        '• Correcciones de errores en caso de que existan, sin costo para el cliente.',
+        '• Membresía Cecani 2026: Acceso a 11 cursos, 10 diplomados y 10 webinars de capacitación especializada.'
+      ];
+      break;
+    case 'recuperacion':
+    case 'renovacion':
+      inclusiones = [
+        '• Análisis exhaustivo del expediente y causales de pérdida o revocación.',
+        '• Elaboración de estrategia legal y documental para la recuperación/renovación del estatus.',
+        '• Ingreso del trámite de Donataria ante el SAT con los requerimientos de la Ley del ISR vigente para 2026.',
+        '• Seguimiento al trámite ante el SAT hasta la aprobación de la Donataria Nacional.',
+        '• Correcciones de errores en caso de que existan, sin costo para el cliente.',
+        '• Membresía Cecani 2026: Acceso a 11 cursos, 10 diplomados y 10 webinars de capacitación especializada.'
+      ];
+      break;
+    default:
+      inclusiones = [
+        '• Acompañamiento legal y asesoramiento general corporativo.',
+        '• Seguimiento de trámites acordados.',
+        '• Membresía Cecani 2026: Acceso a 11 cursos, 10 diplomados y 10 webinars de capacitación especializada.'
+      ];
+  }
 
   if (datos.modulosExtraIds.includes('web')) {
     inclusiones.push('• Diseño de Página Web Profesional: Adaptado a dispositivos, certificado SSL, SEO básico, Dominio propio y correo institucional.');

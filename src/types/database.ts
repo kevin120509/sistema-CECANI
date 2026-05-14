@@ -9,6 +9,8 @@ export type EstatusExpediente =
   | 'completado'
   | 'rechazado';
 
+export type TipoTramite = 'CONSTITUCION' | 'EXTRAORDINARIA' | 'RECUPERACION';
+
 export type PlanPagos = 'unico' | '2_meses' | '4_meses';
 
 export type TipoDocumento =
@@ -56,6 +58,8 @@ export interface Expediente {
   figura_id: number;
   nombre_empresa: string;
   estatus: EstatusExpediente;
+  tipo_tramite?: TipoTramite;
+  servicios_extra?: string[];
   created_at: string;
   updated_at: string;
 
@@ -198,6 +202,8 @@ export interface CrearExpedienteForm {
   servicio_base?: string;
   modulos_extra?: string[];
   monto_total?: number;
+  tipo_tramite?: TipoTramite;
+  servicios_extra?: string[];
 }
 
 export interface SubirDocumentosForm {

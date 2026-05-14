@@ -16,6 +16,7 @@ export interface ServicioExtra {
   nombre: string;
   precio: number;
   esRegalo?: boolean;
+  precioVariable?: boolean;
   descripcion: string;
 }
 
@@ -31,14 +32,14 @@ export const SERVICIOS_PRINCIPALES: Record<string, ServicioBase> = {
     id: 'acta_extra',
     nombre: 'Acta Extraordinaria + Donataria',
     precioEspecial: 49500,
-    precioLista: 75000,
+    precioLista: 70000,
     descripcion: 'Actualización de estatutos para asociaciones existentes.'
   },
   RECUPERACION_DONATARIA: {
     id: 'recuperacion',
     nombre: 'Recuperación de Donataria Autorizada',
     precioEspecial: 35000,
-    precioLista: 40500,
+    precioLista: 35000,
     descripcion: 'Trámite para recuperar el estatus de donataria perdido.'
   },
   RENOVACION_CONSTANCIA: {
@@ -51,30 +52,17 @@ export const SERVICIOS_PRINCIPALES: Record<string, ServicioBase> = {
 };
 
 export const SERVICIOS_EXTRAS: Record<string, ServicioExtra> = {
-  GASTOS_NOTARIALES: {
-    id: 'notaria',
-    nombre: 'Gastos Notariales (Protocolización e Inscripción)',
-    precio: 16000,
-    descripcion: 'Pago de honorarios de notaría y registro público.'
-  },
   TRAMITE_CLUNI: {
     id: 'cluni',
-    nombre: 'Trámite de CLUNI',
-    precio: 10000,
+    nombre: 'Trámite de CLUNI desde cero',
+    precio: 11600,
     descripcion: 'Obtención de la Clave Única de Inscripción ante el Registro Federal.'
   },
   PAGINA_WEB: {
     id: 'web',
     nombre: 'Página Web Profesional',
     precio: 4999,
-    esRegalo: true,
     descripcion: 'Diseño de sitio web profesional especializado para donatarias.'
-  },
-  ACTIVIDAD_EXTRA: {
-    id: 'actividad_extra',
-    nombre: 'Actividad Adicional (Constancia)',
-    precio: 10000,
-    descripcion: 'Costo por cada actividad adicional después de las primeras dos.'
   },
   INFORME_ANUAL: {
     id: 'informe_anual',
@@ -84,9 +72,16 @@ export const SERVICIOS_EXTRAS: Record<string, ServicioExtra> = {
   },
   CAMBIO_REPRESENTANTE: {
     id: 'cambio_rep',
-    nombre: 'Actualización de Representante Legal',
+    nombre: 'Actualización de Representante Legal en CLUNI',
     precio: 2320,
     descripcion: 'Carga de actas con modificaciones de representación.'
+  },
+  REGULARIZACION: {
+    id: 'regularizacion',
+    nombre: 'Regularización Contable / Declaraciones',
+    precio: 0,
+    precioVariable: true,
+    descripcion: 'Servicio variable según el atraso. Requiere cotización personalizada.'
   }
 };
 

@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { crearExpedienteCompleto, actualizarExpedienteCompleto } from '@/actions/expediente';
-import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato } from '@/types/database';
+import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato, TipoTramite } from '@/types/database';
 import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import { 
@@ -56,6 +56,27 @@ export default function Paso1CrearProyecto({
   const [servicioBaseId, setServicioBaseId] = useState<string>(contrato?.servicio_base || '');
   const [extrasSeleccionados, setExtrasSeleccionados] = useState<string[]>(contrato?.modulos_extra || []);
 
+  // Estados para preguntas del tipo de trámite
+  const [tieneActa, setTieneActa] = useState<boolean | null>(
+    expediente?.tipo_tramite ? (expediente.tipo_tramite !== 'CONSTITUCION') : null
+  );
+  const [necesitaRenovar, setNecesitaRenovar] = useState<boolean | null>(
+    expediente?.tipo_tramite === 'RECUPERACION' ? true : 
+    expediente?.tipo_tramite === 'EXTRAORDINARIA' ? false : null
+  );
+
+  let tipoTramite: TipoTramite | undefined = undefined;
+  if (tieneActa === false) tipoTramite = 'CONSTITUCION';
+  else if (tieneActa === true && necesitaRenovar === true) tipoTramite = 'RECUPERACION';
+  else if (tieneActa === true && necesitaRenovar === false) tipoTramite = 'EXTRAORDINARIA';
+
+  useEffect(() => {
+    if (tipoTramite === 'CONSTITUCION') setServicioBaseId('constitucion');
+    else if (tipoTramite === 'RECUPERACION') setServicioBaseId('recuperacion');
+    else if (tipoTramite === 'EXTRAORDINARIA') setServicioBaseId('acta_extra');
+    else setServicioBaseId('');
+  }, [tipoTramite]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -110,6 +131,10 @@ export default function Paso1CrearProyecto({
         folio_ine: folioIne,
       };
 
+      const serviciosExtraMapped = [];
+      if (extrasSeleccionados.includes('web')) serviciosExtraMapped.push('WEB');
+      if (extrasSeleccionados.includes('cluni')) serviciosExtraMapped.push('CLUNI');
+
       const formData = {
         nombre_empresa: nombreEmpresa,
         figura_id: figuraId as number,
@@ -117,6 +142,8 @@ export default function Paso1CrearProyecto({
         servicio_base: servicioBaseId,
         modulos_extra: extrasSeleccionados,
         monto_total: presupuestoTotal,
+        tipo_tramite: tipoTramite,
+        servicios_extra: serviciosExtraMapped,
       };
 
       let result;
@@ -416,34 +443,86 @@ export default function Paso1CrearProyecto({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Columna 1: Servicio Base */}
+                <div className="flex flex-col gap-10">
+                  {/* Fila 1: Selección de Trámite (Ancho Completo) */}
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">1. Servicio Principal *</label>
-                      <select 
-                        value={servicioBaseId} 
-                        onChange={e => setServicioBaseId(e.target.value)}
-                        className="w-full bg-slate-800 border-2 border-white/5 p-4 rounded-2xl font-bold text-sm text-white outline-none focus:border-indigo-500 transition-all"
-                        disabled={isLoading}
-                      >
-                        <option value="" className="text-slate-500">-- Elige qué trámite necesitas --</option>
-                        {Object.values(SERVICIOS_PRINCIPALES).map(s => (
-                          <option key={s.id} value={s.id}>
-                            {s.nombre} (${esPagoContado ? s.precioEspecial.toLocaleString() : s.precioLista.toLocaleString()})
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[10px] text-slate-500 mt-2 ml-2 italic">
-                        {servicioBaseId ? Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId)?.descripcion : 'Selecciona un trámite para ver los detalles.'}
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">1. Tipo de Trámite *</label>
+                      
+                      <div className="space-y-4">
+                        <div className="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                          <p className="text-sm font-medium mb-3 text-white">¿Tu organización ya cuenta con Acta Constitutiva?</p>
+                          <div className="flex gap-4">
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => { setTieneActa(true); }}
+                              className={`flex-1 py-2 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                tieneActa === true ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-600 text-slate-400 hover:border-indigo-500/50'
+                              }`}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}
+                              className={`flex-1 py-2 px-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                tieneActa === false ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-600 text-slate-400 hover:border-indigo-500/50'
+                              }`}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+
+                        {tieneActa === true && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }} 
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-slate-800 p-4 rounded-2xl border border-white/5 mt-4"
+                          >
+                            <p className="text-sm font-medium mb-3 text-white">¿Qué necesitas hacer ahora?</p>
+                            <div className="flex flex-col gap-3">
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                onClick={() => setNecesitaRenovar(false)}
+                                className={`w-full py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all text-left ${
+                                  necesitaRenovar === false ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'border-slate-600 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-700/50'
+                                }`}
+                              >
+                                Necesito modificar mi acta para que el SAT me acepte
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                onClick={() => setNecesitaRenovar(true)}
+                                className={`w-full py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all text-left ${
+                                  necesitaRenovar === true ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'border-slate-600 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-700/50'
+                                }`}
+                              >
+                                Perdí mi permiso de Donataria o necesito renovarlo
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-indigo-300 mt-4 ml-2 italic font-medium">
+                        {servicioBaseId 
+                          ? `Servicio asignado: ${Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId)?.nombre}`
+                          : 'Por favor, responde las preguntas para asignar tu trámite automáticamente.'}
                       </p>
                     </div>
                   </div>
 
-                  {/* Columna 2: Extras */}
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">2. ¿Deseas agregar servicios extra?</label>
-                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                  <hr className="border-white/5" />
+
+                  {/* Fila 2: Extras (Ancho Completo) */}
+                  <div className="space-y-6">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 text-center md:text-left">2. ¿Deseas agregar servicios extra?</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Object.values(SERVICIOS_EXTRAS).map(extra => {
                         const isSelected = extrasSeleccionados.includes(extra.id);
                         return (
@@ -462,10 +541,16 @@ export default function Paso1CrearProyecto({
                               }`}>
                                 {isSelected && <span className="text-[10px] text-white">✓</span>}
                               </div>
-                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-200">{extra.nombre}</span>
+                              <span className="text-[11px] font-black uppercase tracking-tight text-slate-200">{extra.nombre}</span>
                             </div>
-                            <span className="text-[10px] font-bold text-indigo-300">
-                              {extra.esRegalo ? 'GRATIS' : `+$${extra.precio.toLocaleString()}`}
+                            <span className="text-[11px] font-bold text-indigo-300 text-right ml-4">
+                              {extra.precioVariable 
+                                ? 'REQUIERE COTIZACIÓN PERSONALIZADA' 
+                                : extra.esRegalo 
+                                  ? 'GRATIS' 
+                                  : extra.id === 'web' 
+                                    ? `+$${extra.precio.toLocaleString()} (MÁS IVA)` 
+                                    : `+$${extra.precio.toLocaleString()}`}
                             </span>
                           </div>
                         );
