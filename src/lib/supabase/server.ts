@@ -20,9 +20,12 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Eliminamos maxAge y expires para que la cookie sea de sesión
+              // (se borre al cerrar el navegador)
+              const { maxAge, expires, ...rest } = options;
+              cookieStore.set(name, value, rest);
+            });
           } catch {
             // Este método se llama desde un Server Component.
             // Podemos ignorarlo de forma segura porque el middleware maneja el refresco.
