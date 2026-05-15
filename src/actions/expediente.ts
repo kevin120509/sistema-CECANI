@@ -40,6 +40,9 @@ export async function crearExpedienteCompleto(
     if (!datosPersonales.curp?.trim()) {
       return { success: false, error: 'La CURP es obligatoria para el contrato.' };
     }
+    if (!datosPersonales.estado_civil?.trim()) {
+      return { success: false, error: 'El estado civil es obligatorio para el contrato.' };
+    }
     if (!datosPersonales.domicilio_completo?.trim()) {
       return { success: false, error: 'El domicilio completo es necesario para las declaraciones.' };
     }
@@ -65,6 +68,7 @@ export async function crearExpedienteCompleto(
           nombre_completo: nombre,
           telefono: datosPersonales.telefono?.trim() || '',
           estado: datosPersonales.estado?.trim() || '',
+          estado_civil: datosPersonales.estado_civil?.trim() || '',
           rol: 'cliente',
         },
       });
@@ -284,6 +288,18 @@ export async function actualizarExpedienteCompleto(
     // Validaciones
     if (!datosPersonales.nombre_completo?.trim()) {
       return { success: false, error: 'El nombre completo es requerido.' };
+    }
+    if (!datosPersonales.rfc?.trim()) {
+      return { success: false, error: 'El RFC es obligatorio para el contrato.' };
+    }
+    if (!datosPersonales.curp?.trim()) {
+      return { success: false, error: 'La CURP es obligatoria para el contrato.' };
+    }
+    if (!datosPersonales.estado_civil?.trim()) {
+      return { success: false, error: 'El estado civil es obligatorio para el contrato.' };
+    }
+    if (!datosPersonales.domicilio_completo?.trim()) {
+      return { success: false, error: 'El domicilio completo es necesario para las declaraciones.' };
     }
     if (!form.nombre_empresa?.trim()) {
       return { success: false, error: 'El nombre de la empresa es requerido.' };

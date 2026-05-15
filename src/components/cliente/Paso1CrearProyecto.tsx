@@ -126,6 +126,7 @@ export default function Paso1CrearProyecto({
       if (!telefono.trim()) { setError('El teléfono es necesario para contactarte.'); return false; }
       if (!rfc.trim()) { setError('El RFC es obligatorio para el contrato.'); return false; }
       if (!curp.trim()) { setError('La CURP es obligatoria.'); return false; }
+      if (!estadoCivil.trim()) { setError('El estado civil es obligatorio para el contrato.'); return false; }
       if (!domicilioCompleto.trim()) { setError('El domicilio completo es necesario para las declaraciones.'); return false; }
     } else if (step === 2) {
       if (!nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido.'); return false; }
@@ -396,6 +397,21 @@ export default function Paso1CrearProyecto({
                           value={ocupacion}
                           onChange={(e) => setOcupacion(e.target.value)}
                           placeholder="Ej. Abogado, Comerciante, etc."
+                          className="input-field pl-12"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="input-label">Estado Civil * </label>
+                      <div className="relative group">
+                        <User className="input-icon" size={18} />
+                        <input
+                          type="text"
+                          value={estadoCivil}
+                          onChange={(e) => setEstadoCivil(e.target.value)}
+                          placeholder="Ej. Soltero, Casado, Divorciado, Viudo"
                           className="input-field pl-12"
                           disabled={isLoading}
                         />
