@@ -63,6 +63,30 @@ export async function guardarContratoFirmado(
       };
     }
 
+    // NOTIFICAR A LA DIRECTORA
+    try {
+      const { getIdsByRol, sendPushNotification } = await import('@/lib/onesignal-server');
+      const directoras = await getIdsByRol('directora');
+      if (directoras.length > 0) {
+        // Obtener expediente_id primero
+        const { data: cont } = await supabase.from('contratos').select('expediente_id').eq('id', contratoId).single();
+        let clientName = 'Un cliente';
+        if (cont?.expediente_id) {
+          const { data: exp } = await supabase.from('expedientes').select('nombre_empresa').eq('id', cont.expediente_id).single();
+          if (exp) clientName = exp.nombre_empresa;
+        }
+
+        await sendPushNotification({
+          userIds: directoras,
+          title: 'Contrato Firmado Recibido',
+          message: `El cliente "${clientName}" ha subido su contrato firmado y comprobante de pago.`,
+          url: '/directora'
+        });
+      }
+    } catch (notifyError) {
+      console.error('Error notificando a directora:', notifyError);
+    }
+
     return { success: true };
   } catch (error) {
     return {
@@ -140,6 +164,22 @@ export async function generarContratoAutomatico(
 
     // 4. Actualizar la base de datos (Supabase) con la URL de R2
     await guardarContratoGenerado(contratoId, urlPublicaR2);
+
+    // 5. NOTIFICAR A LA DIRECTORA
+    try {
+      const { getIdsByRol, sendPushNotification } = await import('@/lib/onesignal-server');
+      const directoras = await getIdsByRol('directora');
+      if (directoras.length > 0) {
+        await sendPushNotification({
+          userIds: directoras,
+          title: 'Nuevo Cliente Registrado',
+          message: `El cliente del expediente "${expedienteData.nombre_empresa}" ha completado su registro y se ha generado su contrato.`,
+          url: '/directora'
+        });
+      }
+    } catch (notifyError) {
+      console.error('Error enviando notificación a directora:', notifyError);
+    }
 
     return { success: true };
   } catch (error) {
