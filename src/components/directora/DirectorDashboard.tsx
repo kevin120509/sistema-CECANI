@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { asignarAbogada, subirContratoDobleFirma } from '@/actions/directora';
+import { logoutAbogada } from '@/actions/auth-abogada';
 import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
@@ -47,6 +48,15 @@ export default function DirectorDashboard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+      setIsLoggingOut(true);
+      await logoutAbogada();
+      window.location.reload();
+    }
+  };
 
   const handleOpenModal = (exp: ExpedienteDirector) => {
     setSelectedExpediente(exp);
@@ -96,8 +106,31 @@ export default function DirectorDashboard({
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Panel de Dirección</h1>
-        <NotificationStatusIndicator />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl">
+            <span className="font-black text-2xl">D</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Panel de Dirección</h1>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Administración Central CECANI</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <NotificationStatusIndicator />
+          <button 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 bg-white border-2 border-slate-100 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all group disabled:opacity-50 shadow-sm"
+          >
+            {isLoggingOut ? 'Saliendo...' : (
+              <>
+                <span className="group-hover:-translate-x-1 transition-transform">🚪</span>
+                Cerrar Sesión
+              </>
+            )}
+          </button>
+        </div>
       </div>
       
       <div className="flex flex-wrap gap-2 bg-gray-100 p-1 rounded-xl w-fit">

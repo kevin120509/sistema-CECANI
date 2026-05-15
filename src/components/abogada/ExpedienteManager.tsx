@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { marcarHitoCompletado, agregarNotaBitacora, guardarDatosConcentrado } from '@/actions/abogada';
+import { logoutAbogada } from '@/actions/auth-abogada';
 import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 import type { CatalogoHito } from '@/types/database';
 import type { ExpedienteAbogada } from '@/app/abogada/page';
@@ -26,6 +27,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const [selectedExpedienteId, setSelectedExpedienteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'etapa_legal' | 'cronograma_legal' | 'entregables' | 'bitacora'>('etapa_legal');
   const [updatingHitoId, setUpdatingHitoId] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const CAMPOS_CONCENTRADO = [
     'estado', 'actividad', 'cluni', 'estatus_rpp', 'notaria', 'pago_notario', 'total_contrato', 
@@ -39,6 +41,14 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
     CAMPOS_CONCENTRADO.reduce((acc, campo) => ({ ...acc, [campo]: '' }), {})
   );
   const [isSavingConcentrado, setIsSavingConcentrado] = useState(false);
+
+  const handleLogout = async () => {
+    if (confirm('¿Estás segura de que deseas cerrar sesión?')) {
+      setIsLoggingOut(true);
+      await logoutAbogada();
+      window.location.reload();
+    }
+  };
 
   const selectedExpediente = expedientes.find(e => e.id === selectedExpedienteId) || null;
 
@@ -158,8 +168,31 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
     return (
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold text-gray-900 uppercase tracking-tighter">Panel Operativo Legal</h1>
-          <NotificationStatusIndicator />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-slate-200">
+              <span className="font-black text-2xl">C</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Panel Operativo Legal</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Gestión de Expedientes CECANI</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <NotificationStatusIndicator />
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="flex items-center gap-2 bg-white border-2 border-slate-100 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all group disabled:opacity-50"
+            >
+              {isLoggingOut ? 'Saliendo...' : (
+                <>
+                  <span className="group-hover:-translate-x-1 transition-transform">🚪</span>
+                  Cerrar Sesión
+                </>
+              )}
+            </button>
+          </div>
         </div>
         <div className="bg-white border-2 border-gray-100 rounded-3xl shadow-xl overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -275,7 +308,14 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       <div className="flex items-center justify-between">
         <button onClick={closeDetail} className="flex items-center text-slate-400 hover:text-slate-800 font-black text-xs uppercase tracking-widest group transition-colors">
           <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-          Panel
+          Volver al Panel
+        </button>
+        <button 
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex items-center gap-2 bg-white border-2 border-slate-100 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all group disabled:opacity-50 shadow-sm"
+        >
+          {isLoggingOut ? '...' : 'Cerrar Sesión'}
         </button>
       </div>
 
