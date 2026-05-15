@@ -86,6 +86,7 @@ export async function agregarNotaBitacora(
   const expedienteId = formData.get('expediente_id') as string;
   const nota = formData.get('nota') as string;
   const fechaProximo = formData.get('fecha_proximo_seguimiento') as string;
+  const hora = formData.get('hora') as string | null;
 
   if (!expedienteId || !nota.trim() || !fechaProximo) {
     return { success: false, error: 'Faltan campos obligatorios.' };
@@ -109,6 +110,7 @@ export async function agregarNotaBitacora(
       autor_id: user.id,
       nota: nota.trim(),
       fecha_proximo_seguimiento: fechaProximo,
+      ...(hora ? { hora } : {}),
     });
 
     if (error) throw error;

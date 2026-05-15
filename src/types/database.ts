@@ -125,6 +125,7 @@ export interface DashboardData {
 export interface CatalogoHito {
   id: string;
   nombre: string;
+  descripcion?: string;
   orden: number;
   created_at: string;
 }
@@ -143,6 +144,7 @@ export interface Bitacora {
   expediente_id: string;
   autor_id: string;
   nota: string;
+  hora: string | null;
   fecha_proximo_seguimiento: string;
   created_at: string;
 }

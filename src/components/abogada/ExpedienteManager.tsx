@@ -148,64 +148,73 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-slate-50 font-black text-slate-600 uppercase text-[11px] tracking-[0.2em]">
               <tr>
-                <th className="px-8 py-6 text-left">Empresa / Proyecto</th>
-                <th className="px-8 py-6 text-left">Nombre del Cliente</th>
-                <th className="px-8 py-6 text-center">Contacto WhatsApp</th>
-                <th className="px-8 py-6 text-left">Figura Legal</th>
-                <th className="px-8 py-6 text-center">Acciones</th>
+                <th className="px-6 py-5 text-left">Empresa / Proyecto</th>
+                <th className="px-6 py-5 text-left">Cliente</th>
+                <th className="px-6 py-5 text-center">Avance Legal</th>
+                <th className="px-6 py-5 text-left">Fase Actual</th>
+                <th className="px-6 py-5 text-center">WhatsApp</th>
+                <th className="px-6 py-5 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {expedientes.map(exp => {
-                // USAR EL ALIAS 'cliente' QUE VIENE DE LA CONSULTA
                 const nombreCliente = (exp as any).cliente?.nombre_completo || 'Sin nombre';
                 const tel = (exp as any).cliente?.telefono;
                 const whatsappUrl = tel ? `https://wa.me/52${tel.replace(/\D/g, '')}` : null;
                 
+                // Calcular progreso legal
+                const completados = hitosLegales.filter(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length;
+                const totalHL = hitosLegales.length;
+                const pct = totalHL > 0 ? Math.round((completados / totalHL) * 100) : 0;
+                
+                // Determinar fase actual (primer hito NO completado)
+                const faseActual = hitosLegales.find(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus !== 'completado');
+                const faseNombre = pct === 100 ? 'COMPLETADO' : faseActual?.nombre || 'Sin iniciar';
+                
                 return (
                   <tr key={exp.id} className="hover:bg-blue-50/50 transition-all group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="font-black text-slate-900 uppercase tracking-tighter text-base group-hover:text-blue-600 transition-colors">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <div className="font-black text-slate-900 uppercase tracking-tighter text-sm group-hover:text-blue-600 transition-colors">
                           {exp.nombre_empresa}
                         </div>
                         {exp.servicios_extra?.includes('REGULARIZACION') && (
-                          <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-200 shadow-sm flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            Cotizar Contabilidad
-                          </span>
+                          <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md text-[8px] font-black uppercase border border-amber-200">⚠ REG</span>
                         )}
                       </div>
+                      <span className="text-[10px] text-slate-400 font-semibold">{exp.figura?.descripcion}</span>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="text-slate-900 font-bold uppercase text-xs tracking-tight bg-slate-100 px-4 py-2 rounded-xl inline-block">
-                        {nombreCliente}
+                    <td className="px-6 py-5">
+                      <span className="text-slate-800 font-bold text-xs uppercase">{nombreCliente}</span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col items-center gap-1.5 min-w-[100px]">
+                        <span className={`text-lg font-black ${pct === 100 ? 'text-emerald-600' : pct > 50 ? 'text-blue-600' : pct > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{pct}%</span>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : pct > 50 ? 'bg-blue-500' : pct > 0 ? 'bg-amber-500' : 'bg-slate-200'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-bold">{completados}/{totalHL} hitos</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6 text-center">
+                    <td className="px-6 py-5">
+                      <span className={`inline-block px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${pct === 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                        {faseNombre}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-center">
                       {tel ? (
-                        <a 
-                          href={whatsappUrl!} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-5 py-2.5 rounded-2xl text-xs font-black hover:bg-green-600 hover:text-white transition-all shadow-sm border border-green-100 uppercase tracking-widest"
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        <a href={whatsappUrl!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-2 rounded-xl text-[10px] font-black hover:bg-green-600 hover:text-white transition-all border border-green-100 uppercase tracking-widest">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                           {tel}
                         </a>
                       ) : (
-                        <span className="text-slate-300 font-black italic text-xs uppercase tracking-widest">Sin Contacto</span>
+                        <span className="text-slate-300 italic text-[10px]">—</span>
                       )}
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="bg-blue-50 text-blue-700 border border-blue-100 px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm tracking-widest">
-                        {exp.figura?.descripcion || 'FIGURA NO DEFINIDA'}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 text-center">
+                    <td className="px-6 py-5 text-center">
                       <button 
                         onClick={() => setSelectedExpedienteId(exp.id)} 
-                        className="bg-slate-900 text-white px-8 py-3 rounded-2xl text-xs font-black transition-all shadow-xl hover:bg-slate-800 hover:scale-105 active:scale-95 uppercase tracking-widest"
+                        className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black transition-all shadow-lg hover:bg-slate-800 hover:scale-105 active:scale-95 uppercase tracking-widest"
                       >
                         Gestionar
                       </button>
@@ -451,44 +460,44 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {hitosLegales.map((h, index) => {
                   const s = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id);
                   const done = s?.estatus === 'completado';
                   const isUpdating = updatingHitoId === h.id.toString();
                   return (
-                    <div key={h.id} className={`flex items-center gap-6 p-6 border-4 rounded-3xl transition-all ${done ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/30'}`}>
-                      {/* Número de Paso */}
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 transition-all ${
-                        done ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-slate-100 text-slate-400'
-                      }`}>
-                        {done ? '✓' : index + 1}
-                      </div>
-                      
-                      {/* Nombre del Hito */}
-                      <label className="flex-1 cursor-pointer">
-                        <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-emerald-700/50' : 'text-slate-800'}`}>
-                          {h.nombre}
-                        </span>
-                        {done && s?.fecha_completado && (
-                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-                            Completado: {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <div key={h.id} className={`p-5 border rounded-2xl transition-all ${done ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'}`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 mt-0.5 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                          {done ? '✓' : index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-emerald-700/50' : 'text-slate-800'}`}>
+                            {h.nombre}
                           </span>
-                        )}
-                      </label>
-
-                      {/* Toggle */}
-                      <button
-                        onClick={() => handleToggleHito(h.id.toString(), !done)}
-                        disabled={isUpdating}
-                        className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${
-                          done 
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 border-2 border-emerald-200 hover:border-red-200' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200'
-                        } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
-                      >
-                        {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
-                      </button>
+                          {h.descripcion && (
+                            <p className={`text-[11px] mt-1 leading-relaxed ${done ? 'text-emerald-600/50' : 'text-slate-400'}`}>
+                              {h.descripcion}
+                            </p>
+                          )}
+                          {done && s?.fecha_completado && (
+                            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-1 inline-block">
+                              ✓ {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleToggleHito(h.id.toString(), !done)}
+                          disabled={isUpdating}
+                          className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
+                            done 
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 border border-emerald-200 hover:border-red-200' 
+                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+                        >
+                          {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -503,17 +512,66 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           )}
 
           {activeTab === 'entregables' && (
-            <div className="max-w-3xl p-12">
-              <h2 className="text-3xl font-black uppercase tracking-tighter mb-10 text-slate-900">Control de Capacitación</h2>
-              <div className="space-y-5">
-                {hitosCapacitacion.map((h) => {
+            <div className="max-w-4xl p-8 md:p-12">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tighter text-slate-900">Control de Capacitación</h2>
+                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">Entregables y sesiones del servicio</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 px-5 py-3 rounded-2xl">
+                  <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Avance</p>
+                  <p className="text-2xl font-black text-blue-700">
+                    {hitosCapacitacion.length > 0
+                      ? Math.round((hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100)
+                      : 0}%
+                  </p>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full mb-8 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
+                  style={{ width: `${hitosCapacitacion.length > 0 ? (hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100 : 0}%` }}
+                />
+              </div>
+              <div className="space-y-3">
+                {hitosCapacitacion.map((h, index) => {
                   const s = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id);
                   const done = s?.estatus === 'completado';
+                  const isUpdating = updatingHitoId === h.id.toString();
                   return (
-                    <label key={h.id} className={`flex items-center p-8 border-4 rounded-3xl cursor-pointer transition-all ${done ? 'bg-green-50 border-green-300 shadow-inner' : 'hover:bg-slate-50 border-slate-100 shadow-sm'}`}>
-                      <input type="checkbox" checked={done} onChange={e => handleToggleHito(h.id.toString(), e.target.checked)} className="w-8 h-8 mr-6 rounded-xl border-2 border-slate-300 text-blue-600 focus:ring-blue-500 transition-all" />
-                      <span className={`font-black uppercase text-base tracking-tighter ${done ? 'line-through text-green-700 opacity-40' : 'text-slate-800'}`}>{h.nombre}</span>
-                    </label>
+                    <div key={h.id} className={`p-5 border rounded-2xl transition-all ${done ? 'bg-blue-50/60 border-blue-200' : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md'}`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 mt-0.5 ${done ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                          {done ? '✓' : index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-blue-700/50' : 'text-slate-800'}`}>
+                            {h.nombre}
+                          </span>
+                          {h.descripcion && (
+                            <p className={`text-[11px] mt-1 leading-relaxed ${done ? 'text-blue-600/50' : 'text-slate-400'}`}>
+                              {h.descripcion}
+                            </p>
+                          )}
+                          {done && s?.fecha_completado && (
+                            <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest mt-1 inline-block">
+                              ✓ {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleToggleHito(h.id.toString(), !done)}
+                          disabled={isUpdating}
+                          className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
+                            done 
+                              ? 'bg-blue-100 text-blue-700 hover:bg-red-50 hover:text-red-600 border border-blue-200 hover:border-red-200' 
+                              : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
+                          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+                        >
+                          {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -527,17 +585,23 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                   <span className="w-5 h-5 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)]"></span>
                   Nuevo Registro
                 </h3>
-                <form action={async f => { const r = await agregarNotaBitacora(f); if(r.success) (document.getElementById('form-bitacora') as HTMLFormElement)?.reset(); else alert(r.error); }} id="form-bitacora" className="space-y-10">
+                <form action={async f => { const r = await agregarNotaBitacora(f); if(r.success) (document.getElementById('form-bitacora') as HTMLFormElement)?.reset(); else alert(r.error); }} id="form-bitacora" className="space-y-6">
                   <input type="hidden" name="expediente_id" value={selectedExpediente.id} />
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <label className="text-xs font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Resumen de Actividad</label>
-                    <textarea name="nota" required rows={7} className="w-full p-8 border-4 border-white rounded-[2rem] shadow-inner focus:border-blue-500 outline-none text-lg font-bold text-slate-800 transition-all" placeholder="Describe los avances logrados hoy..."></textarea>
+                    <textarea name="nota" required rows={5} className="w-full p-6 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-base font-bold text-slate-800 transition-all" placeholder="Describe los avances logrados hoy..."></textarea>
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-xs font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Próximo Contacto</label>
-                    <input type="date" name="fecha_proximo_seguimiento" required className="w-full p-8 border-4 border-white rounded-[2rem] shadow-inner focus:border-blue-500 outline-none text-xl font-black text-slate-900" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Próximo Contacto</label>
+                      <input type="date" name="fecha_proximo_seguimiento" required className="w-full p-5 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-base font-black text-slate-900" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Hora</label>
+                      <input type="time" name="hora" className="w-full p-5 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-base font-black text-slate-900" />
+                    </div>
                   </div>
-                  <div className="flex justify-end pt-6"><SubmitButton label="GUARDAR EN BITÁCORA" className="w-full py-8 rounded-[2rem] font-black tracking-widest shadow-2xl shadow-blue-200 text-base" /></div>
+                  <div className="flex justify-end pt-2"><SubmitButton label="GUARDAR EN BITÁCORA" className="w-full py-6 rounded-2xl font-black tracking-widest shadow-lg text-sm" /></div>
                 </form>
               </div>
               <div className="space-y-10 relative">
@@ -581,6 +645,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                               </div>
                               <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.2em]">
                                 {new Date(n.created_at).toLocaleDateString('es-MX', { dateStyle: 'full' })}
+                                {n.hora && <span className="text-slate-400 ml-2">• {n.hora.substring(0, 5)} hrs</span>}
                               </p>
                             </div>
                             {n.fecha_proximo_seguimiento && (
