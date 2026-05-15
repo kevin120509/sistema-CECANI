@@ -98,7 +98,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
         ? new Date(ultimoPago.fecha_pago).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '';
 
-      // Campos que SIEMPRE se calculan en vivo (nunca del DB estático)
+      // Campos que se calculan en vivo como sugerencia inteligente
       const camposVivos: Record<string, string> = {
         total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
         periodicidad_pagos: periodicidad,
@@ -118,16 +118,12 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
         fecha_contrato: fechaContrato,
       };
 
-      // Merge: campos vivos SIEMPRE se imponen, el resto usa DB > default
+      // Merge: Priorizar lo que ya está en DB. Si está vacío, usar el cálculo vivo/sugerencia.
       const newForm: Record<string, string> = {};
       CAMPOS_CONCENTRADO.forEach(campo => {
-        if (camposVivos[campo] !== undefined) {
-          // Campos financieros: siempre usar el valor calculado en vivo
-          newForm[campo] = camposVivos[campo];
-        } else {
-          const dbValue = (dbData as any)[campo] || '';
-          newForm[campo] = dbValue || defaults[campo] || '';
-        }
+        const dbValue = (dbData as any)[campo] || '';
+        // Si hay valor en DB se respeta, si no, se usa el calculado/default
+        newForm[campo] = dbValue || camposVivos[campo] || defaults[campo] || '';
       });
       setConcentradoForm(newForm);
     }
@@ -369,30 +365,36 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { l: 'Total de Contrato', c: 'total_contrato' },
-                      { l: 'Periodicidad', c: 'periodicidad_pagos' },
-                      { l: 'Próximo Cobro', c: 'cantidad_cobrar_proximo' },
-                      { l: '# Pagos Realizados', c: 'num_pagos_realizados' },
-                      { l: 'Pagado Acumulado', c: 'cantidad_pagada_acumulada' },
+                      { l: 'Total de Contrato', c: 'total_contrato', p: '$75,000' },
+                      { l: 'Periodicidad', c: 'periodicidad_pagos', p: 'Ej: Pago Único' },
+                      { l: 'Próximo Cobro', c: 'cantidad_cobrar_proximo', p: '$0' },
+                      { l: '# Pagos Realizados', c: 'num_pagos_realizados', p: '0' },
+                      { l: 'Aportación Total Recibida', c: 'cantidad_pagada_acumulada', p: '$0' },
                     ].map(f => (
                       <div key={f.c} className="space-y-1">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                          <svg className="w-2.5 h-2.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
                           {f.l}
                         </label>
-                        <div className="w-full px-3 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-sm font-semibold text-slate-800 uppercase">
-                          {concentradoForm[f.c] || '—'}
-                        </div>
+                        <input 
+                          type="text" 
+                          value={concentradoForm[f.c] || ''} 
+                          onChange={e => handleConcentradoChange(f.c, e.target.value)} 
+                          placeholder={f.p} 
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all" 
+                        />
                       </div>
                     ))}
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-red-500 flex items-center gap-1">
-                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-red-500">
                         Saldo Pendiente
                       </label>
-                      <div className="w-full px-3 py-2.5 rounded-lg border border-red-200 bg-red-50 text-sm font-black text-red-600 uppercase">
-                        {concentradoForm.saldo_cliente || '$0'}
-                      </div>
+                      <input 
+                        type="text" 
+                        value={concentradoForm.saldo_cliente || ''} 
+                        onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} 
+                        placeholder="$0" 
+                        className="w-full px-3 py-2.5 rounded-lg border border-red-200 bg-red-50 focus:border-red-500 focus:bg-white outline-none text-sm font-black text-red-600 uppercase transition-all" 
+                      />
                     </div>
                   </div>
                 </div>
