@@ -17,6 +17,12 @@ export default function OneSignalInitializer() {
         return;
       }
 
+      // Evitar el error de dominio en localhost
+      if (window.location.hostname === 'localhost') {
+        console.log('OneSignal: Inicialización omitida en localhost para evitar error de dominio.');
+        return;
+      }
+
       // Suprimir errores internos ruidosos de OneSignal en desarrollo (cuando Web Push falla sin HTTPS)
       const originalError = console.error;
       console.error = (...args) => {
