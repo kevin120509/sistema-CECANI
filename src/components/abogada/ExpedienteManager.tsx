@@ -168,7 +168,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 <th className="px-6 py-5 text-left">Empresa / Proyecto</th>
                 <th className="px-6 py-5 text-left">Cliente</th>
                 <th className="px-6 py-5 text-center">Avance Legal</th>
-                <th className="px-6 py-5 text-left">Fase Actual</th>
+                <th className="px-6 py-5 text-center">Capacitación</th>
                 <th className="px-6 py-5 text-center">WhatsApp</th>
                 <th className="px-6 py-5 text-center">Acciones</th>
               </tr>
@@ -207,16 +207,25 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                     <td className="px-6 py-5">
                       <div className="flex flex-col items-center gap-1.5 min-w-[100px]">
                         <span className={`text-lg font-black ${pct === 100 ? 'text-emerald-600' : pct > 50 ? 'text-blue-600' : pct > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{pct}%</span>
-                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : pct > 50 ? 'bg-blue-500' : pct > 0 ? 'bg-amber-500' : 'bg-slate-200'}`} style={{ width: `${pct}%` }} />
+                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-[9px] text-slate-400 font-bold">{completados}/{totalHL} hitos</span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-block px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${pct === 100 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-                        {faseNombre}
-                      </span>
+                      {(() => {
+                        const completadosCap = hitosCapacitacion.filter(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length;
+                        const totalCap = hitosCapacitacion.length;
+                        const pctCap = totalCap > 0 ? Math.round((completadosCap / totalCap) * 100) : 0;
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 min-w-[100px]">
+                            <span className={`text-lg font-black ${pctCap === 100 ? 'text-indigo-600' : 'text-slate-400'}`}>{pctCap}%</span>
+                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${pctCap}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-5 text-center">
                       {tel ? (
@@ -268,11 +277,6 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           Panel
         </button>
-        {activeTab === 'etapa_legal' && (
-          <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg flex items-center gap-2 transition-all uppercase text-[10px] tracking-widest">
-            {isSavingConcentrado ? 'Guardando...' : '✓ Guardar Cambios'}
-          </button>
-        )}
       </div>
 
       <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
@@ -339,11 +343,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 1 y 2: Trámite + Finanzas */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 1. Datos del Trámite */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-blue-500 space-y-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-blue-500 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
-                    Datos del Trámite
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <span className="w-5 h-5 bg-blue-500 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
+                      Datos del Trámite
+                    </h3>
+                    <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-blue-700 transition-all shadow-sm">
+                      {isSavingConcentrado ? '...' : 'Guardar Sección'}
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { l: 'Estado / Entidad', c: 'estado', p: 'Ej: CDMX' },
@@ -362,11 +370,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 2. Finanzas */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-emerald-500 space-y-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-emerald-500 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
-                    Finanzas del Contrato
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <span className="w-5 h-5 bg-emerald-500 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
+                      Finanzas del Contrato
+                    </h3>
+                    <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-emerald-700 transition-all shadow-sm">
+                      {isSavingConcentrado ? '...' : 'Actualizar Pagos'}
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { l: 'Total de Contrato', c: 'total_contrato', p: '$75,000' },
@@ -407,11 +419,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 3, 4, 5: Operación + Reuniones + Seguimiento */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* 3. Operación */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-slate-400 space-y-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-slate-400 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
-                    Operación
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <span className="w-5 h-5 bg-slate-400 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
+                      Operación
+                    </h3>
+                    <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-slate-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-slate-800 transition-all shadow-sm">
+                      {isSavingConcentrado ? '...' : 'Guardar'}
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     {[
                       { l: 'Fecha Último Pago', c: 'fecha_ultimo_pago', p: 'DD/MM/AAAA' },
@@ -428,11 +444,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 4. Reuniones */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-indigo-500 space-y-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-indigo-500 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
-                    Reuniones
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <span className="w-5 h-5 bg-indigo-500 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
+                      Reuniones
+                    </h3>
+                    <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-indigo-700 transition-all shadow-sm">
+                      {isSavingConcentrado ? '...' : 'Guardar Link'}
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Link de Reunión</label>
@@ -446,11 +466,15 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 5. Seguimiento */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-amber-500 space-y-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 bg-amber-500 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
-                    Seguimiento
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                      <span className="w-5 h-5 bg-amber-500 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
+                      Seguimiento
+                    </h3>
+                    <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-amber-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-amber-700 transition-all shadow-sm">
+                      {isSavingConcentrado ? '...' : 'Actualizar Estatus'}
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Estatus del Cliente</label>

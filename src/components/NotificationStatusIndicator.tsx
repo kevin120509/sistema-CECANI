@@ -8,20 +8,27 @@ export default function NotificationStatusIndicator() {
   const [status, setStatus] = useState<'granted' | 'denied' | 'default' | 'loading'>('loading');
 
   useEffect(() => {
+    let retries = 0;
+    const maxRetries = 10;
+
     const checkStatus = async () => {
       try {
-        // Esperar un momento a que OneSignal se inicialice si es necesario
         if (OneSignal.Notifications) {
           const permission = await OneSignal.Notifications.permission;
           setStatus(permission ? 'granted' : 'default');
           
-          // Escuchar cambios
           OneSignal.Notifications.addEventListener('permissionChange', (permission: boolean) => {
             setStatus(permission ? 'granted' : 'default');
           });
+        } else if (retries < maxRetries) {
+          retries++;
+          setTimeout(checkStatus, 1000);
+        } else {
+          setStatus('default');
         }
       } catch (e) {
-        setStatus('denied');
+        console.warn('Error checking OneSignal status:', e);
+        setStatus('default');
       }
     };
 

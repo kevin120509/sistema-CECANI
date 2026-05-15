@@ -82,10 +82,13 @@ export async function GET(req: NextRequest) {
     // Procesar hoy (exacto)
     if (hoyExacto && hoyExacto.length > 0) {
       for (const item of hoyExacto) {
+        const clienteStr = (item.expediente as any)?.nombre_empresa || 'N/A';
+        const horaStr = item.hora ? item.hora.substring(0, 5) : 'N/A';
+        
         notifications.push(sendPushNotification({
           userIds: [item.autor_id],
-          title: '⏰ Recordatorio de Seguimiento',
-          message: `Evento AHORA: "${item.nota}" para el cliente ${(item.expediente as any)?.nombre_empresa || 'N/A'}.`,
+          title: '⏰ RECORDATORIO: ' + clienteStr,
+          message: `ASUNTO: ${item.nota}\nHORA: ${horaStr} hrs\nDÍA: ${todayStr}`,
           url: '/abogada'
         }));
       }
@@ -94,10 +97,13 @@ export async function GET(req: NextRequest) {
     // Procesar mañana (aviso previo)
     if (mananaRecordatorios.length > 0) {
       for (const item of mananaRecordatorios) {
+        const clienteStr = (item.expediente as any)?.nombre_empresa || 'N/A';
+        const horaStr = item.hora ? item.hora.substring(0, 5) : 'Sin hora';
+        
         notifications.push(sendPushNotification({
           userIds: [item.autor_id],
-          title: '📅 Recordatorio para Mañana',
-          message: `Mañana tienes pendiente: "${item.nota}" (${item.hora || 'Sin hora'}) con el cliente ${(item.expediente as any)?.nombre_empresa || 'N/A'}.`,
+          title: '📅 MAÑANA: ' + clienteStr,
+          message: `ASUNTO: ${item.nota}\nHORA: ${horaStr} hrs\nDÍA: ${tomorrowStr}`,
           url: '/abogada'
         }));
       }
