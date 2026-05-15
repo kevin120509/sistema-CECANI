@@ -59,8 +59,13 @@ export default function OneSignalInitializer() {
         });
 
         // Sincronizamos el ID de Supabase con OneSignal
-        // Esto nos permite enviar notificaciones usando el UUID de la base de datos
         await OneSignal.login(user.id);
+        
+        // FORZAR EL PROMPT DE SUSCRIPCIÓN (Slidedown)
+        // Solo si aún no tienen permiso, les pedimos que se suscriban proactivamente
+        if (OneSignal.Notifications && !OneSignal.Notifications.permission) {
+          await OneSignal.Slidedown.prompt();
+        }
         
         console.log('OneSignal Initialized for user:', user.id);
       } catch (error) {
