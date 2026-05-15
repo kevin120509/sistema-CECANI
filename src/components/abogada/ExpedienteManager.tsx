@@ -51,14 +51,20 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       const pagos = selectedExpediente.pagos || [];
       const asesora = (selectedExpediente as any).asesora;
 
-      // Pagos: cálculos financieros
-      const pagosVerificados = pagos.filter(p => p.verificado);
-      const totalPagado = pagosVerificados.reduce((sum, p) => sum + (p.monto || 0), 0);
-      const montoContrato = contrato?.monto_total || 0;
+      // Pagos: separar inicial de subsecuentes
+      const pagoInicial = pagos.find(p => p.es_pago_inicial);
+      const pagosSubsecuentes = pagos.filter(p => !p.es_pago_inicial);
+      const todosPagos = pagos; // Contar TODOS, verificados o no
+
+      // Cálculos financieros sobre TODOS los pagos registrados
+      const montoInicial = pagoInicial ? Number(pagoInicial.monto || 0) : 0;
+      const totalPagado = todosPagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+      const montoContrato = Number(contrato?.monto_total || 0);
       const saldo = montoContrato - totalPagado;
-      const ultimoPago = pagosVerificados.length > 0
-        ? pagosVerificados.sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime())[0]
-        : null;
+      
+      // Último pago registrado (de cualquier tipo)
+      const pagosSorted = [...todosPagos].sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime());
+      const ultimoPago = pagosSorted.length > 0 ? pagosSorted[0] : null;
 
       // Plan de pagos a texto legible
       const planTexto: Record<string, string> = {
@@ -70,11 +76,13 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
 
       // Cantidad a cobrar próximo pago
       let cantidadProximo = '';
-      if (contrato?.plan_pagos === '2_meses' && saldo > 0) {
+      if (contrato?.plan_pagos === 'unico') {
+        cantidadProximo = saldo > 0 ? `$${saldo.toLocaleString()}` : '$0';
+      } else if (contrato?.plan_pagos === '2_meses' && saldo > 0) {
         cantidadProximo = `$${saldo.toLocaleString()}`;
       } else if (contrato?.plan_pagos === '4_meses' && saldo > 0) {
-        const pagosRestantes = 4 - pagosVerificados.length;
-        cantidadProximo = pagosRestantes > 0 ? `$${Math.ceil(saldo / pagosRestantes).toLocaleString()}` : '$0';
+        const pagosRestantes = Math.max(1, 4 - todosPagos.length);
+        cantidadProximo = `$${Math.ceil(saldo / pagosRestantes).toLocaleString()}`;
       }
 
       // CLUNI: si el servicio extra incluye CLUNI
@@ -90,27 +98,36 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
         ? new Date(ultimoPago.fecha_pago).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '';
 
-      // Valores automáticos (solo se usan si la celda está vacía en la DB)
-      const defaults: Record<string, string> = {
-        estado: cliente?.estado || '',
-        telefono_cliente: cliente?.telefono || '',
+      // Campos que SIEMPRE se calculan en vivo (nunca del DB estático)
+      const camposVivos: Record<string, string> = {
         total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
         periodicidad_pagos: periodicidad,
-        cluni: tieneCLUNI ? 'SÍ - INCLUIDO' : 'NO APLICA',
-        num_pagos_realizados: pagosVerificados.length > 0 ? pagosVerificados.length.toString() : '',
-        cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
+        num_pagos_realizados: todosPagos.length > 0 ? todosPagos.length.toString() : '0',
+        cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '$0',
         saldo_cliente: montoContrato > 0 ? `$${saldo.toLocaleString()}` : '',
         fecha_ultimo_pago: fechaUltimoPago,
         cantidad_cobrar_proximo: cantidadProximo,
+      };
+
+      // Valores automáticos (se usan si la celda está vacía en la DB)
+      const defaults: Record<string, string> = {
+        estado: cliente?.estado || '',
+        telefono_cliente: cliente?.telefono || '',
+        cluni: tieneCLUNI ? 'SÍ - INCLUIDO' : 'NO APLICA',
         vendedora: asesora?.nombre_completo || '',
         fecha_contrato: fechaContrato,
       };
 
-      // Merge: dato de DB tiene prioridad, si está vacío usa el calculado
+      // Merge: campos vivos SIEMPRE se imponen, el resto usa DB > default
       const newForm: Record<string, string> = {};
       CAMPOS_CONCENTRADO.forEach(campo => {
-        const dbValue = (dbData as any)[campo] || '';
-        newForm[campo] = dbValue || defaults[campo] || '';
+        if (camposVivos[campo] !== undefined) {
+          // Campos financieros: siempre usar el valor calculado en vivo
+          newForm[campo] = camposVivos[campo];
+        } else {
+          const dbValue = (dbData as any)[campo] || '';
+          newForm[campo] = dbValue || defaults[campo] || '';
+        }
       });
       setConcentradoForm(newForm);
     }
@@ -352,20 +369,30 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { l: 'Total de Contrato', c: 'total_contrato', p: '$75,000' },
-                      { l: 'Periodicidad', c: 'periodicidad_pagos', p: 'Mensual' },
-                      { l: 'Próximo Cobro', c: 'cantidad_cobrar_proximo', p: '$10,000' },
-                      { l: '# Pagos Realizados', c: 'num_pagos_realizados', p: '0' },
-                      { l: 'Pagado Acumulado', c: 'cantidad_pagada_acumulada', p: '$0' },
+                      { l: 'Total de Contrato', c: 'total_contrato' },
+                      { l: 'Periodicidad', c: 'periodicidad_pagos' },
+                      { l: 'Próximo Cobro', c: 'cantidad_cobrar_proximo' },
+                      { l: '# Pagos Realizados', c: 'num_pagos_realizados' },
+                      { l: 'Pagado Acumulado', c: 'cantidad_pagada_acumulada' },
                     ].map(f => (
                       <div key={f.c} className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{f.l}</label>
-                        <input type="text" value={concentradoForm[f.c] || ''} onChange={e => handleConcentradoChange(f.c, e.target.value)} placeholder={f.p} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white outline-none text-sm font-semibold text-slate-800 uppercase transition-all placeholder:text-slate-300 placeholder:normal-case" />
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                          <svg className="w-2.5 h-2.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                          {f.l}
+                        </label>
+                        <div className="w-full px-3 py-2.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-sm font-semibold text-slate-800 uppercase">
+                          {concentradoForm[f.c] || '—'}
+                        </div>
                       </div>
                     ))}
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-red-500">Saldo Pendiente</label>
-                      <input type="text" value={concentradoForm.saldo_cliente || ''} onChange={e => handleConcentradoChange('saldo_cliente', e.target.value)} placeholder="$0" className="w-full px-3 py-2.5 rounded-lg border border-red-200 bg-red-50 focus:border-red-400 outline-none text-sm font-black text-red-600 uppercase transition-all" />
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-red-500 flex items-center gap-1">
+                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                        Saldo Pendiente
+                      </label>
+                      <div className="w-full px-3 py-2.5 rounded-lg border border-red-200 bg-red-50 text-sm font-black text-red-600 uppercase">
+                        {concentradoForm.saldo_cliente || '$0'}
+                      </div>
                     </div>
                   </div>
                 </div>
