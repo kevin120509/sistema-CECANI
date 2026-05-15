@@ -343,6 +343,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 1 y 2: Trámite + Finanzas */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 1. Datos del Trámite */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-blue-500 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
                       <span className="w-5 h-5 bg-blue-500 text-white rounded-md flex items-center justify-center text-[9px]">1</span>
@@ -370,6 +371,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 2. Finanzas */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-emerald-500 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
                       <span className="w-5 h-5 bg-emerald-500 text-white rounded-md flex items-center justify-center text-[9px]">2</span>
@@ -419,6 +421,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               {/* SECCIÓN 3, 4, 5: Operación + Reuniones + Seguimiento */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* 3. Operación */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-slate-400 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
                       <span className="w-5 h-5 bg-slate-400 text-white rounded-md flex items-center justify-center text-[9px]">3</span>
@@ -444,6 +447,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 4. Reuniones */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-indigo-500 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
                       <span className="w-5 h-5 bg-indigo-500 text-white rounded-md flex items-center justify-center text-[9px]">4</span>
@@ -466,6 +470,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                 </div>
 
                 {/* 5. Seguimiento */}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 border-l-4 border-l-amber-500 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
                       <span className="w-5 h-5 bg-amber-500 text-white rounded-md flex items-center justify-center text-[9px]">5</span>
