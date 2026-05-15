@@ -463,80 +463,87 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           )}
 
           {activeTab === 'cronograma_legal' && (
-            <div className="max-w-4xl p-12">
-              <div className="flex items-center justify-between mb-10">
+            <div className="max-w-4xl p-8 md:p-12">
+              <div className="flex items-center justify-between mb-12">
                 <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Cronograma Legal</h2>
-                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.4em] mt-1">Seguimiento de Proceso SAT / RPP / CLUNI</p>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter text-blue-900">Cronograma Legal</h2>
+                  <p className="text-[11px] text-blue-600/60 font-black uppercase tracking-[0.4em] mt-1">Hitos de Constitución y Registro</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="bg-emerald-50 border-2 border-emerald-200 px-6 py-3 rounded-2xl">
-                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Avance</p>
-                    <p className="text-2xl font-black text-emerald-700">
-                      {hitosLegales.length > 0 
-                        ? Math.round((hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100)
-                        : 0}%
-                    </p>
-                  </div>
+                <div className="bg-blue-600 px-6 py-3 rounded-2xl shadow-xl shadow-blue-200">
+                  <p className="text-[9px] font-black text-blue-100 uppercase tracking-widest">Progreso Legal</p>
+                  <p className="text-2xl font-black text-white">
+                    {hitosLegales.length > 0 
+                      ? Math.round((hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100)
+                      : 0}%
+                  </p>
                 </div>
               </div>
 
-              {/* Barra de Progreso Visual */}
-              <div className="w-full h-3 bg-slate-100 rounded-full mb-12 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-700"
-                  style={{ width: `${hitosLegales.length > 0 ? (hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100 : 0}%` }}
-                />
-              </div>
-
-              <div className="space-y-3">
+              {/* Nueva Estructura de Timeline Azul */}
+              <div className="relative pl-8 border-l-4 border-blue-100 space-y-6">
                 {hitosLegales.map((h, index) => {
                   const s = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id);
                   const done = s?.estatus === 'completado';
                   const isUpdating = updatingHitoId === h.id.toString();
+                  
                   return (
-                    <div key={h.id} className={`p-5 border rounded-2xl transition-all ${done ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'}`}>
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 mt-0.5 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                          {done ? '✓' : index + 1}
+                    <div key={h.id} className="relative">
+                      {/* Punto del timeline */}
+                      <div className={`absolute -left-[42px] top-6 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all ${
+                        done ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-blue-200'
+                      }`} />
+
+                      <div className={`p-6 rounded-[2rem] border-2 transition-all ${
+                        done 
+                        ? 'bg-emerald-50 border-emerald-100 opacity-70' 
+                        : 'bg-blue-50 border-blue-100 hover:border-blue-400 hover:bg-white hover:shadow-xl'
+                      }`}>
+                        <div className="flex items-start gap-6">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 ${
+                            done ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-black uppercase text-base tracking-tight ${done ? 'text-emerald-900/40 line-through' : 'text-blue-900'}`}>
+                              {h.nombre}
+                            </h4>
+                            {h.descripcion && (
+                              <p className={`text-[11px] mt-2 leading-relaxed font-medium ${done ? 'text-emerald-600/50' : 'text-blue-600/70'}`}>
+                                {h.descripcion}
+                              </p>
+                            )}
+                            {done && s?.fecha_completado && (
+                              <div className="mt-3 inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => handleToggleHito(h.id.toString(), !done)}
+                            disabled={isUpdating}
+                            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${
+                              done 
+                                ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 border border-emerald-200' 
+                                : 'bg-blue-900 text-white hover:bg-blue-700 shadow-lg shadow-blue-100'
+                            } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+                          >
+                            {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-emerald-700/50' : 'text-slate-800'}`}>
-                            {h.nombre}
-                          </span>
-                          {h.descripcion && (
-                            <p className={`text-[11px] mt-1 leading-relaxed ${done ? 'text-emerald-600/50' : 'text-slate-400'}`}>
-                              {h.descripcion}
-                            </p>
-                          )}
-                          {done && s?.fecha_completado && (
-                            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-1 inline-block">
-                              ✓ {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleToggleHito(h.id.toString(), !done)}
-                          disabled={isUpdating}
-                          className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
-                            done 
-                              ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 border border-emerald-200 hover:border-red-200' 
-                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                          {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
-                        </button>
                       </div>
                     </div>
                   );
                 })}
-                {hitosLegales.length === 0 && (
-                  <div className="text-center py-20">
-                    <p className="text-slate-300 font-black uppercase text-lg tracking-widest">No hay hitos legales configurados</p>
-                    <p className="text-slate-400 text-xs mt-2">Contacta al administrador para agregar el catálogo de hitos legales.</p>
-                  </div>
-                )}
               </div>
+
+              {hitosLegales.length === 0 && (
+                <div className="text-center py-20 bg-blue-50/50 rounded-[3rem] border-4 border-dashed border-blue-100">
+                  <p className="text-blue-200 font-black uppercase text-lg tracking-widest">Sin hitos legales</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -599,16 +606,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                           </p>
                         </div>
 
-                        {/* Sección Explicativa de la Labor de la Abogada */}
-                        <div className={`p-4 rounded-xl border ${done ? 'bg-white/50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
-                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            Labor de la Abogada
-                          </p>
-                          <p className="text-[10px] text-slate-600 font-bold leading-snug">
-                            Supervisa la sesión técnica, resuelve dudas operativas del cliente y valida la correcta asimilación del material entregado.
-                          </p>
-                        </div>
+
 
                         <div className="flex items-center justify-between pt-2">
                           <div className="h-8">
