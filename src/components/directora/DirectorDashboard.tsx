@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { asignarAbogada, subirContratoDobleFirma } from '@/actions/directora';
+import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
 export type ExpedienteDirector = Record<string, unknown> & {
@@ -94,7 +95,10 @@ export default function DirectorDashboard({
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
-      <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Panel de Dirección</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Panel de Dirección</h1>
+        <NotificationStatusIndicator />
+      </div>
       
       <div className="flex flex-wrap gap-2 bg-gray-100 p-1 rounded-xl w-fit">
         <button onClick={() => setActiveTab('por_asignar')} className={`px-6 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'por_asignar' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>POR ASIGNAR ABOGADA ({porAsignar.length})</button>

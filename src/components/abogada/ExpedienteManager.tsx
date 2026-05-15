@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { marcarHitoCompletado, agregarNotaBitacora, guardarDatosConcentrado } from '@/actions/abogada';
+import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 import type { CatalogoHito } from '@/types/database';
 import type { ExpedienteAbogada } from '@/app/abogada/page';
 
@@ -156,7 +157,10 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   if (!selectedExpediente) {
     return (
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 uppercase tracking-tighter">Panel Operativo Legal</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-extrabold text-gray-900 uppercase tracking-tighter">Panel Operativo Legal</h1>
+          <NotificationStatusIndicator />
+        </div>
         <div className="bg-white border-2 border-gray-100 rounded-3xl shadow-xl overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-slate-50 font-black text-slate-600 uppercase text-[11px] tracking-[0.2em]">

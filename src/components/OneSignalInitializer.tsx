@@ -63,8 +63,19 @@ export default function OneSignalInitializer() {
         
         // FORZAR EL PROMPT DE SUSCRIPCIÓN (Slidedown)
         // Solo si aún no tienen permiso, les pedimos que se suscriban proactivamente
-        if (OneSignal.Notifications && !OneSignal.Notifications.permission) {
-          await OneSignal.Slidedown.prompt();
+        try {
+          const permission = await OneSignal.Notifications.permission;
+          if (!permission) {
+            // Usamos un acceso seguro para evitar errores de tipos en compilación
+            const os = OneSignal as any;
+            if (os.Slidedown) {
+              await os.Slidedown.prompt();
+            } else if (os.showSlidedownPrompt) {
+              await os.showSlidedownPrompt();
+            }
+          }
+        } catch (promptError) {
+          console.warn('No se pudo mostrar el prompt de OneSignal:', promptError);
         }
         
         console.log('OneSignal Initialized for user:', user.id);
