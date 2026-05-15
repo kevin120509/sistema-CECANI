@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const headersList = await headers();
+  const referer = headersList.get('referer') || '';
+  const isStaffPath = referer.includes('/abogada') || referer.includes('/directora');
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,14 +24,18 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // Eliminamos maxAge y expires para que la cookie sea de sesión
-              // (se borre al cerrar el navegador)
-              const { maxAge, expires, ...rest } = options;
-              cookieStore.set(name, value, rest);
+              let finalOptions = { ...options };
+              
+              if (isStaffPath) {
+                // Forzamos que sea de sesión para staff
+                const { maxAge, expires, ...rest } = finalOptions;
+                finalOptions = rest;
+              }
+
+              cookieStore.set(name, value, finalOptions);
             });
           } catch {
             // Este método se llama desde un Server Component.
-            // Podemos ignorarlo de forma segura porque el middleware maneja el refresco.
           }
         },
       },
