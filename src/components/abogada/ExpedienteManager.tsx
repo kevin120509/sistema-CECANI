@@ -541,69 +541,110 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           )}
 
           {activeTab === 'entregables' && (
-            <div className="max-w-4xl p-8 md:p-12">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-black uppercase tracking-tighter text-slate-900">Control de Capacitación</h2>
-                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">Entregables y sesiones del servicio</p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 px-5 py-3 rounded-2xl">
-                  <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Avance</p>
-                  <p className="text-2xl font-black text-blue-700">
-                    {hitosCapacitacion.length > 0
-                      ? Math.round((hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100)
-                      : 0}%
-                  </p>
+            <div className="max-w-6xl p-8 md:p-12">
+              {/* Encabezado Distintivo para Capacitación */}
+              <div className="bg-indigo-900 rounded-[2rem] p-8 mb-10 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <span className="bg-indigo-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block shadow-lg">
+                      Módulo Operativo
+                    </span>
+                    <h2 className="text-4xl font-black uppercase tracking-tighter leading-none mb-2">Control de Capacitación</h2>
+                    <p className="text-indigo-200 text-sm font-medium max-w-md">
+                      Seguimiento de la transferencia de conocimientos y entrega de herramientas operativas a la organización.
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-[1.5rem] min-w-[180px] text-center">
+                    <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-1">Progreso de Entrega</p>
+                    <p className="text-5xl font-black text-white">
+                      {hitosCapacitacion.length > 0
+                        ? Math.round((hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100)
+                        : 0}%
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full mb-8 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
-                  style={{ width: `${hitosCapacitacion.length > 0 ? (hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100 : 0}%` }}
-                />
-              </div>
-              <div className="space-y-3">
+
+              {/* Grid de 2 Columnas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {hitosCapacitacion.map((h, index) => {
                   const s = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id);
                   const done = s?.estatus === 'completado';
                   const isUpdating = updatingHitoId === h.id.toString();
+                  
                   return (
-                    <div key={h.id} className={`p-5 border rounded-2xl transition-all ${done ? 'bg-blue-50/60 border-blue-200' : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md'}`}>
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 mt-0.5 ${done ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                          {done ? '✓' : index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className={`font-black uppercase text-sm tracking-tight block ${done ? 'line-through text-blue-700/50' : 'text-slate-800'}`}>
+                    <div 
+                      key={h.id} 
+                      className={`relative group p-6 rounded-[2rem] border-2 transition-all duration-300 ${
+                        done 
+                        ? 'bg-indigo-50/50 border-indigo-200 shadow-sm' 
+                        : 'bg-white border-slate-100 hover:border-indigo-400 hover:shadow-xl hover:-translate-y-1'
+                      }`}
+                    >
+                      {/* Número Flotante */}
+                      <div className={`absolute -top-3 -left-3 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:scale-110 ${
+                        done ? 'bg-indigo-600 text-white' : 'bg-white border-2 border-slate-100 text-slate-300'
+                      }`}>
+                        {index + 1}
+                      </div>
+
+                      <div className="ml-8 space-y-4">
+                        <div>
+                          <h4 className={`font-black uppercase text-base tracking-tight leading-tight ${done ? 'text-indigo-900/40 line-through' : 'text-slate-900'}`}>
                             {h.nombre}
-                          </span>
-                          {h.descripcion && (
-                            <p className={`text-[11px] mt-1 leading-relaxed ${done ? 'text-blue-600/50' : 'text-slate-400'}`}>
-                              {h.descripcion}
-                            </p>
-                          )}
-                          {done && s?.fecha_completado && (
-                            <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest mt-1 inline-block">
-                              ✓ {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </span>
-                          )}
+                          </h4>
+                          <p className={`text-[11px] mt-2 font-medium leading-relaxed ${done ? 'text-indigo-400' : 'text-slate-500'}`}>
+                            {h.descripcion || 'Sin descripción disponible.'}
+                          </p>
                         </div>
-                        <button
-                          onClick={() => handleToggleHito(h.id.toString(), !done)}
-                          disabled={isUpdating}
-                          className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 ${
-                            done 
-                              ? 'bg-blue-100 text-blue-700 hover:bg-red-50 hover:text-red-600 border border-blue-200 hover:border-red-200' 
-                              : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
-                          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                          {isUpdating ? '...' : done ? 'Completado' : 'Marcar'}
-                        </button>
+
+                        {/* Sección Explicativa de la Labor de la Abogada */}
+                        <div className={`p-4 rounded-xl border ${done ? 'bg-white/50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
+                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            Labor de la Abogada
+                          </p>
+                          <p className="text-[10px] text-slate-600 font-bold leading-snug">
+                            Supervisa la sesión técnica, resuelve dudas operativas del cliente y valida la correcta asimilación del material entregado.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="h-8">
+                            {done && s?.fecha_completado && (
+                              <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                ✓ {new Date(s.fecha_completado).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => handleToggleHito(h.id.toString(), !done)}
+                            disabled={isUpdating}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                              done 
+                                ? 'bg-indigo-100 text-indigo-700 hover:bg-red-50 hover:text-red-600' 
+                                : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
+                            } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+                          >
+                            {isUpdating ? '...' : done ? 'Entregado' : 'Marcar Entrega'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {hitosCapacitacion.length === 0 && (
+                <div className="text-center py-32 bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-200">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                    <svg className="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                  </div>
+                  <p className="text-slate-300 font-black uppercase text-xl tracking-[0.5em]">Sin hitos de capacitación</p>
+                </div>
+              )}
             </div>
           )}
 
