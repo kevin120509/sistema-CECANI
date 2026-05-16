@@ -1,66 +1,46 @@
 'use server';
 
-import { createAdminClient } from '@/lib/supabase/admin';
-import { subirArchivoR2 } from '@/lib/r2';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult, TipoDocumento } from '@/types/database';
 
-import { sendPushNotification, getIdsByRol } from '@/lib/onesignal-server';
+// Importaciones de la Arquitectura Limpia
+import { DocumentoService } from '@/core/services/DocumentoService';
+import { SupabaseDocumentoRepository, SupabasePagoRepository } from '@/infrastructure/persistence/SupabaseDocumentosRepository';
+import { CloudflareStorageService } from '@/infrastructure/storage/CloudflareStorageService';
+import { OneSignalNotificationService } from '@/infrastructure/external/OneSignalNotificationService';
+
+function getDocumentoService() {
+  return new DocumentoService(
+    new SupabaseDocumentoRepository(),
+    new SupabasePagoRepository(),
+    new CloudflareStorageService(),
+    new OneSignalNotificationService()
+  );
+}
 
 /**
- * Registra un documento en la base de datos.
+ * Registra un documento en la base de datos y notifica.
  */
 export async function registrarDocumento(
   expedienteId: string,
   tipo: TipoDocumento,
   urlArchivo: string
 ): Promise<ActionResult<{ documento_id: string }>> {
-  try {
-    const supabase = createAdminClient();
+  const service = getDocumentoService();
+  const result = await service.registrarDocumentoYNotificar(expedienteId, tipo, urlArchivo);
 
-    const { data, error } = await supabase
-      .from('documentos')
-      .insert({
-        expediente_id: expedienteId,
-        tipo,
-        url_archivo: urlArchivo,
-      })
-      .select('id')
-      .single();
-
-    if (error || !data) {
-      return {
-        success: false,
-        error: `Error al registrar documento: ${error?.message}`,
-      };
-    }
-
-    // NOTIFICACIÓN A LA DIRECTORA
-    const directoras = await getIdsByRol('directora');
-    if (directoras.length > 0) {
-      await sendPushNotification({
-        userIds: directoras,
-        title: 'Nuevo Documento Recibido',
-        message: `Se ha subido un nuevo documento (${tipo}) para el expediente #${expedienteId.slice(-6)}.`,
-        url: `/directora/expediente/${expedienteId}`
-      });
-    }
-
+  if (result.success) {
     revalidatePath('/directora');
     revalidatePath('/abogada');
     revalidatePath('/');
-
-    return { success: true, data: { documento_id: data.id } };
-  } catch (error) {
-    return {
-      success: false,
-      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
-    };
   }
+
+  return result;
 }
 
 /**
- * Registra un pago inicial en la base de datos.
+ * Registra un pago inicial en la base de datos y notifica.
+ * (Mantenemos la firma para compatibilidad, pero lo delega al Service).
  */
 export async function registrarPago(
   expedienteId: string,
@@ -68,48 +48,27 @@ export async function registrarPago(
   urlComprobante: string
 ): Promise<ActionResult<{ pago_id: string }>> {
   try {
-    const supabase = createAdminClient();
+    const pagoRepo = new SupabasePagoRepository();
+    const pagoId = await pagoRepo.registrarPago(expedienteId, monto, urlComprobante, true);
 
-    const { data, error } = await supabase
-      .from('pagos')
-      .insert({
-        expediente_id: expedienteId,
-        monto,
-        fecha_pago: new Date().toISOString().split('T')[0],
-        url_comprobante: urlComprobante,
-        es_pago_inicial: true,
-      })
-      .select('id')
-      .single();
-
-    if (error || !data) {
-      return {
-        success: false,
-        error: `Error al registrar pago: ${error?.message}`,
-      };
-    }
-
-    // NOTIFICACIÓN A LA DIRECTORA
-    const directoras = await getIdsByRol('directora');
+    const notificationService = new OneSignalNotificationService();
+    const directoras = await notificationService.obtenerIdsPorRol('directora');
     if (directoras.length > 0) {
-      await sendPushNotification({
-        userIds: directoras,
-        title: '¡Pago Recibido!',
-        message: `Un cliente ha registrado un pago de $${monto} para el expediente #${expedienteId.slice(-6)}.`,
-        url: `/directora/expediente/${expedienteId}`
-      });
+      await notificationService.enviarNotificacionPush(
+        directoras,
+        '¡Pago Recibido!',
+        `Un cliente ha registrado un pago de $${monto} para el expediente #${expedienteId.slice(-6)}.`,
+        `/directora/expediente/${expedienteId}`
+      );
     }
 
     revalidatePath('/directora');
     revalidatePath('/abogada');
     revalidatePath('/');
 
-    return { success: true, data: { pago_id: data.id } };
-  } catch (error) {
-    return {
-      success: false,
-      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
-    };
+    return { success: true, data: { pago_id: pagoId } };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }
 
@@ -125,37 +84,17 @@ export async function subirYRegistrarPago(
   monto: number,
   nombreEmpresa: string
 ): Promise<ActionResult> {
-  try {
-    const file = formData.get('file') as File;
-    if (!file || file.size === 0) {
-      return { success: false, error: 'No se proporcionó el archivo del comprobante.' };
-    }
+  const file = formData.get('file') as File;
+  const service = getDocumentoService();
+  
+  const result = await service.subirYRegistrarPagoInicial(file, expedienteId, monto, nombreEmpresa);
 
-    // 1. Subir a R2
-    const carpetaEmpresa = nombreEmpresa
-      .replace(/[^a-zA-Z0-9]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '');
-    
-    const extension = file.name.split('.').pop() || 'bin';
-    const nuevoNombre = `Comprobante_Pago_${carpetaEmpresa}.${extension}`;
-    const fileRenombrado = new File([file], nuevoNombre, { type: file.type });
-    
-    const urlPublicaR2 = await subirArchivoR2(fileRenombrado, `expedientes/${carpetaEmpresa}/documentacion`);
-
-    // 2. Registrar Pago
-    const resPago = await registrarPago(expedienteId, monto, urlPublicaR2);
-    if (!resPago.success) throw new Error(resPago.error);
-
-    // 3. Registrar Documento (para visibilidad en dashboard)
-    await registrarDocumento(expedienteId, 'comprobante_pago' as TipoDocumento, urlPublicaR2);
-
+  if (result.success) {
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    revalidatePath('/');
     return { success: true };
-  } catch (error) {
-    console.error('Error en subirYRegistrarPago:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Error al procesar el pago',
-    };
   }
+
+  return { success: false, error: result.error };
 }

@@ -7,6 +7,14 @@ import type { ActionResult } from '@/types/database';
 
 import { sendPushNotification } from '@/lib/onesignal-server';
 
+// Importaciones de la Arquitectura Limpia
+import { TareaService } from '@/core/services/TareaService';
+import { SupabaseTareaRepository } from '@/infrastructure/persistence/SupabaseTareaRepository';
+
+function getTareaService() {
+  return new TareaService(new SupabaseTareaRepository());
+}
+
 export async function marcarHitoCompletado(
   expedienteId: string,
   hitoId: string,
@@ -19,58 +27,14 @@ export async function marcarHitoCompletado(
     return { success: false, error: 'No autorizado' };
   }
 
-  // Verificar que el expediente pertenece a esta abogada
-  const { data: exp } = await supabase
-    .from('expedientes')
-    .select('id, nombre_empresa')
-    .eq('id', expedienteId)
-    .eq('asesora_id', user.id)
-    .single();
+  const service = getTareaService();
+  const result = await service.marcarHitoCompletado(user.id, expedienteId, hitoId, completado);
 
-  if (!exp) {
-    return { success: false, error: 'No tienes permisos sobre este expediente.' };
-  }
-
-  // Usar admin client para bypasear RLS en seguimiento_tareas
-  const adminClient = createAdminClient();
-
-  try {
-    if (completado) {
-      const { error } = await adminClient
-        .from('seguimiento_tareas')
-        .upsert(
-          {
-            expediente_id: expedienteId,
-            hito_id: parseInt(hitoId),
-            estatus: 'completado',
-            fecha_completado: new Date().toISOString(),
-          },
-          { onConflict: 'expediente_id, hito_id' }
-        );
-
-      if (error) throw error;
-    } else {
-      const { error } = await adminClient
-        .from('seguimiento_tareas')
-        .upsert(
-          {
-            expediente_id: expedienteId,
-            hito_id: parseInt(hitoId),
-            estatus: 'pendiente',
-            fecha_completado: null,
-          },
-          { onConflict: 'expediente_id, hito_id' }
-        );
-
-      if (error) throw error;
-    }
-
+  if (result.success) {
     revalidatePath('/abogada');
-    return { success: true };
-  } catch (error) {
-    console.error('Error al actualizar hito:', error);
-    return { success: false, error: 'Ocurrió un error al actualizar el hito.' };
   }
+
+  return result;
 }
 
 export async function agregarNotaBitacora(
@@ -83,52 +47,14 @@ export async function agregarNotaBitacora(
     return { success: false, error: 'No autorizado' };
   }
 
-  const expedienteId = formData.get('expediente_id') as string;
-  const nota = formData.get('nota') as string;
-  const fechaProximo = formData.get('fecha_proximo_seguimiento') as string;
-  const hora = formData.get('hora') as string | null;
+  const service = getTareaService();
+  const result = await service.agregarNotaBitacora(user.id, formData);
 
-  if (!expedienteId || !nota.trim() || !fechaProximo) {
-    return { success: false, error: 'Faltan campos obligatorios.' };
-  }
-
-  // Verificar que el expediente pertenece a esta abogada
-  const { data: exp } = await supabase
-    .from('expedientes')
-    .select('id')
-    .eq('id', expedienteId)
-    .eq('asesora_id', user.id)
-    .single();
-
-  if (!exp) {
-    return { success: false, error: 'No tienes permisos sobre este expediente.' };
-  }
-
-  try {
-    const { error } = await supabase.from('bitacora').insert({
-      expediente_id: expedienteId,
-      autor_id: user.id,
-      nota: nota.trim(),
-      fecha_proximo_seguimiento: fechaProximo,
-      ...(hora ? { hora } : {}),
-    });
-
-    if (error) throw error;
-
-    // NOTIFICACIÓN DE RECORDATORIO AGENDADO (Para la propia abogada)
-    await sendPushNotification({
-      userIds: [user.id],
-      title: 'Seguimiento Agendado',
-      message: `Se ha registrado tu nota. Recuerda el próximo seguimiento para el día ${fechaProximo}.`,
-      url: `/abogada/expediente/${expedienteId}`
-    });
-
+  if (result.success) {
     revalidatePath('/abogada');
-    return { success: true };
-  } catch (error) {
-    console.error('Error al agregar nota:', error);
-    return { success: false, error: 'Ocurrió un error al agregar la nota.' };
   }
+
+  return result;
 }
 
 export async function guardarDatosConcentrado(

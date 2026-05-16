@@ -24,7 +24,22 @@ Este documento resume las optimizaciones, cambios estructurales y decisiones té
 *   **Diseño Premium:** Implementación de una paleta de colores azul pastel, layouts *full-width* (horizontal) y adaptabilidad responsiva total.
 *   **Micro-interacciones:** Avisos visuales para servicios que requieren "Cotización Contable" (Regularización) y estados de carga en botones.
 
-## 3. Estado Actual y Siguientes Pasos
+## 3. Arquitectura del Sistema (Clean Architecture)
+
+Se ha implementado una **Arquitectura Limpia (Clean Architecture)** para garantizar que el proyecto sea escalable, fácil de mantener e independiente de proveedores externos.
+
+### Estructura de Capas:
+*   **🧠 Dominio (`src/core/domain`):** El corazón del negocio. Contiene las interfaces (contratos) y tipos de datos que definen qué hace el sistema.
+*   **⚙️ Aplicación (`src/core/services`):** Casos de uso y lógica de orquestación. Aquí reside el "cerebro" que decide el flujo de los expedientes y contratos.
+*   **🔌 Infraestructura (`src/infrastructure`):** Detalles técnicos. Implementaciones reales de Supabase (persistencia), Cloudflare R2 (almacenamiento) y OneSignal (notificaciones).
+*   **🖼️ Presentación (`src/app`, `src/actions`):** Interfaz de usuario y controladores (Server Actions) delgados que delegan la lógica a los servicios.
+
+### Beneficios:
+*   **Desacoplamiento:** Las herramientas externas (como OneSignal o Supabase) pueden ser reemplazadas sin afectar la lógica de negocio central.
+*   **Mantenibilidad:** Cada función tiene un lugar único y predecible.
+*   **Robustez:** Se eliminó la lógica compleja de los *Server Actions*, convirtiéndolos en puentes simples hacia los servicios.
+
+## 4. Estado Actual y Siguientes Pasos
 
 ### Estado: Operativo
 *   El sistema permite el registro, generación de contrato, firma digital del cliente, validación de la directora y asignación de abogada.

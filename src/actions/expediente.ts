@@ -5,6 +5,11 @@ import { revalidatePath } from 'next/cache';
 import { sendPushNotification } from '@/lib/onesignal-server';
 import type { ActionResult, CrearExpedienteForm } from '@/types/database';
 
+// Importaciones de la nueva arquitectura
+import { ExpedienteService } from '@/core/services/ExpedienteService';
+import { SupabaseExpedienteRepository } from '@/infrastructure/persistence/SupabaseExpedienteRepository';
+import { SupabaseUserRepository } from '@/infrastructure/persistence/SupabaseUserRepository';
+
 interface DatosPersonales {
   nombre_completo: string;
   telefono?: string;
@@ -17,161 +22,27 @@ interface DatosPersonales {
   folio_ine?: string;
 }
 
+// Factoría rápida para el servicio (podría moverse a un archivo de configuración)
+function getExpedienteService() {
+  const expedienteRepo = new SupabaseExpedienteRepository();
+  const userRepo = new SupabaseUserRepository();
+  return new ExpedienteService(expedienteRepo, userRepo);
+}
+
 /**
- * Crea un expediente completo:
- * 1. Crea usuario auth (pasa metadatos legales para el trigger)
- * 2. Actualiza perfil con toda la información legal
- * 3. Crea expediente + contrato
+ * Crea un expediente completo usando la Arquitectura Limpia.
  */
 export async function crearExpedienteCompleto(
   datosPersonales: DatosPersonales,
   form: CrearExpedienteForm
 ): Promise<ActionResult<{ expediente_id: string; user_id: string }>> {
-  try {
-    const supabase = createAdminClient();
-
-    // Validaciones
-    if (!datosPersonales.nombre_completo?.trim()) {
-      return { success: false, error: 'El nombre completo es requerido.' };
-    }
-    if (!datosPersonales.rfc?.trim()) {
-      return { success: false, error: 'El RFC es obligatorio para el contrato.' };
-    }
-    if (!datosPersonales.curp?.trim()) {
-      return { success: false, error: 'La CURP es obligatoria para el contrato.' };
-    }
-    if (!datosPersonales.estado_civil?.trim()) {
-      return { success: false, error: 'El estado civil es obligatorio para el contrato.' };
-    }
-    if (!datosPersonales.domicilio_completo?.trim()) {
-      return { success: false, error: 'El domicilio completo es necesario para las declaraciones.' };
-    }
-    if (!form.nombre_empresa?.trim()) {
-      return { success: false, error: 'El nombre de la empresa es requerido.' };
-    }
-    if (!form.figura_id) {
-      return { success: false, error: 'Debes seleccionar un tipo de figura legal.' };
-    }
-    if (!form.plan_pagos) {
-      return { success: false, error: 'Debes seleccionar un plan de pagos.' };
-    }
-
-    // 1. Crear usuario en auth.users
-    const nombre = datosPersonales.nombre_completo.trim();
-    const fakeEmail = `${nombre.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)}_${Date.now()}@cecani.temp`;
-
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
-        email: fakeEmail,
-        email_confirm: true,
-        user_metadata: {
-          nombre_completo: nombre,
-          telefono: datosPersonales.telefono?.trim() || '',
-          estado: datosPersonales.estado?.trim() || '',
-          estado_civil: datosPersonales.estado_civil?.trim() || '',
-          rol: 'cliente',
-        },
-      });
-
-    if (authError || !authData.user) {
-      return {
-        success: false,
-        error: `Error al registrar: ${authError?.message || 'No se pudo crear el usuario'}`,
-      };
-    }
-
-    const userId = authData.user.id;
-
-    // 2. Verificar/actualizar perfil con TODOS los campos legales
-    const updateData = {
-      telefono: datosPersonales.telefono?.trim() || null,
-      estado: datosPersonales.estado?.trim() || null,
-      rfc: datosPersonales.rfc?.trim().toUpperCase() || null,
-      curp: datosPersonales.curp?.trim().toUpperCase() || null,
-      ocupacion: datosPersonales.ocupacion?.trim() || null,
-      estado_civil: datosPersonales.estado_civil?.trim() || null,
-      domicilio_completo: datosPersonales.domicilio_completo?.trim() || null,
-      folio_ine: datosPersonales.folio_ine?.trim() || null,
-    };
-
-    const { data: perfilExiste } = await supabase
-      .from('perfiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (perfilExiste) {
-      await supabase.from('perfiles').update(updateData).eq('id', userId);
-    } else {
-      const { error: perfilError } = await supabase.from('perfiles').insert({
-        id: userId,
-        rol: 'cliente',
-        nombre_completo: nombre,
-        ...updateData
-      });
-
-      if (perfilError) {
-        await supabase.auth.admin.deleteUser(userId);
-        return { success: false, error: `Error al crear perfil: ${perfilError.message}` };
-      }
-    }
-
-    // 3. Crear expediente
-    const { data: expediente, error: expError } = await supabase
-      .from('expedientes')
-      .insert({
-        cliente_id: userId,
-        figura_id: form.figura_id,
-        nombre_empresa: form.nombre_empresa.trim(),
-        estatus: 'en_registro',
-        tipo_tramite: form.tipo_tramite,
-        servicios_extra: form.servicios_extra || [],
-      })
-      .select('id')
-      .single();
-
-    if (expError || !expediente) {
-      await supabase.from('perfiles').delete().eq('id', userId);
-      await supabase.auth.admin.deleteUser(userId);
-      return {
-        success: false,
-        error: `Error al crear expediente: ${expError?.message}`,
-      };
-    }
-
-    // 4. Crear contrato vinculado
-    const { error: contratoError } = await supabase.from('contratos').insert({
-      expediente_id: expediente.id,
-      plan_pagos: form.plan_pagos,
-      monto_total: form.monto_total || 0,
-      servicio_base: form.servicio_base,
-      modulos_extra: form.modulos_extra,
-    });
-
-    if (contratoError) {
-      await supabase.from('expedientes').delete().eq('id', expediente.id);
-      await supabase.from('perfiles').delete().eq('id', userId);
-      await supabase.auth.admin.deleteUser(userId);
-      return {
-        success: false,
-        error: `Error al crear contrato: ${contratoError.message}`,
-      };
-    }
-
-    return {
-      success: true,
-      data: { expediente_id: expediente.id, user_id: userId },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
-    };
-  }
+  const service = getExpedienteService();
+  return service.registrarNuevoClienteConExpediente(datosPersonales, form);
 }
 
 /**
  * Actualiza el estatus de un expediente.
+ * (Pendiente de mover a Service e Infrastructure)
  */
 export async function actualizarEstatusExpediente(
   expedienteId: string,
@@ -229,8 +100,8 @@ export async function actualizarEstatusExpediente(
 }
 
 /**
- * Obtiene los datos completos del dashboard evadiendo RLS 
- * (necesario ya que el usuario no tiene login activo por contraseña).
+ * Obtiene los datos completos del dashboard.
+ * (Pendiente de mover a Service e Infrastructure)
  */
 export async function obtenerDashboardData(clienteId: string) {
   try {
@@ -270,11 +141,8 @@ export async function obtenerDashboardData(clienteId: string) {
 }
 
 /**
- * Actualiza un expediente completo:
- * 1. Actualiza perfil
- * 2. Actualiza auth.users metadata
- * 3. Actualiza expediente
- * 4. Actualiza contrato
+ * Actualiza un expediente completo.
+ * (Pendiente de mover a Service e Infrastructure)
  */
 export async function actualizarExpedienteCompleto(
   userId: string,
@@ -284,32 +152,6 @@ export async function actualizarExpedienteCompleto(
 ): Promise<ActionResult> {
   try {
     const supabase = createAdminClient();
-
-    // Validaciones
-    if (!datosPersonales.nombre_completo?.trim()) {
-      return { success: false, error: 'El nombre completo es requerido.' };
-    }
-    if (!datosPersonales.rfc?.trim()) {
-      return { success: false, error: 'El RFC es obligatorio para el contrato.' };
-    }
-    if (!datosPersonales.curp?.trim()) {
-      return { success: false, error: 'La CURP es obligatoria para el contrato.' };
-    }
-    if (!datosPersonales.estado_civil?.trim()) {
-      return { success: false, error: 'El estado civil es obligatorio para el contrato.' };
-    }
-    if (!datosPersonales.domicilio_completo?.trim()) {
-      return { success: false, error: 'El domicilio completo es necesario para las declaraciones.' };
-    }
-    if (!form.nombre_empresa?.trim()) {
-      return { success: false, error: 'El nombre de la empresa es requerido.' };
-    }
-    if (!form.figura_id) {
-      return { success: false, error: 'Debes seleccionar un tipo de figura legal.' };
-    }
-    if (!form.plan_pagos) {
-      return { success: false, error: 'Debes seleccionar un plan de pagos.' };
-    }
 
     // 1. Actualizar perfil
     const { error: perfilError } = await supabase
@@ -378,4 +220,3 @@ export async function actualizarExpedienteCompleto(
     };
   }
 }
-

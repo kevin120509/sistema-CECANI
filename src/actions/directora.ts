@@ -1,103 +1,33 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { revalidatePath } from 'next/cache';
 import { sendPushNotification } from '@/lib/onesignal-server';
 import { subirArchivoR2 } from '@/lib/r2';
 
+// Importaciones de la Arquitectura Limpia
+import { AuthService } from '@/core/services/AuthService';
+import { SupabaseAuthAdapter } from '@/infrastructure/external/SupabaseAuthAdapter';
+
+function getAuthService() {
+  return new AuthService(new SupabaseAuthAdapter());
+}
+
 export async function loginDirectora(formData: FormData): Promise<{ success?: boolean; error?: string }> {
-  try {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    if (!email || !password) {
-      return { error: 'Correo y contraseña son obligatorios.' };
-    }
-
-    const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      return { error: 'Credenciales inválidas: ' + authError.message };
-    }
-
-    if (!authData.user) {
-      return { error: 'No se pudo recuperar la información del usuario.' };
-    }
-
-    // VERIFICACIÓN DE ROL CRÍTICA
-    const adminSupabase = createAdminClient();
-    const { data: perfil, error: perfilError } = await adminSupabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', authData.user.id)
-      .single();
-
-    if (perfilError || !perfil) {
-      await supabase.auth.signOut();
-      return { error: 'Tu cuenta no tiene un perfil configurado en la base de datos.' };
-    }
-
-    if (perfil.rol !== 'directora') {
-      await supabase.auth.signOut();
-      return { error: 'Acceso denegado: Esta cuenta no tiene rol de directora.' };
-    }
-
+  const service = getAuthService();
+  const result = await service.loginDirectora(formData);
+  
+  if (result.success) {
     revalidatePath('/directora');
-    return { success: true };
-  } catch (error: any) {
-    console.error('Login Error:', error);
-    return { error: 'Error inesperado al iniciar sesión.' };
   }
+  
+  return result;
 }
 
 export async function registrarDirectora(formData: FormData): Promise<{ success?: boolean; error?: string }> {
-  try {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const nombre = formData.get('nombre') as string;
-
-    if (!email || !password || !nombre) {
-      return { error: 'Todos los campos son obligatorios.' };
-    }
-
-    const supabase = await createClient();
-    
-    // 1. Registrar en Supabase Auth con metadatos
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          nombre_completo: nombre,
-          rol: 'directora'
-        }
-      }
-    });
-
-    if (authError) return { error: 'Error al registrar: ' + authError.message };
-    if (!authData.user) return { error: 'No se pudo crear el usuario.' };
-
-    // 2. Forzar el perfil en la tabla (por si el trigger tarda o falla)
-    const adminSupabase = createAdminClient();
-    const { error: perfilError } = await adminSupabase
-      .from('perfiles')
-      .upsert({
-        id: authData.user.id,
-        nombre_completo: nombre,
-        rol: 'directora'
-      });
-
-    if (perfilError) console.error('Error perfil:', perfilError);
-
-    return { success: true };
-  } catch (error: any) {
-    return { error: 'Error inesperado: ' + error.message };
-  }
+  const service = getAuthService();
+  return await service.registrarDirectora(formData);
 }
 
 export async function enviarContratoCliente(formData: FormData): Promise<{ success?: boolean; error?: string }> {
