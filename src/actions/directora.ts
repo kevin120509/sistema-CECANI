@@ -273,26 +273,36 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
       return { error: 'Faltan datos obligatorios para la asignación.' };
     }
 
-    // 1. Insertar en la tabla relacional (Muchos a Muchos)
-    const { error: relError } = await adminSupabase
-      .from('expediente_asesoras')
-      .upsert({
-        expediente_id: expedienteId,
-        asesora_id: asesoraId
-      }, { onConflict: 'expediente_id, asesora_id' });
-
-    if (relError) throw new Error(`Fallo en relación de asesora: ${relError.message}`);
-
-    // 2. Transacción: Actualizar Expediente (Legacy asesora_id para filtros antiguos y estatus)
+    // 1. PRIMERO ACTUALIZAR LEGACY (Asegura que el sistema funcione y el cliente se mueva de pestaña)
     const { error: expError } = await adminSupabase
       .from('expedientes')
       .update({
-        asesora_id: asesoraId, // Mantenemos el último asignado como principal
+        asesora_id: asesoraId, 
         estatus: 'en_proceso'
       })
       .eq('id', expedienteId);
 
-    if (expError) throw new Error(`Fallo actualizando el expediente: ${expError.message}`);
+    if (expError) {
+      console.error('Legacy Assignment Error:', expError);
+      throw new Error(`Fallo actualizando el expediente: ${expError.message}`);
+    }
+
+    // 2. SEGUNDO: Intentar insertar en la tabla relacional (Muchos a Muchos)
+    // No bloqueamos el éxito de la acción si esta tabla aún no está lista
+    try {
+      const { error: relError } = await adminSupabase
+        .from('expediente_asesoras')
+        .upsert({
+          expediente_id: expedienteId,
+          asesora_id: asesoraId
+        }, { onConflict: 'expediente_id,asesora_id' });
+
+      if (relError) {
+        console.warn('Relational table update failed (Non-critical):', relError.message);
+      }
+    } catch (e) {
+      console.warn('Relational update caught error (Non-critical)');
+    }
 
     // NOTIFICACIÓN A LA ABOGADA
     await sendPushNotification({

@@ -325,14 +325,22 @@ export default function DirectorDashboard({
                   {(activeTab === 'por_asignar' ? porAsignar : filteredConcentrado).map((exp) => (
                     <tr key={exp.id} className="group hover:bg-slate-50/5 transition-colors">
                       <td className="px-6 py-6 align-top">
-                        <div className="flex flex-col gap-2">
-                          <div>
-                            <p className="text-lg font-black text-slate-900 leading-none uppercase break-words max-w-[400px] line-clamp-3">{exp.nombre_empresa || 'SIN NOMBRE'}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{exp.cliente?.nombre_completo || 'SIN TITULAR'}</p>
+                        <div className="flex flex-col gap-3">
+                          <div className="space-y-1">
+                            <p className="text-lg font-black text-slate-900 uppercase break-words max-w-[450px] leading-tight">
+                              {exp.nombre_empresa || 'SIN NOMBRE'}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              {exp.cliente?.nombre_completo || 'SIN TITULAR'}
+                            </p>
                           </div>
-                          <div className="flex flex-wrap gap-2 items-center mt-1">
-                            <span className="text-[8px] font-black uppercase px-3 py-1 bg-sky-50 text-sky-600 border border-sky-100 rounded-lg break-words max-w-[200px]">{exp.figura?.descripcion || 'Genérica'}</span>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-slate-100 px-2 py-1 rounded-lg">{(exp.estatus || 'EN_PROCESO').replace(/_/g, ' ')}</span>
+                          <div className="flex flex-wrap gap-2 items-center">
+                            <span className="text-[8px] font-black uppercase px-3 py-1.5 bg-sky-50 text-sky-600 border border-sky-100 rounded-lg max-w-[250px] leading-relaxed">
+                              {exp.figura?.descripcion || 'FIGURA NO DEFINIDA'}
+                            </span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">
+                              {(exp.estatus || 'EN_PROCESO').replace(/_/g, ' ')}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -464,7 +472,21 @@ export default function DirectorDashboard({
                  </section>
                  <section className="bg-slate-950 rounded-[2rem] p-8 md:p-10 text-white text-center space-y-8">
                    <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Designar Asesora</h3>
-                   <form onSubmit={async (e) => { e.preventDefault(); startTransition(async () => { const fd = new FormData(); fd.append('expediente_id', selectedExpediente.id); fd.append('asesora_id', asesoraId); const res = await asignarAbogada(fd); if (res.success) setIsAssignModalOpen(false); }); }} className="space-y-4 max-w-sm mx-auto">
+                      <form onSubmit={async (e) => { 
+                        e.preventDefault(); 
+                        startTransition(async () => { 
+                          const fd = new FormData(); 
+                          fd.append('expediente_id', selectedExpediente.id); 
+                          fd.append('asesora_id', asesoraId); 
+                          const res = await asignarAbogada(fd); 
+                          if (res.success) {
+                            setIsAssignModalOpen(false);
+                            setAsesoraId(''); // Limpiar selección
+                          } else {
+                            alert('Error: ' + res.error);
+                          }
+                        }); 
+                      }} className="space-y-4 max-w-sm mx-auto">
                       <select required value={asesoraId} onChange={e => setAsesoraId(e.target.value)} className="w-full p-5 bg-white/5 border-2 border-white/10 rounded-2xl font-black text-xs uppercase outline-none focus:border-sky-500 text-white appearance-none text-center">
                         <option value="" className="bg-slate-900">Seleccionar...</option>
                         {abogadas.map(a => <option key={a.id} value={a.id} className="bg-slate-900">{a.nombre_completo}</option>)}
