@@ -31,52 +31,49 @@ export default async function DirectoraPage() {
   }
 
   // 1. Obtener Abogadas (Para el <select> de Asignación)
+  // Buscamos asesora, abogada o incluso admin para asegurar que la lista tenga opciones si se crearon con roles distintos
   const { data: abogadasData } = await supabaseAdmin
     .from('perfiles')
     .select('id, nombre_completo')
     .or('rol.eq.asesora,rol.eq.abogada,rol.eq.admin');
 
-  // 2. Expedientes Pendientes de Asignar (solo columnas necesarias para la tabla)
-  const { data: asignarData } = await supabaseAdmin
+  // 2. Obtener Expedientes Pendientes de Asignar (Sin importar estatus, solo que no tengan asesora)
+  const { data: asignarData, error: asignarError } = await supabaseAdmin
     .from('expedientes')
     .select(`
-      id,
-      cliente_id,
-      nombre_empresa,
-      estatus,
-      created_at,
-      servicios_extra,
-      perfiles!cliente_id(nombre_completo),
+      *,
+      cliente:perfiles!cliente_id(*),
       figura:catalogo_figuras(descripcion),
-      contratos(id, monto_total, url_pdf_generado, url_pdf_firmado_cliente, url_pdf_doble_firma, plan_pagos, servicio_base, modulos_extra),
-      documentos(tipo, url_archivo),
-      pagos(monto, url_comprobante, fecha_pago)
+      contratos(*),
+      documentos(*),
+      pagos(*),
+      datos_concentrado(vendedora)
     `)
     .is('asesora_id', null)
     .order('created_at', { ascending: false });
 
-  // 3. Concentrado Global (OPTIMIZADO: solo columnas de tabla, sin relaciones pesadas)
-  const { data: concentradoData } = await supabaseAdmin
+  if (asignarError) console.error('Error fetching asignarData:', asignarError);
+
+  // 4. Obtener Concentrado Global (Optimizado para volumen masivo)
+  const { data: concentradoData, error: concentradoError } = await supabaseAdmin
     .from('expedientes')
     .select(`
-      id,
-      cliente_id,
-      nombre_empresa,
-      estatus,
-      created_at,
-      servicios_extra,
-      perfiles!cliente_id(nombre_completo),
+      *,
+      cliente:perfiles!cliente_id(*),
       asesora:perfiles!asesora_id(id, nombre_completo),
-      figura:catalogo_figuras(descripcion)
+      figura:catalogo_figuras(descripcion),
+      datos_concentrado(vendedora)
     `)
     .order('created_at', { ascending: false });
+
+  if (concentradoError) console.error('Error fetching concentradoData:', concentradoError);
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 py-8">
       <DirectorDashboard 
         abogadas={abogadasData || []} 
-        porAsignar={(asignarData || []) as any}
-        concentrado={(concentradoData || []) as any} 
+        porAsignar={asignarData || []}
+        concentrado={concentradoData || []} 
       />
     </main>
   );

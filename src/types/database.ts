@@ -55,7 +55,7 @@ export interface Perfil {
 export interface Expediente {
   id: string;
   cliente_id: string;
-  asesora_id: string | null;
+  asesora_id: string | null; // Mantenemos por compatibilidad legacy, pero usaremos expediente_asesoras
   figura_id: number;
   nombre_empresa: string;
   estatus: EstatusExpediente;
@@ -66,9 +66,19 @@ export interface Expediente {
 
   // Relaciones (Opcionales)
   perfil?: Perfil;
+  cliente?: Perfil;
   figura?: CatalogoFigura;
   contratos?: Contrato[];
   documentos?: Documento[];
+  expediente_asesoras?: ExpedienteAsesora[];
+}
+
+export interface ExpedienteAsesora {
+  id: string;
+  expediente_id: string;
+  asesora_id: string;
+  asesora?: Perfil;
+  created_at: string;
 }
 
 export interface Contrato {

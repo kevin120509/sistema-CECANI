@@ -273,11 +273,21 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
       return { error: 'Faltan datos obligatorios para la asignación.' };
     }
 
-    // Transacción: Actualizar Expediente y asignar
+    // 1. Insertar en la tabla relacional (Muchos a Muchos)
+    const { error: relError } = await adminSupabase
+      .from('expediente_asesoras')
+      .upsert({
+        expediente_id: expedienteId,
+        asesora_id: asesoraId
+      }, { onConflict: 'expediente_id, asesora_id' });
+
+    if (relError) throw new Error(`Fallo en relación de asesora: ${relError.message}`);
+
+    // 2. Transacción: Actualizar Expediente (Legacy asesora_id para filtros antiguos y estatus)
     const { error: expError } = await adminSupabase
       .from('expedientes')
       .update({
-        asesora_id: asesoraId,
+        asesora_id: asesoraId, // Mantenemos el último asignado como principal
         estatus: 'en_proceso'
       })
       .eq('id', expedienteId);
