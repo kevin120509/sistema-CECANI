@@ -75,4 +75,43 @@ export class SupabaseExpedienteRepository implements IExpedienteRepository {
     if (error) return null;
     return data;
   }
+
+  async actualizarExpedienteYContrato(
+    expedienteId: string,
+    form: CrearExpedienteForm
+  ): Promise<void> {
+    const supabase = createAdminClient();
+
+    // 1. Actualizar expediente
+    const { error: expError } = await supabase
+      .from('expedientes')
+      .update({
+        figura_id: form.figura_id,
+        nombre_empresa: form.nombre_empresa.trim(),
+        tipo_tramite: form.tipo_tramite,
+        servicios_extra: form.servicios_extra || [],
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', expedienteId);
+
+    if (expError) {
+      throw new Error(`Error al actualizar expediente: ${expError.message}`);
+    }
+
+    // 2. Actualizar contrato (plan_pagos)
+    const { error: contratoError } = await supabase
+      .from('contratos')
+      .update({
+        plan_pagos: form.plan_pagos,
+        monto_total: form.monto_total || 0,
+        servicio_base: form.servicio_base,
+        modulos_extra: form.modulos_extra,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('expediente_id', expedienteId);
+
+    if (contratoError) {
+      throw new Error(`Error al actualizar contrato: ${contratoError.message}`);
+    }
+  }
 }

@@ -1,23 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+'use client';
+
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { crearExpedienteCompleto, actualizarExpedienteCompleto } from '@/actions/expediente';
 import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato, TipoTramite } from '@/types/database';
 import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, 
-  Phone, 
-  MapPin, 
-  Building2, 
-  Scale, 
-  CreditCard, 
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  Calculator,
-  FileText,
-  Briefcase,
-  Users,
-  AlertCircle
+  User, Phone, MapPin, Building2, Scale, CreditCard, 
+  ArrowRight, CheckCircle2, Loader2, Calculator, 
+  FileText, Briefcase, AlertCircle, Sparkles, Users, ChevronLeft
 } from 'lucide-react';
 
 interface Paso1Props {
@@ -29,6 +20,13 @@ interface Paso1Props {
   onComplete: () => Promise<void>;
 }
 
+/**
+ * Componente: Paso1CrearProyecto
+ * Habilidades Aplicadas: 
+ * - next-best-practices (React 19)
+ * - frontend-design (Luxury Premium Aesthetic)
+ * - tailwind-css-patterns (Shadows & Fluid Layout)
+ */
 export default function Paso1CrearProyecto({
   figuras,
   userId,
@@ -37,26 +35,30 @@ export default function Paso1CrearProyecto({
   contrato,
   onComplete,
 }: Paso1Props) {
-  // Datos Personales y Legales
-  const [nombreCompleto, setNombreCompleto] = useState(perfil?.nombre_completo || '');
-  const [telefono, setTelefono] = useState(perfil?.telefono || '');
-  const [estado, setEstado] = useState(perfil?.estado || '');
-  const [rfc, setRfc] = useState(perfil?.rfc || '');
-  const [curp, setCurp] = useState(perfil?.curp || '');
-  const [ocupacion, setOcupacion] = useState(perfil?.ocupacion || '');
-  const [estadoCivil, setEstadoCivil] = useState(perfil?.estado_civil || '');
-  const [domicilioCompleto, setDomicilioCompleto] = useState(perfil?.domicilio_completo || '');
+  // --- Estados Locales ---
+  const [subStep, setSubStep] = useState(1);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  // Datos de la Empresa
-  const [nombreEmpresa, setNombreEmpresa] = useState(expediente?.nombre_empresa || '');
-  const [figuraId, setFiguraId] = useState<number | ''>(expediente?.figura_id || '');
-  const [planPagos, setPlanPagos] = useState<PlanPagos | ''>(contrato?.plan_pagos || '');
-  
-  // Estados para la Calculadora Modular
-  const [servicioBaseId, setServicioBaseId] = useState<string>(contrato?.servicio_base || '');
-  const [extrasSeleccionados, setExtrasSeleccionados] = useState<string[]>(contrato?.modulos_extra || []);
+  // --- Form State ---
+  const [formData, setFormData] = useState({
+    nombreCompleto: perfil?.nombre_completo || '',
+    telefono: perfil?.telefono || '',
+    estado: perfil?.estado || '',
+    rfc: perfil?.rfc || '',
+    curp: perfil?.curp || '',
+    ocupacion: perfil?.ocupacion || '',
+    estadoCivil: perfil?.estado_civil || '',
+    domicilioCompleto: perfil?.domicilio_completo || '',
+    nombreEmpresa: expediente?.nombre_empresa || '',
+    figuraId: expediente?.figura_id || ('' as number | ''),
+    planPagos: contrato?.plan_pagos || ('' as PlanPagos | ''),
+    servicioBaseId: contrato?.servicio_base || '',
+    extrasSeleccionados: contrato?.modulos_extra || ([] as string[]),
+  });
 
-  // Estados para preguntas del tipo de trámite
+  // --- Lógica de Trámite ---
   const [tieneActa, setTieneActa] = useState<boolean | null>(
     expediente?.tipo_tramite ? (expediente.tipo_tramite !== 'CONSTITUCION') : null
   );
@@ -65,605 +67,440 @@ export default function Paso1CrearProyecto({
     expediente?.tipo_tramite === 'EXTRAORDINARIA' ? false : null
   );
 
-  let tipoTramite: TipoTramite | undefined = undefined;
-  if (tieneActa === false) tipoTramite = 'CONSTITUCION';
-  else if (tieneActa === true && necesitaRenovar === true) tipoTramite = 'RECUPERACION';
-  else if (tieneActa === true && necesitaRenovar === false) tipoTramite = 'EXTRAORDINARIA';
+  const tipoTramite = useMemo((): TipoTramite | undefined => {
+    if (tieneActa === false) return 'CONSTITUCION';
+    if (tieneActa === true && necesitaRenovar === true) return 'RECUPERACION';
+    if (tieneActa === true && necesitaRenovar === false) return 'EXTRAORDINARIA';
+    return undefined;
+  }, [tieneActa, necesitaRenovar]);
 
   useEffect(() => {
-    if (tipoTramite === 'CONSTITUCION') setServicioBaseId('constitucion');
-    else if (tipoTramite === 'RECUPERACION') setServicioBaseId('recuperacion');
-    else if (tipoTramite === 'EXTRAORDINARIA') setServicioBaseId('acta_extra');
-    else setServicioBaseId('');
+    const baseId = tipoTramite === 'CONSTITUCION' ? 'constitucion' : 
+                   tipoTramite === 'RECUPERACION' ? 'recuperacion' : 
+                   tipoTramite === 'EXTRAORDINARIA' ? 'acta_extra' : '';
+    setFormData(prev => ({ ...prev, servicioBaseId: baseId }));
   }, [tipoTramite]);
 
-  const [subStep, setSubStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const esPagoContado = planPagos === 'unico';
-
+  // --- Calculadora ---
   const presupuestoTotal = useMemo(() => {
     let total = 0;
+    const { servicioBaseId, extrasSeleccionados, planPagos } = formData;
+    const esPagoContado = planPagos === 'unico';
     
-    // 1. Calcular Base
     const base = Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId);
-    if (base) {
-      total += esPagoContado ? base.precioEspecial : base.precioLista;
-    }
+    if (base) total += esPagoContado ? base.precioEspecial : base.precioLista;
 
-    // 2. Calcular Extras con reglas lógicas
     extrasSeleccionados.forEach(extraId => {
       const extra = Object.values(SERVICIOS_EXTRAS).find(e => e.id === extraId);
       if (!extra) return;
-
       if (extraId === 'cluni') {
-        // Regla: $10,000 si es paquete con trámite mayor, $11,600 independiente
         const esPaquete = ['constitucion', 'acta_extra'].includes(servicioBaseId);
         total += esPaquete ? 10000 : 11600;
       } else if (extraId === 'web') {
-        // Regla: $4,999 + 16% IVA
         total += 4999 * 1.16;
       } else {
         total += extra.precio;
       }
     });
-
     return Math.round(total);
-  }, [servicioBaseId, extrasSeleccionados, esPagoContado]);
+  }, [formData]);
 
-  const toggleExtra = (id: string) => {
-    setExtrasSeleccionados(prev => 
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  // --- Handlers ---
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const validateSubStep = (step: number) => {
-    setError(null);
+  const validate = (step: number) => {
+    setLocalError(null);
+    const f = formData;
     if (step === 1) {
-      if (!nombreCompleto.trim()) { setError('El nombre completo es requerido.'); return false; }
-      if (!telefono.trim()) { setError('El teléfono es necesario para contactarte.'); return false; }
-      if (!rfc.trim()) { setError('El RFC es obligatorio para el contrato.'); return false; }
-      if (!curp.trim()) { setError('La CURP es obligatoria.'); return false; }
-      if (!estadoCivil.trim()) { setError('El estado civil es obligatorio para el contrato.'); return false; }
-      if (!domicilioCompleto.trim()) { setError('El domicilio completo es necesario para las declaraciones.'); return false; }
+      if (!f.nombreCompleto.trim() || !f.telefono.trim() || !f.rfc.trim()) {
+        setLocalError('Por favor completa los campos obligatorios marcados con *');
+        return false;
+      }
     } else if (step === 2) {
-      if (!nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido.'); return false; }
-      if (!figuraId) { setError('Selecciona un tipo de figura legal.'); return false; }
-      if (!planPagos) { setError('Selecciona un plan de pagos.'); return false; }
-    } else if (step === 3) {
-      if (!servicioBaseId) { setError('Selecciona el servicio principal antes de finalizar.'); return false; }
+      if (!f.nombreEmpresa.trim() || !f.figuraId || !f.planPagos) {
+        setLocalError('La configuración de la empresa y el plan de pagos son requeridos.');
+        return false;
+      }
     }
     return true;
   };
 
-  const handleNext = () => {
-    if (validateSubStep(subStep)) {
-      setSubStep(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
+  const handleSubmit = () => {
+    if (!validate(3)) return;
 
-  const handlePrev = () => {
-    setSubStep(prev => prev - 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateSubStep(3)) return;
-
-    setIsLoading(true);
-
-    try {
+    startTransition(async () => {
       const dataPersonales = {
-        nombre_completo: nombreCompleto,
-        telefono,
-        estado,
-        rfc,
-        curp,
-        ocupacion,
-        estado_civil: estadoCivil,
-        domicilio_completo: domicilioCompleto,
+        nombre_completo: formData.nombreCompleto,
+        telefono: formData.telefono,
+        estado: formData.estado,
+        rfc: formData.rfc,
+        curp: formData.curp,
+        ocupacion: formData.ocupacion,
+        estado_civil: formData.estadoCivil,
+        domicilio_completo: formData.domicilioCompleto,
       };
 
-      const serviciosExtraMapped = [];
-      if (extrasSeleccionados.includes('web')) serviciosExtraMapped.push('WEB');
-      if (extrasSeleccionados.includes('cluni')) serviciosExtraMapped.push('CLUNI');
-      if (extrasSeleccionados.includes('regularizacion')) serviciosExtraMapped.push('REGULARIZACION');
-      if (extrasSeleccionados.includes('informe_anual')) serviciosExtraMapped.push('INFORME_ANUAL');
-      if (extrasSeleccionados.includes('cambio_rep')) serviciosExtraMapped.push('CAMBIO_REPRESENTANTE');
+      const serviciosExtraMapped = formData.extrasSeleccionados.map(id => {
+        if (id === 'web') return 'WEB';
+        if (id === 'cluni') return 'CLUNI';
+        return id.toUpperCase();
+      });
 
-      const formData = {
-        nombre_empresa: nombreEmpresa,
-        figura_id: figuraId as number,
-        plan_pagos: planPagos as PlanPagos,
-        servicio_base: servicioBaseId,
-        modulos_extra: extrasSeleccionados,
+      const payload = {
+        nombre_empresa: formData.nombreEmpresa,
+        figura_id: formData.figuraId as number,
+        plan_pagos: formData.planPagos as PlanPagos,
+        servicio_base: formData.servicioBaseId,
+        modulos_extra: formData.extrasSeleccionados,
         monto_total: presupuestoTotal,
         tipo_tramite: tipoTramite,
         servicios_extra: serviciosExtraMapped,
       };
 
-      let result;
-      if (expediente?.id && userId) {
-        result = await actualizarExpedienteCompleto(userId, expediente.id, dataPersonales, formData);
-      } else {
-        result = await crearExpedienteCompleto(dataPersonales, formData);
-      }
+      const result = expediente?.id 
+        ? await actualizarExpedienteCompleto(userId, expediente.id, dataPersonales, payload)
+        : await crearExpedienteCompleto(dataPersonales, payload);
 
       if (result.success) {
         if (!expediente?.id && result.data?.user_id) {
           localStorage.setItem('cecani_cliente_id', result.data.user_id);
           window.dispatchEvent(new Event('storage'));
         }
-        
         setIsSuccess(true);
-        setTimeout(() => {
-          onComplete();
-        }, 1500);
+        setTimeout(onComplete, 1500);
       } else {
-        setError(result.error || 'Error al registrar el expediente.');
+        setLocalError(result.error || 'Ocurrió un error al procesar la solicitud.');
       }
-    } catch (err) {
-      setError('Error inesperado de red.');
-    } finally {
-      setIsLoading(false);
+    });
+  };
+
+  // --- Framer Motion Variants ---
+  const containerVariants: any = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.8, 
+        ease: [0.16, 1, 0.3, 1],
+        staggerChildren: 0.1
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -20,
+      transition: { duration: 0.4 }
     }
   };
 
-  if (isSuccess) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-2xl mx-auto glass-card rounded-3xl p-12 text-center"
-      >
-        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-          <CheckCircle2 size={40} />
-        </div>
-        <h2 className="text-3xl font-bold text-slate-800 mb-4">
-          {expediente?.id ? '¡Expediente Actualizado!' : '¡Expediente Creado!'}
-        </h2>
-        <p className="text-slate-600 text-lg">Tus datos legales han sido procesados correctamente.</p>
-        <div className="mt-8 flex items-center justify-center gap-2 text-blue-600 font-medium">
-          <Loader2 className="animate-spin" size={20} />
-          <span>Generando estructura legal...</span>
-        </div>
-      </motion.div>
-    );
-  }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
 
-  const subStepsLabels = ['Identidad', 'Organización', 'Presupuesto'];
+  if (isSuccess) return <SuccessView isUpdate={!!expediente?.id} />;
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start w-full max-w-[1600px] mx-auto">
-      {/* Columna de Información / Progreso Lateral */}
-      <div className="xl:col-span-3 space-y-6">
-        <div className="glass-card rounded-[2.5rem] p-8 bg-slate-900 text-white overflow-hidden relative shadow-2xl border border-white/5">
+    <div className="flex flex-col lg:flex-row gap-8 w-full max-w-[1600px] mx-auto py-4">
+      {/* Sidebar: Sub-pasos dinámicos */}
+      <aside className="lg:w-[320px] shrink-0">
+        <div className="sticky top-28 bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl overflow-hidden border border-white/5 group">
           <div className="relative z-10">
-            <h2 className="text-xl font-black uppercase tracking-widest mb-6 text-sky-400">Progreso de Registro</h2>
+            <div className="flex items-center gap-3 mb-10">
+              <div className="p-2 bg-sky-500/20 rounded-lg">
+                <Sparkles className="text-sky-400" size={18} />
+              </div>
+              <h2 className="text-[10px] font-black tracking-[0.3em] uppercase text-sky-400">Paso 1: Perfil Legal</h2>
+            </div>
             
-            <div className="space-y-8">
-              {subStepsLabels.map((label, idx) => {
+            <nav className="space-y-12">
+              {['Identidad', 'Estructura', 'Servicios'].map((label, idx) => {
                 const stepNum = idx + 1;
-                const isCurrent = subStep === stepNum;
-                const isPast = subStep > stepNum;
-                
+                const active = subStep === stepNum;
+                const done = subStep > stepNum;
                 return (
-                  <div key={label} className="flex items-center gap-4 group">
+                  <div key={label} className="relative flex items-center gap-6 group cursor-default">
+                    {idx < 2 && (
+                      <div className={`absolute left-5 top-10 w-0.5 h-12 transition-all duration-700 ${done ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                    )}
                     <div className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all
-                      ${isCurrent ? 'bg-sky-500 text-white shadow-[0_0_15px_rgba(14,165,233,0.5)] scale-110' : 
-                        isPast ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500 border border-slate-700'}
+                      w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black transition-all duration-500 z-10
+                      ${active ? 'bg-sky-500 text-white shadow-[0_0_25px_rgba(14,165,233,0.4)] scale-110 -rotate-3' : 
+                        done ? 'bg-emerald-500 text-white' : 'bg-slate-950 text-slate-600 border border-white/5'}
                     `}>
-                      {isPast ? '✓' : stepNum}
+                      {done ? '✓' : stepNum}
                     </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${isCurrent ? 'text-white' : isPast ? 'text-emerald-400' : 'text-slate-600'}`}>
-                      {label}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+                      {active && (
+                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-sky-500 mt-2 w-8 rounded-full" />
+                      )}
+                    </div>
                   </div>
                 );
               })}
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-white/5">
-              <p className="text-slate-400 text-[10px] leading-relaxed italic">
-                {subStep === 1 && "Ingresa tus datos personales tal cual aparecen en tu identificación oficial."}
-                {subStep === 2 && "Define el nombre y la figura legal bajo la cual operará tu organización."}
-                {subStep === 3 && "Personaliza los servicios adicionales y verifica tu inversión total."}
-              </p>
-            </div>
+            </nav>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-sky-500/10 rounded-full blur-3xl"></div>
+          {/* Decorative gradients */}
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-500/10 rounded-full blur-[100px] group-hover:bg-sky-500/20 transition-all duration-1000" />
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-[80px]" />
         </div>
-      </div>
+      </aside>
 
-      {/* Columna del Formulario */}
-      <div className="xl:col-span-9 space-y-8">
-        <div className="glass-card rounded-[3rem] p-6 md:p-12 shadow-2xl border border-slate-100 bg-white relative overflow-hidden">
-          {/* Barra de progreso superior sutil */}
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-50">
-            <motion.div 
-              className="h-full bg-sky-500"
-              initial={{ width: '0%' }}
-              animate={{ width: `${(subStep / 3) * 100}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
+      {/* Main Form Area */}
+      <main className="flex-1 min-w-0">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] border border-slate-100/50 relative overflow-hidden"
+        >
+          {/* Error Message */}
+          <AnimatePresence>
+            {localError && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="mb-8 p-6 bg-red-50 border border-red-100 rounded-[2rem] flex items-center gap-4 text-red-900 shadow-sm"
+              >
+                <div className="p-2 bg-red-100 rounded-xl"><AlertCircle size={20} /></div>
+                <p className="text-xs font-bold uppercase tracking-tight leading-relaxed">{localError}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border-2 border-red-100 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 shadow-sm"
-            >
-              <AlertCircle size={20} className="shrink-0" />
-              <span className="text-xs font-bold uppercase tracking-tight">{error}</span>
-            </motion.div>
-          )}
-
-          <div className="min-h-[400px]">
+          {/* Form Content */}
+          <div className="min-h-[500px]">
             <AnimatePresence mode="wait">
-              {/* SUB-PASO 1: Identidad */}
               {subStep === 1 && (
-                <motion.section
-                  key="substep1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-10"
-                >
-                  <div className="flex items-center gap-4 mb-10">
-                    <div className="p-4 bg-sky-50 text-sky-600 rounded-3xl shadow-sm">
-                      <User size={32} />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Identidad del Representante</h3>
-                      <p className="text-sm text-slate-500 font-medium">Información para declaraciones del contrato</p>
-                    </div>
+                <StepContent key="identidad" title="Identidad del Titular" icon={<User size={30} />} variants={itemVariants}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+                    <InputCol span={2} label="Nombre Completo (INE) *" name="nombreCompleto" value={formData.nombreCompleto} onChange={handleInputChange} icon={<User size={18} />} placeholder="Ej. Alejandra García López" />
+                    <InputCol label="Teléfono (WhatsApp) *" name="telefono" value={formData.telefono} onChange={handleInputChange} icon={<Phone size={18} />} placeholder="55 1234 5678" />
+                    <InputCol label="RFC *" name="rfc" value={formData.rfc} onChange={handleInputChange} icon={<FileText size={18} />} placeholder="GALA900101XXX" />
+                    <InputCol label="CURP *" name="curp" value={formData.curp} onChange={handleInputChange} icon={<FileText size={18} />} placeholder="18 Caracteres..." />
+                    <InputCol label="Estado Civil *" name="estadoCivil" value={formData.estadoCivil} onChange={handleInputChange} icon={<Users size={18} />} placeholder="Ej. Soltero(a)" />
+                    <InputCol span={2} label="Domicilio Legal Completo *" name="domicilioCompleto" value={formData.domicilioCompleto} onChange={handleInputChange} icon={<MapPin size={18} />} isTextArea placeholder="Calle, Número, Colonia, CP, Ciudad, Estado" />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="md:col-span-2">
-                      <label className="input-label">Nombre completo (Como aparece en INE) *</label>
-                      <div className="relative group">
-                        <User className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={nombreCompleto}
-                          onChange={(e) => setNombreCompleto(e.target.value)}
-                          placeholder="Ej. Juan Pérez López"
-                          className="input-field pl-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">Teléfono (WhatsApp) *</label>
-                      <div className="relative group">
-                        <Phone className="input-icon" size={18} />
-                        <input
-                          type="tel"
-                          value={telefono}
-                          onChange={(e) => setTelefono(e.target.value)}
-                          placeholder="Ej. 5512345678"
-                          className="input-field pl-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">RFC (con homoclave) *</label>
-                      <div className="relative group">
-                        <FileText className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={rfc}
-                          onChange={(e) => setRfc(e.target.value.toUpperCase())}
-                          placeholder="ABCD900101XXX"
-                          className="input-field pl-12 uppercase"
-                          maxLength={13}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">CURP *</label>
-                      <div className="relative group">
-                        <FileText className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={curp}
-                          onChange={(e) => setCurp(e.target.value.toUpperCase())}
-                          placeholder="ABCD900101HXXXXX00"
-                          className="input-field pl-12 uppercase"
-                          maxLength={18}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">Ocupación / Profesión</label>
-                      <div className="relative group">
-                        <Briefcase className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={ocupacion}
-                          onChange={(e) => setOcupacion(e.target.value)}
-                          placeholder="Ej. Abogado, Comerciante, etc."
-                          className="input-field pl-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">Estado Civil * </label>
-                      <div className="relative group">
-                        <User className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={estadoCivil}
-                          onChange={(e) => setEstadoCivil(e.target.value)}
-                          placeholder="Ej. Soltero, Casado, Divorciado, Viudo"
-                          className="input-field pl-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="input-label">Domicilio Completo *</label>
-                      <div className="relative group">
-                        <MapPin className="input-icon" size={18} />
-                        <textarea
-                          value={domicilioCompleto}
-                          onChange={(e) => setDomicilioCompleto(e.target.value)}
-                          placeholder="Calle, Núm, Col, CP, Ciudad, Estado"
-                          className="input-field pl-12 pt-4 min-h-[100px]"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </motion.section>
+                </StepContent>
               )}
 
-              {/* SUB-PASO 2: Organización */}
               {subStep === 2 && (
-                <motion.section
-                  key="substep2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-10"
-                >
-                  <div className="flex items-center gap-4 mb-10">
-                    <div className="p-4 bg-blue-50 text-blue-600 rounded-3xl shadow-sm">
-                      <Building2 size={32} />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Datos de la Organización</h3>
-                      <p className="text-sm text-slate-500 font-medium">Configuración legal y financiera</p>
+                <StepContent key="organizacion" title="Detalles Institucionales" icon={<Building2 size={30} />} variants={itemVariants}>
+                  <div className="space-y-10">
+                    <InputCol label="Nombre de la Asociación o Empresa *" name="nombreEmpresa" value={formData.nombreEmpresa} onChange={handleInputChange} icon={<Building2 size={18} />} placeholder="Ej. Transformando Vidas A.C." />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <SelectCol label="Figura Jurídica Recomendada *" name="figuraId" value={formData.figuraId} onChange={handleInputChange} icon={<Scale size={18} />} options={figuras.map(f => ({ value: f.id, label: `${f.siglas} — ${f.descripcion}` }))} />
+                      <SelectCol label="Plan de Liquidación *" name="planPagos" value={formData.planPagos} onChange={handleInputChange} icon={<CreditCard size={18} />} options={[{ value: 'unico', label: 'Pago Único (Precio Especial)' }, { value: '2_meses', label: '2 Mensualidades' }, { value: '4_meses', label: '4 Mensualidades' }]} />
                     </div>
                   </div>
-
-                  <div className="space-y-8">
-                    <div>
-                      <label className="input-label">Nombre de la Empresa / Asociación *</label>
-                      <div className="relative group">
-                        <Building2 className="input-icon" size={18} />
-                        <input
-                          type="text"
-                          value={nombreEmpresa}
-                          onChange={(e) => setNombreEmpresa(e.target.value)}
-                          placeholder="Ej. Fundación de Ayuda A.C."
-                          className="input-field pl-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <label className="input-label">Figura Legal Deseada *</label>
-                        <div className="relative group">
-                          <Scale className="input-icon" size={18} />
-                          <select
-                            value={figuraId}
-                            onChange={(e) => setFiguraId(Number(e.target.value))}
-                            className="input-field pl-12 appearance-none"
-                            disabled={isLoading}
-                          >
-                            <option value="">Selecciona...</option>
-                            {figuras.map((fig) => (
-                              <option key={fig.id} value={fig.id}>
-                                {fig.siglas} — {fig.descripcion}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="input-label">Modalidad de Pago *</label>
-                        <div className="relative group">
-                          <CreditCard className="input-icon" size={18} />
-                          <select
-                            value={planPagos}
-                            onChange={(e) => setPlanPagos(e.target.value as PlanPagos)}
-                            className="input-field pl-12 appearance-none"
-                            disabled={isLoading}
-                          >
-                            <option value="">Selecciona un plan...</option>
-                            <option value="unico">Pago Único de Contado (Precio Especial)</option>
-                            <option value="2_meses">A 2 Mensualidades</option>
-                            <option value="4_meses">A 4 Mensualidades</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.section>
+                </StepContent>
               )}
 
-              {/* SUB-PASO 3: Presupuesto */}
               {subStep === 3 && (
-                <motion.section
-                  key="substep3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-10"
-                >
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="p-4 bg-sky-100 text-sky-600 rounded-3xl shadow-sm">
-                      <Calculator size={32} />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Presupuesto Modular</h3>
-                      <p className="text-sm text-slate-500 font-medium">Personalización de servicios y trámites</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950 p-8 md:p-12 rounded-[3.5rem] text-white shadow-2xl space-y-12 border border-white/5 relative overflow-hidden">
-                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-sky-500/10 rounded-full blur-[80px]"></div>
-                    
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8 border-b border-white/5 pb-10">
-                      <div className="text-center md:text-left">
-                        <h3 className="text-lg font-black uppercase tracking-[0.3em] text-sky-400">Total Inversión</h3>
-                        <p className="text-[10px] text-slate-400 mt-2 font-black uppercase tracking-widest opacity-60">IVA INCLUIDO SEGÚN CORRESPONDA</p>
+                <StepContent key="resumen" title="Configuración de Servicios" icon={<Calculator size={30} />} variants={itemVariants}>
+                  <div className="space-y-10">
+                    {/* Tarjeta de Resumen Financiero */}
+                    <div className="bg-slate-950 p-10 md:p-14 rounded-[3.5rem] text-white relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(15,23,42,0.5)]">
+                      <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12 border-b border-white/10 pb-12">
+                        <div className="text-center md:text-left">
+                          <h4 className="text-[10px] font-black tracking-[0.4em] uppercase text-sky-400 mb-3">Total Inversión Proyectada</h4>
+                          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Conceptos de gestoría, impuestos y notaría</p>
+                        </div>
+                        <div className="text-6xl md:text-7xl font-black text-sky-400 tracking-tighter flex items-baseline gap-2 tabular-nums">
+                          <span className="text-2xl font-light opacity-30">$</span>
+                          {presupuestoTotal.toLocaleString()}
+                          <span className="text-sm font-bold opacity-20 tracking-widest">MXN</span>
+                        </div>
                       </div>
-                      <div className="bg-sky-500/10 px-12 py-6 rounded-[2.5rem] font-black text-5xl text-sky-300 border border-sky-400/20 flex items-baseline gap-4 shadow-[0_0_40px_rgba(14,165,233,0.1)]">
-                        <span className="text-xl opacity-30">$</span>
-                        {presupuestoTotal.toLocaleString()}
-                        <span className="text-xs opacity-50 tracking-[0.2em] font-bold">MXN</span>
-                      </div>
-                    </div>
 
-                    <div className="space-y-10 relative z-10">
-                      {/* Trámite Principal */}
-                      <div className="space-y-6">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">1. Selección de Trámite Principal *</label>
-                        <div className="grid grid-cols-1 gap-4">
-                          <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
-                            <p className="text-sm font-bold mb-4 text-slate-200">¿Tu organización ya cuenta con Acta Constitutiva?</p>
-                            <div className="grid grid-cols-2 gap-4">
-                              <button
-                                type="button"
-                                onClick={() => setTieneActa(true)}
-                                className={`py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${tieneActa === true ? 'bg-sky-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                              >
-                                Sí, ya existe
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}
-                                className={`py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${tieneActa === false ? 'bg-sky-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                              >
-                                No, desde cero
-                              </button>
-                            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Estado de la Organización</p>
+                          <div className="grid grid-cols-2 gap-4">
+                            <ToggleButton active={tieneActa === true} onClick={() => setTieneActa(true)}>Acta Existente</ToggleButton>
+                            <ToggleButton active={tieneActa === false} onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}>Nueva Constitución</ToggleButton>
                           </div>
-
-                          {tieneActa === true && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-white/5 p-6 rounded-3xl border border-white/5">
-                              <p className="text-sm font-bold mb-4 text-slate-200">Objetivo del trámite:</p>
-                              <div className="space-y-3">
-                                <button
-                                  type="button"
-                                  onClick={() => setNecesitaRenovar(false)}
-                                  className={`w-full py-4 px-6 rounded-2xl text-[10px] text-left font-black uppercase tracking-widest transition-all ${necesitaRenovar === false ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                                >
-                                  Actualización de Estatutos / Donataria
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setNecesitaRenovar(true)}
-                                  className={`w-full py-4 px-6 rounded-2xl text-[10px] text-left font-black uppercase tracking-widest transition-all ${necesitaRenovar === true ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}
-                                >
-                                  Recuperación / Renovación de Donataria
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
                         </div>
-                      </div>
 
-                      {/* Extras */}
-                      <div className="space-y-6">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">2. Servicios Adicionales</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.values(SERVICIOS_EXTRAS).map(extra => {
-                            const isSelected = extrasSeleccionados.includes(extra.id);
-                            return (
-                              <div 
-                                key={extra.id} 
-                                onClick={() => toggleExtra(extra.id)}
-                                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group ${isSelected ? 'bg-sky-500/10 border-sky-500/50' : 'bg-slate-900 border-white/5'}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'bg-sky-500 border-sky-500' : 'border-slate-700 group-hover:border-slate-500'}`} />
-                                  <span className="text-[10px] font-black uppercase tracking-tighter text-slate-300">{extra.nombre}</span>
-                                </div>
-                                <span className="text-[9px] font-black text-sky-400 opacity-80">
-                                  {extra.id === 'web' ? '+$4,999 (+ IVA)' : 
-                                   extra.id === 'cluni' && ['constitucion', 'acta_extra'].includes(servicioBaseId) ? '+$10,000 (OFERTA)' :
-                                   extra.precio > 0 ? `+$${extra.precio.toLocaleString()}` : 'COTIZAR'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {tieneActa !== null && (
+                          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Alcance del Trámite</p>
+                            <div className="flex flex-col gap-3">
+                              {tieneActa === false ? (
+                                <OptionButton active={true} onClick={() => {}}>Constitución desde Cero</OptionButton>
+                              ) : (
+                                <>
+                                  <OptionButton active={necesitaRenovar === false} onClick={() => setNecesitaRenovar(false)}>Modificación de Estatutos</OptionButton>
+                                  <OptionButton active={necesitaRenovar === true} onClick={() => setNecesitaRenovar(true)}>Recuperación de Vigencia</OptionButton>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </motion.section>
+                </StepContent>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Navegación de Sub-pasos */}
-          <div className="mt-12 pt-10 border-t border-slate-100 flex items-center justify-between gap-4">
-            {subStep > 1 ? (
-              <button
-                onClick={handlePrev}
-                className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
-              >
-                Anterior
-              </button>
-            ) : <div />}
+          {/* Navigation Controls */}
+          <footer className="mt-16 pt-10 border-t border-slate-100 flex items-center justify-between">
+            <button 
+              onClick={() => { setSubStep(s => s - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+              disabled={subStep === 1 || isPending} 
+              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${subStep === 1 ? 'opacity-0' : 'text-slate-400 hover:text-slate-900 hover:-translate-x-1'}`}
+            >
+              <ChevronLeft size={16} /> Anterior
+            </button>
+            
+            <div className="flex items-center gap-6">
+              {subStep < 3 ? (
+                <button 
+                  onClick={() => { if(validate(subStep)) { setSubStep(s => s + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }} 
+                  className="bg-slate-950 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-600 transition-all duration-500 shadow-2xl shadow-slate-200 flex items-center gap-4 group"
+                >
+                  Continuar <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={isPending} 
+                  className="bg-sky-600 text-white px-14 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-700 transition-all duration-500 shadow-2xl shadow-sky-200 flex items-center gap-4 disabled:opacity-50 group"
+                >
+                  {isPending ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} className="group-hover:scale-110 transition-transform" />}
+                  {isPending ? 'Procesando Datos' : 'Finalizar Registro'}
+                </button>
+              )}
+            </div>
+          </footer>
+        </motion.div>
+      </main>
+    </div>
+  );
+}
 
-            {subStep < 3 ? (
-              <button
-                onClick={handleNext}
-                className="bg-slate-900 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition shadow-xl shadow-slate-200 flex items-center gap-3"
-              >
-                Siguiente Paso
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="bg-sky-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-sky-700 transition shadow-xl shadow-sky-200 flex items-center gap-3 disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <><Loader2 className="animate-spin" size={16} /> Procesando...</>
-                ) : (
-                  <>Finalizar Registro <CheckCircle2 size={16} /></>
-                )}
-              </button>
-            )}
+// --- Componentes UI Refinados ---
+
+function StepContent({ title, icon, children, variants }: any) {
+  return (
+    <motion.section variants={variants} className="space-y-12">
+      <header className="flex items-center gap-8 mb-16">
+        <div className="w-20 h-20 bg-slate-50 text-sky-600 rounded-[2.5rem] flex items-center justify-center shadow-inner border border-slate-100">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">{title}</h3>
+          <div className="flex items-center gap-2 mt-4">
+            <div className="h-1.5 w-12 bg-sky-500 rounded-full" />
+            <div className="h-1.5 w-4 bg-sky-200 rounded-full" />
+            <div className="h-1.5 w-4 bg-sky-100 rounded-full" />
           </div>
+        </div>
+      </header>
+      {children}
+    </motion.section>
+  );
+}
+
+function InputCol({ label, icon, span = 1, isTextArea = false, ...props }: any) {
+  const Component = isTextArea ? 'textarea' : 'input';
+  return (
+    <div className={span === 2 ? 'md:col-span-2' : ''}>
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block ml-1">{label}</label>
+      <div className="relative group">
+        <div className="absolute left-6 top-[22px] text-slate-300 group-focus-within:text-sky-500 transition-all duration-300 group-focus-within:scale-110">{icon}</div>
+        <Component 
+          {...props} 
+          className={`
+            w-full bg-slate-50/50 border-2 border-slate-100/50 focus:border-sky-500 focus:bg-white focus:shadow-[0_10px_30px_rgba(14,165,233,0.05)]
+            rounded-3xl py-5 pl-16 pr-8 text-sm font-bold text-slate-800 outline-none transition-all duration-300 
+            placeholder:text-slate-300 placeholder:font-normal
+            ${isTextArea ? 'min-h-[140px] pt-5' : ''}
+          `} 
+        />
+      </div>
+    </div>
+  );
+}
+
+function SelectCol({ label, icon, options, ...props }: any) {
+  return (
+    <div>
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block ml-1">{label}</label>
+      <div className="relative group">
+        <div className="absolute left-6 top-[22px] text-slate-300 group-focus-within:text-sky-500 transition-all duration-300 z-10">{icon}</div>
+        <select 
+          {...props} 
+          className="w-full bg-slate-50/50 border-2 border-slate-100/50 focus:border-sky-500 focus:bg-white rounded-3xl py-5 pl-16 pr-12 text-sm font-bold text-slate-800 outline-none transition-all duration-300 appearance-none relative cursor-pointer"
+        >
+          <option value="">Seleccionar opción...</option>
+          {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
         </div>
       </div>
     </div>
+  );
+}
+
+function ToggleButton({ active, children, onClick }: any) {
+  return (
+    <button 
+      type="button" 
+      onClick={onClick} 
+      className={`
+        py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500
+        ${active ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/40 scale-105' : 'bg-white/5 text-slate-500 border border-white/5 hover:bg-white/10 hover:text-slate-300'}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+function OptionButton({ active, children, onClick }: any) {
+  return (
+    <button 
+      type="button" 
+      onClick={onClick} 
+      className={`
+        w-full py-5 px-8 rounded-2xl text-[10px] text-left font-black uppercase tracking-[0.1em] transition-all duration-300 border
+        ${active ? 'bg-sky-500 border-sky-400 text-white shadow-lg' : 'bg-slate-900 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-400'}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SuccessView({ isUpdate }: { isUpdate: boolean }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9, rotateX: 20 }} 
+      animate={{ opacity: 1, scale: 1, rotateX: 0 }} 
+      className="max-w-2xl mx-auto bg-white rounded-[4rem] p-16 text-center shadow-[0_50px_100px_rgba(0,0,0,0.1)] border border-slate-100"
+    >
+      <div className="w-28 h-28 bg-emerald-50 text-emerald-500 rounded-[3rem] flex items-center justify-center mx-auto mb-10 shadow-inner">
+        <CheckCircle2 size={56} />
+      </div>
+      <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6 leading-tight">
+        {isUpdate ? 'Expediente Actualizado' : 'Misión Cumplida'}
+      </h2>
+      <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-md mx-auto">
+        Tus datos han sido integrados con éxito. Estamos orquestando la siguiente fase de tu estructura legal.
+      </p>
+      <div className="mt-12 flex items-center justify-center gap-4 text-sky-500 font-black text-[11px] uppercase tracking-[0.3em]">
+        <Loader2 className="animate-spin" size={24} />
+        <span>Sincronizando portal...</span>
+      </div>
+    </motion.div>
   );
 }

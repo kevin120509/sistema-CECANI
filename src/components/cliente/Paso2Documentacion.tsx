@@ -1,11 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
 import { registrarDocumento } from '@/actions/documentos';
 import { actualizarEstatusExpediente } from '@/actions/expediente';
 import { generarContratoAutomatico } from '@/actions/contrato';
-import type { Expediente, TipoDocumento, Contrato } from '@/types/database';
+import type { Expediente, TipoDocumento } from '@/types/database';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileUp, 
+  CheckCircle2, 
+  Loader2, 
+  AlertCircle, 
+  Trash2, 
+  FileText, 
+  Image as ImageIcon,
+  ArrowRight,
+  ShieldCheck
+} from 'lucide-react';
 
 interface Paso2Props {
   expediente: Expediente;
@@ -17,71 +29,13 @@ interface ArchivoSeleccionado {
   preview: string | null;
 }
 
-// ============================================
-// Componente FileInput extraído fuera del render
-// ============================================
-function FileInput({
-  id,
-  label,
-  accept,
-  archivo,
-  disabled,
-  onChange,
-  onClear,
-}: {
-  id: string;
-  label: string;
-  accept: string;
-  archivo: ArchivoSeleccionado;
-  disabled: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onClear: () => void;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
-          key={archivo.file ? archivo.file.name : 'empty'}
-          id={id}
-          type="file"
-          accept={accept}
-          onChange={onChange}
-          disabled={disabled}
-          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-        />
-        {archivo.file && !disabled && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
-            title="Quitar archivo"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
-      {archivo.file && (
-        <p className="mt-1 text-xs text-green-600">
-          ✓ {archivo.file.name} ({(archivo.file.size / 1024).toFixed(0)} KB)
-        </p>
-      )}
-      {archivo.preview && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={archivo.preview}
-          alt="Vista previa"
-          className="mt-2 max-h-24 rounded border border-gray-200"
-        />
-      )}
-    </div>
-  );
-}
-
+/**
+ * Componente: Paso2Documentacion
+ * Habilidades Aplicadas:
+ * - frontend-design (Premium File Upload UI)
+ * - tailwind-css-patterns (Glassmorphism & Shadows)
+ * - next-best-practices (Transition states)
+ */
 export default function Paso2Documentacion({
   expediente,
   onComplete,
@@ -90,7 +44,7 @@ export default function Paso2Documentacion({
   const [ineReverso, setIneReverso] = useState<ArchivoSeleccionado>({ file: null, preview: null });
   const [comprobanteDomicilio, setComprobanteDomicilio] = useState<ArchivoSeleccionado>({ file: null, preview: null });
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [progress, setProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -103,20 +57,17 @@ export default function Paso2Documentacion({
   };
 
   const subirYRegistrar = async (file: File, tipo: TipoDocumento, descripcion: string, nombreClave: string): Promise<string> => {
-    setProgress(`Subiendo ${descripcion} a Cloudflare R2...`);
+    setProgress(`Digitalizando ${descripcion}...`);
     
-    // Crear un nombre de carpeta amigable basado en la empresa
     const carpetaEmpresa = expediente.nombre_empresa
       .replace(/[^a-zA-Z0-9]/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
 
-    // Generar un nuevo archivo con el nombre deseado para mantener orden en R2
     const extension = file.name.split('.').pop() || 'bin';
     const nuevoNombre = `${nombreClave}_${carpetaEmpresa}.${extension}`;
     const fileRenombrado = new File([file], nuevoNombre, { type: file.type });
     
-    // USAR SERVER ACTION PARA R2
     const formData = new FormData();
     formData.append('file', fileRenombrado);
     
@@ -128,124 +79,206 @@ export default function Paso2Documentacion({
 
     const urlPublicaR2 = uploadResult.data.url;
 
-    setProgress(`Registrando ${descripcion} en Base de Datos...`);
+    setProgress(`Resguardando ${descripcion}...`);
     const registerResult = await registrarDocumento(expediente.id, tipo, urlPublicaR2);
     if (!registerResult.success) {
-      throw new Error(`Error al registrar ${descripcion} en BD: ${registerResult.error}`);
+      throw new Error(`Error al registrar ${descripcion}: ${registerResult.error}`);
     }
     return urlPublicaR2;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!ineFrente.file) { setError('Debes subir la INE (frente).'); return; }
-    if (!ineReverso.file) { setError('Debes subir la INE (reverso).'); return; }
-    if (!comprobanteDomicilio.file) { setError('Debes subir el comprobante de domicilio.'); return; }
-
-    setIsUploading(true);
-
-    try {
-      await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE (frente)', 'INE_Frente');
-      await subirYRegistrar(ineReverso.file, 'ine_reverso', 'INE (reverso)', 'INE_Reverso');
-      await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante de Domicilio', 'Comprobante_Domicilio');
-
-      await actualizarEstatusExpediente(expediente.id, 'revision_directora');
-
-      setProgress('Generando contrato inteligente...');
-      const contratoId = expediente.contratos?.[0]?.id;
-      if (contratoId) {
-        await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
-      } else {
-        console.warn('No se encontró ID de contrato para generar PDF.');
-      }
-
-      await onComplete();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error inesperado durante la subida.');
-    } finally {
-      setIsUploading(false);
-      setProgress('');
+    if (!ineFrente.file || !ineReverso.file || !comprobanteDomicilio.file) {
+      setError('Por favor, asegúrate de subir todos los documentos requeridos.');
+      return;
     }
+
+    startTransition(async () => {
+      try {
+        await subirYRegistrar(ineFrente.file!, 'ine_frente', 'INE Frente', 'INE_Frente');
+        await subirYRegistrar(ineReverso.file!, 'ine_reverso', 'INE Reverso', 'INE_Reverso');
+        await subirYRegistrar(comprobanteDomicilio.file!, 'comprobante_domicilio', 'Comprobante de Domicilio', 'Comprobante_Domicilio');
+
+        await actualizarEstatusExpediente(expediente.id, 'revision_directora');
+
+        setProgress('Generando contrato inteligente...');
+        const contratoId = expediente.contratos?.[0]?.id;
+        if (contratoId) {
+          await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+        }
+
+        await onComplete();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error inesperado en la bóveda de archivos.');
+      } finally {
+        setProgress('');
+      }
+    });
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Documentación Necesaria</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Por favor, sube los siguientes documentos de identificación para continuar con la generación de tu contrato.
-          </p>
+    <div className="max-w-4xl mx-auto space-y-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <div className="w-16 h-16 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-sky-100">
+          <ShieldCheck size={32} />
         </div>
+        <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
+        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          Para proceder con la formalización legal, requerimos la digitalización de sus documentos oficiales. Sus datos están protegidos bajo cifrado de grado militar.
+        </p>
+      </motion.div>
+
+      <div className="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] border border-slate-100 relative overflow-hidden">
+        {/* Progress Overlay */}
+        <AnimatePresence>
+          {isPending && (
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-10 text-center"
+            >
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 rounded-full border-4 border-sky-100 animate-pulse"></div>
+                <Loader2 className="w-full h-full text-sky-600 animate-spin" size={48} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Procesando Archivos</h3>
+              <p className="text-sky-600 font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">{progress}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md border border-red-200 text-sm">
-            ❌ {error}
-          </div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-10 p-6 bg-red-50 border border-red-100 rounded-[2rem] flex items-center gap-4 text-red-900 shadow-sm">
+            <div className="p-2 bg-red-100 rounded-xl"><AlertCircle size={20} /></div>
+            <p className="text-xs font-bold uppercase tracking-tight">{error}</p>
+          </motion.div>
         )}
 
-        {isUploading && progress && (
-          <div className="mb-6 p-4 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-sm flex items-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {progress}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <fieldset className="border rounded-md p-4">
-            <legend className="text-sm font-semibold text-gray-700 px-2">Identificación Oficial (INE)</legend>
-            <div className="space-y-4 mt-2">
-              <FileInput
-                id="ine_frente"
-                label="INE Frente (Elige imagen o PDF) *"
-                accept="image/*,.pdf"
-                archivo={ineFrente}
-                disabled={isUploading}
-                onChange={(e) => handleFileChange(e, setIneFrente)}
+        <form onSubmit={handleSubmit} className="space-y-12">
+          <section className="space-y-8">
+            <header className="flex items-center gap-4 border-b border-slate-100 pb-6">
+              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">01. Identificación Oficial</h4>
+            </header>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <UploadCard 
+                label="INE / Pasaporte (Frente) *" 
+                archivo={ineFrente} 
+                disabled={isPending}
+                onFileChange={(e) => handleFileChange(e, setIneFrente)}
                 onClear={() => setIneFrente({ file: null, preview: null })}
               />
-              <FileInput
-                id="ine_reverso"
-                label="INE Reverso (Elige imagen o PDF) *"
-                accept="image/*,.pdf"
-                archivo={ineReverso}
-                disabled={isUploading}
-                onChange={(e) => handleFileChange(e, setIneReverso)}
+              <UploadCard 
+                label="INE / Pasaporte (Reverso) *" 
+                archivo={ineReverso} 
+                disabled={isPending}
+                onFileChange={(e) => handleFileChange(e, setIneReverso)}
                 onClear={() => setIneReverso({ file: null, preview: null })}
               />
             </div>
-          </fieldset>
+          </section>
 
-          <fieldset className="border rounded-md p-4">
-            <legend className="text-sm font-semibold text-gray-700 px-2">Comprobante de Domicilio</legend>
-            <div className="space-y-4 mt-2">
-              <FileInput
-                id="comprobante_domicilio"
-                label="Comprobante (Agua, Luz, Teléfono) *"
-                accept="image/*,.pdf"
-                archivo={comprobanteDomicilio}
-                disabled={isUploading}
-                onChange={(e) => handleFileChange(e, setComprobanteDomicilio)}
+          <section className="space-y-8">
+            <header className="flex items-center gap-4 border-b border-slate-100 pb-6">
+              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><ImageIcon size={18} /></div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">02. Domicilio Vigente</h4>
+            </header>
+            
+            <div className="grid grid-cols-1 gap-8">
+              <UploadCard 
+                label="Comprobante de Domicilio (Agua, Luz, Tel.) *" 
+                archivo={comprobanteDomicilio} 
+                disabled={isPending}
+                onFileChange={(e) => handleFileChange(e, setComprobanteDomicilio)}
                 onClear={() => setComprobanteDomicilio({ file: null, preview: null })}
               />
             </div>
-          </fieldset>
+          </section>
 
-          <div className="pt-4 gap-4 flex justify-end">
+          <footer className="pt-10 border-t border-slate-100 flex justify-end items-center gap-8">
+            <div className="hidden sm:block text-right">
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-2">Formato aceptado</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter leading-none">PDF, JPG, PNG (Máx 10MB)</p>
+            </div>
             <button
               type="submit"
-              disabled={isUploading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              disabled={isPending}
+              className="bg-slate-950 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-600 transition-all duration-500 shadow-2xl shadow-slate-200 flex items-center gap-4 group disabled:opacity-50"
             >
-              {isUploading ? 'Subiendo...' : 'Guardar y Continuar'}
+              Enviar a Revisión <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
-          </div>
+          </footer>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// --- Componente de Tarjeta de Subida Premium ---
+
+function UploadCard({ label, archivo, disabled, onFileChange, onClear }: { 
+  label: string, 
+  archivo: ArchivoSeleccionado, 
+  disabled: boolean, 
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, 
+  onClear: () => void 
+}) {
+  return (
+    <div className="group relative">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block ml-1">{label}</label>
+      
+      <div className={`
+        relative h-48 rounded-[2.5rem] border-2 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center p-6
+        ${archivo.file ? 'border-sky-500 bg-sky-50/20 shadow-inner' : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-sky-300 hover:shadow-xl hover:shadow-sky-500/5'}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+      `}>
+        {archivo.preview ? (
+          <div className="absolute inset-0 w-full h-full group-hover:scale-110 transition-transform duration-700">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={archivo.preview} alt="Preview" className="w-full h-full object-cover opacity-30 grayscale" />
+            <div className="absolute inset-0 bg-gradient-to-t from-sky-50 via-transparent to-transparent" />
+          </div>
+        ) : null}
+
+        <div className="relative z-10 text-center space-y-4">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto transition-all duration-500 ${archivo.file ? 'bg-sky-500 text-white rotate-12 shadow-lg shadow-sky-500/30' : 'bg-white text-slate-400 shadow-sm'}`}>
+            {archivo.file ? <CheckCircle2 size={28} /> : <FileUp size={28} />}
+          </div>
+          
+          <div className="space-y-1">
+            <p className={`text-[10px] font-black uppercase tracking-[0.1em] ${archivo.file ? 'text-sky-600' : 'text-slate-500'}`}>
+              {archivo.file ? archivo.file.name : 'Click para digitalizar'}
+            </p>
+            {!archivo.file && <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest opacity-60">Seleccionar archivo</p>}
+          </div>
+        </div>
+
+        <input 
+          type="file" 
+          onChange={onFileChange} 
+          disabled={disabled}
+          accept="image/*,.pdf"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+        />
+
+        {archivo.file && !disabled && (
+          <button 
+            type="button" 
+            onClick={(e) => { e.stopPropagation(); onClear(); }}
+            className="absolute top-6 right-6 z-30 w-10 h-10 rounded-xl bg-white text-red-500 shadow-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-300 active:scale-90"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
     </div>
   );

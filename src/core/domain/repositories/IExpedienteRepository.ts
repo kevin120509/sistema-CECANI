@@ -18,6 +18,14 @@ export interface IExpedienteRepository {
    * Busca el expediente de un cliente específico
    */
   obtenerPorClienteId(clienteId: string): Promise<Expediente | null>;
+
+  /**
+   * Actualiza un expediente y su contrato asociado
+   */
+  actualizarExpedienteYContrato(
+    expedienteId: string,
+    form: CrearExpedienteForm
+  ): Promise<void>;
 }
 
 export interface IUserRepository {

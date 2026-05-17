@@ -31,37 +31,43 @@ export default async function DirectoraPage() {
   }
 
   // 1. Obtener Abogadas (Para el <select> de Asignación)
-  // Buscamos asesora, abogada o incluso admin para asegurar que la lista tenga opciones si se crearon con roles distintos
   const { data: abogadasData } = await supabaseAdmin
     .from('perfiles')
     .select('id, nombre_completo')
     .or('rol.eq.asesora,rol.eq.abogada,rol.eq.admin');
 
-  // 2. Obtener Expedientes Pendientes de Asignar (Cliente ya firmó o está por firmar)
+  // 2. Expedientes Pendientes de Asignar (solo columnas necesarias para la tabla)
   const { data: asignarData } = await supabaseAdmin
     .from('expedientes')
     .select(`
-      *,
+      id,
+      cliente_id,
+      nombre_empresa,
+      estatus,
+      created_at,
+      servicios_extra,
       perfiles!cliente_id(nombre_completo),
       figura:catalogo_figuras(descripcion),
-      contratos(*),
-      documentos(*),
-      pagos(*)
+      contratos(id, monto_total, url_pdf_generado, url_pdf_firmado_cliente, url_pdf_doble_firma, plan_pagos, servicio_base, modulos_extra),
+      documentos(tipo, url_archivo),
+      pagos(monto, url_comprobante, fecha_pago)
     `)
-    .eq('estatus', 'en_proceso')
     .is('asesora_id', null)
     .order('created_at', { ascending: false });
 
-  // 4. Obtener Concentrado Global (Todos los expedientes)
+  // 3. Concentrado Global (OPTIMIZADO: solo columnas de tabla, sin relaciones pesadas)
   const { data: concentradoData } = await supabaseAdmin
     .from('expedientes')
     .select(`
-      *,
+      id,
+      cliente_id,
+      nombre_empresa,
+      estatus,
+      created_at,
+      servicios_extra,
       perfiles!cliente_id(nombre_completo),
-      asesora:perfiles!asesora_id(nombre_completo),
-      figura:catalogo_figuras(descripcion),
-      contratos(*),
-      pagos(*)
+      asesora:perfiles!asesora_id(id, nombre_completo),
+      figura:catalogo_figuras(descripcion)
     `)
     .order('created_at', { ascending: false });
 
@@ -69,8 +75,8 @@ export default async function DirectoraPage() {
     <main className="min-h-screen bg-gray-50 text-gray-900 py-8">
       <DirectorDashboard 
         abogadas={abogadasData || []} 
-        porAsignar={asignarData || []}
-        concentrado={concentradoData || []} 
+        porAsignar={(asignarData || []) as any}
+        concentrado={(concentradoData || []) as any} 
       />
     </main>
   );

@@ -14,6 +14,100 @@ function getAuthService() {
   return new AuthService(new SupabaseAuthAdapter());
 }
 
+import { SupabaseExpedienteRepository } from '@/infrastructure/persistence/SupabaseExpedienteRepository';
+import { SupabaseUserRepository } from '@/infrastructure/persistence/SupabaseUserRepository';
+import { ExpedienteService } from '@/core/services/ExpedienteService';
+
+function getExpedienteService() {
+  return new ExpedienteService(new SupabaseExpedienteRepository(), new SupabaseUserRepository());
+}
+
+export async function crearClienteManualAction(formData: FormData): Promise<{ success?: boolean; error?: string; data?: { expediente_id: string; cliente_id: string; contrato_id: string } }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'No autorizado' };
+
+    const service = getExpedienteService();
+    const result = await service.registrarClienteManual(
+      {
+        nombre_completo: formData.get('nombre_completo') as string,
+        telefono: formData.get('telefono') as string,
+        rfc: formData.get('rfc') as string || undefined,
+      },
+      formData.get('nombre_empresa') as string
+    );
+
+    if (result.success && result.data) {
+      revalidatePath('/directora');
+      return { 
+        success: true, 
+        data: {
+          expediente_id: result.data.expediente_id,
+          cliente_id: result.data.user_id,
+          contrato_id: result.data.contrato_id
+        } 
+      };
+    }
+    return { error: result.error };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function eliminarExpedienteAction(expedienteId: string, clienteId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'No autorizado' };
+
+    const adminSupabase = createAdminClient();
+
+    // 1. Eliminar expediente (la base de datos debería manejar cascada para contratos/documentos/pagos si está configurado, 
+    // pero lo hacemos manual o confiamos en el esquema)
+    const { error: expError } = await adminSupabase
+      .from('expedientes')
+      .delete()
+      .eq('id', expedienteId);
+
+    if (expError) throw expError;
+
+    // 2. Eliminar perfil del cliente
+    const { error: perfilError } = await adminSupabase
+      .from('perfiles')
+      .delete()
+      .eq('id', clienteId);
+
+    if (perfilError) throw perfilError;
+
+    // 3. Eliminar usuario de Auth (Opcional, pero recomendado para limpieza total)
+    await adminSupabase.auth.admin.deleteUser(clienteId);
+
+    revalidatePath('/directora');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || 'Error al eliminar registro' };
+  }
+}
+
+export async function vincularContratoDobleFirmaAction(contratoId: string, url: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase
+      .from('contratos')
+      .update({
+        url_pdf_doble_firma: url,
+        estatus: 'doble_firma'
+      })
+      .eq('id', contratoId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
 export async function loginDirectora(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const service = getAuthService();
   const result = await service.loginDirectora(formData);

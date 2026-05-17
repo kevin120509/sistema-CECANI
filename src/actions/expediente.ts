@@ -37,7 +37,14 @@ export async function crearExpedienteCompleto(
   form: CrearExpedienteForm
 ): Promise<ActionResult<{ expediente_id: string; user_id: string }>> {
   const service = getExpedienteService();
-  return service.registrarNuevoClienteConExpediente(datosPersonales, form);
+  const result = await service.registrarNuevoClienteConExpediente(datosPersonales, form);
+  
+  if (result.success) {
+    revalidatePath('/');
+    return { success: true, data: result.data };
+  }
+  
+  return { success: false, error: result.error };
 }
 
 /**
@@ -142,7 +149,6 @@ export async function obtenerDashboardData(clienteId: string) {
 
 /**
  * Actualiza un expediente completo.
- * (Pendiente de mover a Service e Infrastructure)
  */
 export async function actualizarExpedienteCompleto(
   userId: string,
@@ -150,73 +156,15 @@ export async function actualizarExpedienteCompleto(
   datosPersonales: DatosPersonales,
   form: CrearExpedienteForm
 ): Promise<ActionResult> {
-  try {
-    const supabase = createAdminClient();
+  const service = getExpedienteService();
+  const result = await service.actualizarExpedienteExistente(userId, expedienteId, datosPersonales, form);
 
-    // 1. Actualizar perfil
-    const { error: perfilError } = await supabase
-      .from('perfiles')
-      .update({
-        nombre_completo: datosPersonales.nombre_completo.trim(),
-        telefono: datosPersonales.telefono?.trim() || null,
-        estado: datosPersonales.estado?.trim() || null,
-        rfc: datosPersonales.rfc?.trim().toUpperCase() || null,
-        curp: datosPersonales.curp?.trim().toUpperCase() || null,
-        ocupacion: datosPersonales.ocupacion?.trim() || null,
-        estado_civil: datosPersonales.estado_civil?.trim() || null,
-        domicilio_completo: datosPersonales.domicilio_completo?.trim() || null,
-        folio_ine: datosPersonales.folio_ine?.trim() || null,
-      })
-      .eq('id', userId);
-
-    if (perfilError) {
-      return { success: false, error: `Error al actualizar perfil: ${perfilError.message}` };
-    }
-
-    // 2. Actualizar user_metadata en auth.users
-    await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: {
-        nombre_completo: datosPersonales.nombre_completo.trim(),
-        telefono: datosPersonales.telefono?.trim() || '',
-        estado: datosPersonales.estado?.trim() || '',
-      }
-    });
-
-    // 3. Actualizar expediente
-    const { error: expError } = await supabase
-      .from('expedientes')
-      .update({
-        figura_id: form.figura_id,
-        nombre_empresa: form.nombre_empresa.trim(),
-        tipo_tramite: form.tipo_tramite,
-        servicios_extra: form.servicios_extra || [],
-      })
-      .eq('id', expedienteId);
-
-    if (expError) {
-      return { success: false, error: `Error al actualizar expediente: ${expError.message}` };
-    }
-
-    // 4. Actualizar contrato (plan_pagos)
-    const { error: contratoError } = await supabase
-      .from('contratos')
-      .update({
-        plan_pagos: form.plan_pagos,
-        monto_total: form.monto_total || 0,
-        servicio_base: form.servicio_base,
-        modulos_extra: form.modulos_extra,
-      })
-      .eq('expediente_id', expedienteId);
-
-    if (contratoError) {
-      return { success: false, error: `Error al actualizar contrato: ${contratoError.message}` };
-    }
-
+  if (result.success) {
+    revalidatePath('/');
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
     return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: `Error inesperado: ${error instanceof Error ? error.message : 'Desconocido'}`,
-    };
   }
+
+  return { success: false, error: result.error };
 }

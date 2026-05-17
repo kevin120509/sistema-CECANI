@@ -1,10 +1,16 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Next.js 16+ Proxy (Formerly Middleware)
+ * Skill: next-best-practices
+ */
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,27 +18,34 @@ export async function proxy(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const isStaffPath = request.nextUrl.pathname.startsWith('/abogada') || 
+                               request.nextUrl.pathname.startsWith('/directora');
+            
+            let finalOptions = { ...options };
+            if (isStaffPath) {
+              // Forzamos cookie de sesión para staff
+              const { maxAge, expires, ...rest } = finalOptions;
+              finalOptions = rest;
+            }
+            request.cookies.set(name, value)
+            response = NextResponse.next({
+              request,
+            })
+            response.cookies.set(name, value, finalOptions)
+          })
         },
       },
     }
-  );
+  )
 
-  // IMPORTANTE: Esto refresca el token de forma segura en el Edge.
-  // Si el token es viejo, el 'setAll' de arriba actualizará las cookies
-  // ANTES de que la página intente cargar.
-  await supabase.auth.getUser();
+  // Refrescar el token si existe
+  await supabase.auth.getUser()
 
-  return supabaseResponse;
+  return response
 }
 
 export const config = {
@@ -42,8 +55,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}

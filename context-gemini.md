@@ -1,54 +1,37 @@
 # Contexto del Proyecto: Sistema Administrativo CECANI
 
-Este documento resume las optimizaciones, cambios estructurales y decisiones técnicas tomadas durante el desarrollo y refinamiento del Sistema Administrativo CECANI para centralizar la gestión de contratos y expedientes legales.
+Este documento resume las optimizaciones, cambios estructurales y decisiones técnicas tomadas para centralizar la gestión de contratos y expedientes legales. **Actualizado para continuidad con Antigravity.**
 
-## 1. Resumen de Optimizaciones Principales
+## 1. Evolución Arquitectónica (Clean Architecture)
+El sistema utiliza una arquitectura de capas desacoplada para garantizar robustez:
 
-### Panel de la Directora (Unificado)
-*   **Eliminación de Etapas Redundantes:** Se eliminó la pestaña de "Validación" intermedia. El flujo ahora es directo: el cliente firma el contrato generado -> el expediente aparece en "Por Asignar" -> la Directora finaliza el proceso.
-*   **Enriquecimiento de Tablas:** Se añadieron columnas de *Figura Legal* y *Servicios Seleccionados* (incluyendo avisos de cotización contable) directamente en la vista principal para evitar aperturas de modales innecesarias.
-*   **Gestión de Documentos Inteligente:** Se implementó un filtro en el modal de la Directora para eliminar fotos duplicadas (INE, Comprobantes) que se acumulaban por re-subidas del cliente.
+*   **Patrón Result (`src/core/domain/Result.ts`):** Manejo funcional de errores `Success | Failure`. Se debe evitar el uso de `try/catch` en la capa de aplicación, delegando el manejo al tipo `Result`.
+*   **Servicios Centralizados:** La lógica de negocio reside en `src/core/services/ExpedienteService.ts`. Los Server Actions son controladores delgados.
+*   **Repositorios:** Implementaciones en `src/infrastructure/persistence/` (Supabase) y `src/infrastructure/storage/` (Cloudflare R2).
 
-### Flujo de Contratos y Firmas
-*   **Proceso de Doble Firma:** El sistema ahora permite a la Directora descargar el PDF firmado por el cliente, compararlo con el original, subir la versión final con ambas firmas y asignar a la abogada en un solo paso.
-*   **Asignación de Abogadas:** Se robusteció la consulta de personal para incluir múltiples roles (`asesora`, `abogada`, `admin`), garantizando que la lista de selección nunca aparezca vacía si hay personal registrado.
+## 2. Frontend y UX (React 19 + Next.js 16)
+*   **Estética Luxury Premium:** Uso intensivo de `backdrop-blur-2xl`, sombras profundas y animaciones escalonadas con `framer-motion`.
+*   **Rendimiento:** Implementación de **Lazy Initialization** en componentes pesados como `ExpedienteManager.tsx` para manejar más de 500 registros sin lag.
+*   **Next.js 16:** El archivo de middleware se ha renombrado a `src/proxy.ts` siguiendo la nueva convención.
 
-## 2. Cambios Técnicos Clave
+## 3. Gestión de Datos y Bóveda R2
+*   **Estructura de Archivos:**
+    *   Contratos: `expedientes/{EMPRESA_KEY}/contratos/`
+    *   Documentación: `expedientes/{EMPRESA_KEY}/documentacion/`
+*   **Alta Maestra:** Flujo administrativo de 3 pasos que permite crear cliente, subir 4 documentos críticos y asignar abogada en una sola operación atómica.
+*   **Consolidación de Asesoras:** Se ha realizado una purga y normalización de nombres. Las asesoras oficiales son: SANDRA, ABIGAIL, LUISA ENRIQUEZ, ARACELI, CHAVIRA, ODETTE, YESENIA, FLOR, KENIA, SELENA, VALERIA, NIZA GUERRA.
 
-### Base de Datos y Backend
-*   **Supabase Admin:** Uso de `createAdminClient` para operaciones críticas de dirección, permitiendo bypass de RLS (Row Level Security) y asegurando que la Directora tenga visibilidad total de los expedientes.
-*   **Limpieza de Datos:** Eliminación del campo `folio_ine` en todos los formularios y motores de generación de PDF para simplificar el registro del cliente.
-*   **Acciones de Servidor:** Creación de `aprobarContratoGeneradoCliente` y optimización de `asignarAbogada` para manejar notificaciones automáticas.
+## 4. Skills de IA Activas
+Para mantener la calidad, este proyecto se trabaja con:
+*   `next-best-practices`: Next.js 15+, PPR, y Server Actions.
+*   `frontend-design`: Estética "Luxury Minimalist".
+*   `tailwind-css-patterns`: Composición avanzada de utilidades (Tailwind v4).
+*   `typescript-advanced-types`: Tipado estricto y genéricos.
 
-### Frontend y UI/UX
-*   **Diseño Premium:** Implementación de una paleta de colores azul pastel, layouts *full-width* (horizontal) y adaptabilidad responsiva total.
-*   **Micro-interacciones:** Avisos visuales para servicios que requieren "Cotización Contable" (Regularización) y estados de carga en botones.
-
-## 3. Arquitectura del Sistema (Clean Architecture)
-
-Se ha implementado una **Arquitectura Limpia (Clean Architecture)** para garantizar que el proyecto sea escalable, fácil de mantener e independiente de proveedores externos.
-
-### Estructura de Capas:
-*   **🧠 Dominio (`src/core/domain`):** El corazón del negocio. Contiene las interfaces (contratos) y tipos de datos que definen qué hace el sistema.
-*   **⚙️ Aplicación (`src/core/services`):** Casos de uso y lógica de orquestación. Aquí reside el "cerebro" que decide el flujo de los expedientes y contratos.
-*   **🔌 Infraestructura (`src/infrastructure`):** Detalles técnicos. Implementaciones reales de Supabase (persistencia), Cloudflare R2 (almacenamiento) y OneSignal (notificaciones).
-*   **🖼️ Presentación (`src/app`, `src/actions`):** Interfaz de usuario y controladores (Server Actions) delgados que delegan la lógica a los servicios.
-
-### Beneficios:
-*   **Desacoplamiento:** Las herramientas externas (como OneSignal o Supabase) pueden ser reemplazadas sin afectar la lógica de negocio central.
-*   **Mantenibilidad:** Cada función tiene un lugar único y predecible.
-*   **Robustez:** Se eliminó la lógica compleja de los *Server Actions*, convirtiéndolos en puentes simples hacia los servicios.
-
-## 4. Estado Actual y Siguientes Pasos
-
-### Estado: Operativo
-*   El sistema permite el registro, generación de contrato, firma digital del cliente, validación de la directora y asignación de abogada.
-*   Los archivos se almacenan de forma segura en Cloudflare R2.
-
-### Pendientes / Ideas de Mejora
-*   **Cálculo de IVA:** Automatizar el cálculo matemático exacto (`Total * 1.16`) en el motor de PDF en lugar de solo mencionar "(MÁS IVA)".
-*   **Triggers de Notificación:** Configurar alertas automáticas vía email para el área contable cuando se detecte un servicio de "Regularización".
-*   **Refactorización:** Ejecutar limpieza de lints menores (`prefer-const`, `unused-vars`) en el motor de PDF para mantener la salud del código.
+## 5. Pendientes Críticos para Antigravity
+1.  **Notificaciones Push:** Integrar OneSignal para alertar a asesoras sobre nuevos registros en bitácora.
+2.  **Validación de R2:** Implementar políticas de seguridad para que las URLs de R2 no sean públicas por defecto.
+3.  **Cálculos Automáticos:** Refinar el motor de PDF para realizar cálculos de IVA exactos.
 
 ---
-*Última actualización: 14 de Mayo, 2026*
+*Última actualización: 16 de Mayo, 2026 (Migración de Datos y Optimización Masiva)*

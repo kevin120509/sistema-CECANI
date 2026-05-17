@@ -81,44 +81,47 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header Premium */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
-        <div className="w-full px-6 md:px-12 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-              <span className="font-bold text-xl">C</span>
+    <div className="min-h-screen flex flex-col selection:bg-sky-500/30">
+      {/* Header Premium - Luxury Refined */}
+      <header className="sticky top-0 z-50 bg-white/60 backdrop-blur-2xl border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
+        <div className="w-full px-6 md:px-12 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4 group cursor-default">
+            <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] group-hover:scale-105 transition-transform duration-500">
+              <span className="font-black text-2xl tracking-tighter">C</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+              <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
                 CECANI
               </h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
-                Portal del Cliente
+              <p className="text-[9px] uppercase tracking-[0.4em] text-sky-600 font-black mt-1.5 opacity-80">
+                CLIENT CONSOLE
               </p>
             </div>
           </div>
           
           {perfil && (
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-slate-700">
+            <div className="flex items-center gap-6">
+              <div className="hidden sm:flex items-center gap-4 bg-white/40 border border-slate-200/60 px-5 py-2.5 rounded-2xl shadow-sm">
+                <div className="relative">
+                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-700">
                   {perfil.nombre_completo}
                 </span>
               </div>
               <button 
                 onClick={() => {
-                  if (confirm('¿Estás seguro de que deseas cerrar sesión? Tendrás que iniciar un nuevo trámite si no has guardado.')) {
+                  if (confirm('¿Deseas finalizar la sesión actual?')) {
                     localStorage.removeItem('cecani_cliente_id');
                     window.location.reload();
                   }
                 }}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors group"
-                title="Cerrar sesión / Nuevo trámite"
+                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300 border border-transparent hover:border-red-100 group"
+                title="Cerrar sesión"
               >
-                <svg className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
             </div>
@@ -126,12 +129,19 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Stepper Moderno */}
-      <div className="w-full px-6 md:px-12 py-8">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-center justify-between relative">
-            {/* Línea de fondo */}
-            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 z-0"></div>
+      {/* Stepper Moderno - Visual Flow */}
+      <div className="w-full px-6 md:px-12 py-12">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-center justify-between relative px-4 md:px-10">
+            {/* Línea de fondo con gradiente */}
+            <div className="absolute top-1/2 left-0 w-full h-[3px] bg-slate-100 -translate-y-1/2 z-0 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-gradient-to-r from-sky-500 to-indigo-500"
+                initial={{ width: '0%' }}
+                animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
             
             {steps.map(({ step, label, icon: Icon }) => {
               const isCompleted = step < currentStep;
@@ -139,20 +149,28 @@ export default function HomePage() {
               
               return (
                 <div key={step} className="relative z-10 flex flex-col items-center group">
-                  <div 
+                  <motion.div 
+                    initial={false}
+                    animate={{ 
+                      scale: isActive ? 1.15 : 1,
+                      backgroundColor: isActive ? '#0ea5e9' : isCompleted ? '#10b981' : '#ffffff'
+                    }}
                     className={`
-                      w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
-                      ${isActive ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 scale-110' : 
-                        isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-100' : 
-                        'bg-white text-slate-400 border-2 border-slate-200 group-hover:border-slate-300'}
+                      w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4
+                      ${isActive ? 'text-white border-sky-100 shadow-[0_15px_30px_rgba(14,165,233,0.3)]' : 
+                        isCompleted ? 'text-white border-emerald-50 shadow-[0_10px_20px_rgba(16,185,129,0.2)]' : 
+                        'text-slate-300 border-slate-50 shadow-sm'}
                     `}
                   >
-                    {isCompleted ? <CheckCircle2 size={24} /> : <Icon size={24} />}
-                  </div>
-                  <div className="absolute -bottom-8 whitespace-nowrap">
-                    <span className={`text-xs font-bold uppercase tracking-tight transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {isCompleted ? <CheckCircle2 size={26} strokeWidth={3} /> : <Icon size={26} strokeWidth={isActive ? 3 : 2} />}
+                  </motion.div>
+                  <div className="absolute -bottom-10 whitespace-nowrap text-center">
+                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-sky-600 scale-105' : isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {label}
                     </span>
+                    {isActive && (
+                      <motion.div layoutId="active-dot" className="w-1.5 h-1.5 bg-sky-500 rounded-full mx-auto mt-2 shadow-[0_0_10px_rgba(14,165,233,0.8)]" />
+                    )}
                   </div>
                 </div>
               );
@@ -161,27 +179,27 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Main Content - Full Width */}
-      <main className="flex-1 w-full px-6 md:px-12 py-12 mt-4">
+      {/* Main Content - Fluid Transitions */}
+      <main className="flex-1 w-full px-6 md:px-12 py-8 mt-6 mb-12">
         <div className="max-w-[1600px] mx-auto h-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="h-full"
             >
               {currentStep > 1 && currentStep <= hookStep && (
                 <button
                   onClick={handleBack}
-                  className="mb-8 flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors group"
+                  className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all duration-300 group"
                 >
-                  <div className="p-1.5 rounded-lg bg-white border border-slate-200 group-hover:border-slate-300 shadow-sm">
-                    <ChevronLeft size={16} />
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:-translate-x-1 transition-all">
+                    <ChevronLeft size={18} />
                   </div>
-                  Volver al paso anterior
+                  Regresar
                 </button>
               )}
 
