@@ -323,6 +323,105 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
   }
 }
 
+/**
+ * Valida o rechaza un documento individual.
+ */
+export async function validarDocumentoAction(documentoId: string, validado: boolean): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase
+      .from('documentos')
+      .update({ validado })
+      .eq('id', documentoId);
+
+    if (error) throw error;
+    
+    revalidatePath('/directora');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Aprueba el expediente completo (documentos + contrato) y notifica al cliente.
+ */
+export async function aprobarExpedienteAction(expedienteId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // 1. Obtener datos del cliente para la notificación
+    const { data: expData, error: fetchError } = await adminSupabase
+      .from('expedientes')
+      .select('cliente_id, nombre_empresa')
+      .eq('id', expedienteId)
+      .single();
+      
+    if (fetchError || !expData) throw new Error('No se encontró el expediente');
+
+    // 2. Cambiar estatus a 'en_proceso' (esto libera el contrato para el cliente)
+    const { error: updateError } = await adminSupabase
+      .from('expedientes')
+      .update({ estatus: 'en_proceso' })
+      .eq('id', expedienteId);
+
+    if (updateError) throw updateError;
+
+    // 3. Notificar al cliente
+    await sendPushNotification({
+      userIds: [expData.cliente_id],
+      title: '¡Expediente Aprobado!',
+      message: `Tu documentación y contrato para ${expData.nombre_empresa} han sido aprobados. Ya puedes descargar y firmar tu contrato.`,
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Rechaza el expediente y lo devuelve al cliente para correcciones.
+ */
+export async function rechazarExpedienteAction(expedienteId: string, motivo: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    const { data: expData } = await adminSupabase
+      .from('expedientes')
+      .select('cliente_id')
+      .eq('id', expedienteId)
+      .single();
+
+    // 1. Regresar estatus a 'en_registro'
+    const { error } = await adminSupabase
+      .from('expedientes')
+      .update({ estatus: 'en_registro' })
+      .eq('id', expedienteId);
+
+    if (error) throw error;
+
+    // 2. Notificar al cliente
+    if (expData?.cliente_id) {
+      await sendPushNotification({
+        userIds: [expData.cliente_id],
+        title: 'Atención: Documentación Rechazada',
+        message: `Hay detalles que corregir en tu expediente: ${motivo}. Por favor, revisa tu panel.`,
+        url: '/'
+      });
+    }
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function subirContratoDobleFirma(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   try {
     const supabase = await createClient();

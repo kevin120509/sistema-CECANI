@@ -33,11 +33,13 @@ export default async function AbogadaPage() {
     .eq('id', user.id)
     .single();
 
-  if (!perfilData || perfilData.rol !== 'asesora') {
+  if (!perfilData || !['asesora', 'admin', 'directora'].includes(perfilData.rol)) {
     return <AbogadaAuth />;
   }
 
-  // Fetch 1: Catálogo de Hitos (usando admin client para bypasear RLS)
+  const esAdmin = ['admin', 'directora'].includes(perfilData.rol);
+
+  // Fetch 1: Catálogo de Hitos
   const supabaseAdmin = createAdminClient();
   const { data: hitosData } = await supabaseAdmin
     .from('catalogo_hitos')
@@ -46,8 +48,8 @@ export default async function AbogadaPage() {
 
   const hitos = (hitosData || []) as CatalogoHito[];
 
-  // Fetch 2: Expedientes asignados a la abogada (Usamos admin para asegurar ver perfiles)
-  const { data: expedientesData } = await supabaseAdmin
+  // Fetch 2: Expedientes (Filtro por asesora si no es admin)
+  let query = supabaseAdmin
     .from('expedientes')
     .select(`
       *,
@@ -58,13 +60,18 @@ export default async function AbogadaPage() {
       documentos(*),
       seguimiento_tareas(*),
       pagos(*),
+      integrantes:expediente_integrantes(*),
       bitacora(
         *,
         autor:perfiles!autor_id(nombre_completo)
       )
-    `)
-    .eq('asesora_id', user.id)
-    .order('created_at', { ascending: false });
+    `);
+
+  if (!esAdmin) {
+    query = query.eq('asesora_id', user.id);
+  }
+
+  const { data: expedientesData } = await query.order('created_at', { ascending: false });
 
   // Fetch datos_concentrado separately with admin client (bypasses RLS)
   const expedienteIds = (expedientesData || []).map(e => e.id);

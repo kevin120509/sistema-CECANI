@@ -63,7 +63,7 @@ export type ExpedienteDirector = Record<string, unknown> & {
     modulos_extra?: string[];
   }>;
   pagos?: Array<{ monto: number; url_comprobante?: string; fecha_pago?: string }>;
-  documentos?: Array<{ tipo: string; url_archivo: string }>;
+  documentos?: Array<{ id: string; tipo: string; url_archivo: string; validado: boolean }>;
   servicios_extra?: string[];
 };
 
@@ -83,12 +83,13 @@ export default function DirectorDashboard({
   porAsignar: ExpedienteDirector[];
   concentrado: ExpedienteDirector[];
 }) {
-  const [activeTab, setActiveTab] = useState<'por_asignar' | 'concentrado'>('por_asignar');
+  const [activeTab, setActiveTab] = useState<'por_asignar' | 'concentrado' | 'validacion'>('por_asignar');
   const [selectedExpediente, setSelectedExpediente] = useState<ExpedienteDirector | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAsesoraName, setSelectedAsesoraName] = useState<string>('all');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -105,15 +106,21 @@ export default function DirectorDashboard({
   const [createError, setCreateError] = useState<string | null>(null);
   const [asesoraId, setAsesoraId] = useState('');
 
-  const filteredConcentrado = useMemo(() => {
-    let result = [...concentrado];
-    if (selectedAsesoraName !== 'all') {
+  const validacion = useMemo(() => {
+    return concentrado.filter(exp => exp.estatus === 'revision_directora');
+  }, [concentrado]);
+
+  const filteredData = useMemo(() => {
+    let result = activeTab === 'por_asignar' ? porAsignar : activeTab === 'validacion' ? validacion : concentrado;
+    
+    if (activeTab === 'concentrado' && selectedAsesoraName !== 'all') {
       const q = selectedAsesoraName.toLowerCase();
       result = result.filter(exp => 
         exp.expediente_asesoras?.some(ea => ea.asesora?.nombre_completo?.toLowerCase().includes(q)) ||
         exp.asesora?.nombre_completo?.toLowerCase().includes(q)
       );
     }
+    
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(exp => 
@@ -122,7 +129,7 @@ export default function DirectorDashboard({
       );
     }
     return result;
-  }, [concentrado, selectedAsesoraName, searchQuery]);
+  }, [activeTab, porAsignar, concentrado, validacion, selectedAsesoraName, searchQuery]);
 
   const individualAsesoras = useMemo(() => {
     const names = new Set<string>();
@@ -265,6 +272,7 @@ export default function DirectorDashboard({
 
         <nav className="flex-1 px-4 md:px-6 space-y-2 overflow-y-auto custom-scrollbar min-h-0">
           <SidebarLink icon={<LayoutDashboard size={20} />} label="Por Asignar" active={activeTab === 'por_asignar'} onClick={() => { setActiveTab('por_asignar'); setIsSidebarOpen(false); }} badge={porAsignar.length} />
+          <SidebarLink icon={<ShieldCheck size={20} />} label="Validación" active={activeTab === 'validacion'} onClick={() => { setActiveTab('validacion'); setIsSidebarOpen(false); }} badge={validacion.length} />
           <SidebarLink icon={<Users size={20} />} label="Concentrado" active={activeTab === 'concentrado'} onClick={() => { setActiveTab('concentrado'); setIsSidebarOpen(false); }} />
           
           <AnimatePresence>
@@ -301,7 +309,7 @@ export default function DirectorDashboard({
             <button onClick={() => setIsSidebarOpen(true)} className="p-3 bg-white border border-slate-200 rounded-xl lg:hidden shadow-sm"><Menu size={24} /></button>
             <div>
               <h1 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">{activeTab === 'por_asignar' ? 'Por Asignar' : 'Concentrado'}</h1>
-              <p className="text-[10px] lg:text-xs font-black text-slate-400 mt-2 uppercase tracking-widest">{activeTab === 'por_asignar' ? 'Expedientes sin asesora titular' : `Total: ${filteredConcentrado.length} expedientes`}</p>
+              <p className="text-[10px] lg:text-xs font-black text-slate-400 mt-2 uppercase tracking-widest">{activeTab === 'por_asignar' ? 'Expedientes sin asesora titular' : `Total: ${filteredData.length} expedientes`}</p>
             </div>
           </div>
           <div className="relative group">
@@ -322,7 +330,7 @@ export default function DirectorDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {(activeTab === 'por_asignar' ? porAsignar : filteredConcentrado).map((exp) => (
+                  {filteredData.map((exp) => (
                     <tr key={exp.id} className="group hover:bg-slate-50/5 transition-colors">
                       <td className="px-6 py-6 align-top">
                         <div className="flex flex-col gap-3">
@@ -371,13 +379,17 @@ export default function DirectorDashboard({
                       )}
                       <td className="px-6 py-6 align-top">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }} className="bg-slate-950 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center gap-2">Gestión <ArrowRight size={14}/></button>
+                          {activeTab === 'validacion' ? (
+                            <button onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} className="bg-sky-600 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-950 transition-all flex items-center gap-2">Validar <ShieldCheck size={14}/></button>
+                          ) : (
+                            <button onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }} className="bg-slate-950 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center gap-2">Gestión <ArrowRight size={14}/></button>
+                          )}
                           <button onClick={() => handleEliminar(exp.id, exp.cliente_id, exp.nombre_empresa)} disabled={isPending} className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18}/></button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {(activeTab === 'por_asignar' ? porAsignar : filteredConcentrado).length === 0 && (
+                  {filteredData.length === 0 && (
                     <tr><td colSpan={5} className="px-10 py-40 text-center text-slate-300 font-black uppercase text-[10px] tracking-[0.5em]">Sin registros</td></tr>
                   )}
                 </tbody>
@@ -386,6 +398,131 @@ export default function DirectorDashboard({
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {isValidationModalOpen && selectedExpediente && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-5xl w-full flex flex-col max-h-[95vh] overflow-hidden">
+               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between">
+                 <div className="flex items-center gap-6">
+                   <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><ShieldCheck size={24}/></div>
+                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Validación de Expediente</h2>
+                 </div>
+                 <button onClick={() => setIsValidationModalOpen(false)} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar space-y-12">
+                 <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                   <div className="space-y-6">
+                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">Datos del Cliente</h3>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       <DataField label="Representante" value={selectedExpediente.cliente?.nombre_completo} icon={<Users size={14}/>} />
+                       <DataField label="WhatsApp" value={selectedExpediente.cliente?.telefono} icon={<Users size={14}/>} />
+                       <DataField label="RFC" value={selectedExpediente.cliente?.rfc} icon={<FileText size={14}/>} />
+                       <DataField label="CURP" value={selectedExpediente.cliente?.curp} icon={<ShieldCheck size={14}/>} />
+                     </div>
+                     <DataField label="Domicilio" value={selectedExpediente.cliente?.domicilio_completo} icon={<MapPin size={14}/>} />
+                   </div>
+
+                   <div className="space-y-6">
+                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">Documentación Cargada</h3>
+                     <div className="space-y-3">
+                       {selectedExpediente.documentos?.map((doc: any) => (
+                         <div key={doc.id} className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl group">
+                           <div className="flex items-center gap-3">
+                             <div className={`p-2 rounded-lg ${doc.validado ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 shadow-sm'}`}>
+                               {doc.validado ? <ShieldCheck size={16}/> : <FileText size={16}/>}
+                             </div>
+                             <div>
+                               <p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p>
+                               <a href={doc.url_archivo} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
+                             </div>
+                           </div>
+                           <div className="flex gap-1">
+                             <button 
+                               onClick={async () => {
+                                 const { validarDocumentoAction } = await import('@/actions/directora');
+                                 startTransition(async () => { await validarDocumentoAction(doc.id, !doc.validado); });
+                               }}
+                               className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${doc.validado ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:border-emerald-500 hover:text-emerald-500'}`}
+                             >
+                               {doc.validado ? 'Aprobado' : 'Aprobar'}
+                             </button>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 </section>
+
+                 <section className="space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">Contrato Generado</h3>
+                    <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                      <div className="relative z-10 space-y-4">
+                        <div className="w-14 h-14 bg-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center"><FileSignature size={28}/></div>
+                        <div>
+                          <h4 className="text-xl font-black uppercase tracking-tighter leading-none">Contrato de Servicios</h4>
+                          <p className="text-slate-400 text-xs font-medium mt-2">Revisa que los datos en el PDF sean correctos antes de liberar la descarga al cliente.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row gap-4 relative z-10">
+                        {selectedExpediente.contratos?.[0]?.url_pdf_generado && (
+                          <a href={selectedExpediente.contratos[0].url_pdf_generado} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 backdrop-blur-md transition-all">
+                            <Download size={16}/> Previsualizar PDF
+                          </a>
+                        )}
+                        <button 
+                          disabled={isPending}
+                          onClick={async () => {
+                            if (!confirm('¿Aprobar este expediente y liberar el contrato para el cliente?')) return;
+                            const { aprobarExpedienteAction } = await import('@/actions/directora');
+                            startTransition(async () => {
+                              const res = await aprobarExpedienteAction(selectedExpediente.id);
+                              if (res.success) {
+                                setIsValidationModalOpen(false);
+                                setActiveTab('concentrado');
+                              } else {
+                                alert('Error: ' + res.error);
+                              }
+                            });
+                          }}
+                          className="bg-sky-500 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl transition-all flex items-center gap-3"
+                        >
+                          {isPending ? <Loader2 className="animate-spin" size={16}/> : <ShieldCheck size={16}/>} 
+                          Aprobar y Notificar
+                        </button>
+                        <button 
+                          disabled={isPending}
+                          onClick={async () => {
+                            const motivo = prompt('Motivo del rechazo (se enviará al cliente):');
+                            if (!motivo) return;
+                            const { rechazarExpedienteAction } = await import('@/actions/directora');
+                            startTransition(async () => {
+                              const res = await rechazarExpedienteAction(selectedExpediente.id, motivo);
+                              if (res.success) {
+                                setIsValidationModalOpen(false);
+                                setActiveTab('concentrado');
+                              } else {
+                                alert('Error: ' + res.error);
+                              }
+                            });
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl transition-all flex items-center gap-3"
+                        >
+                          {isPending ? <Loader2 className="animate-spin" size={16}/> : <X size={16}/>} 
+                          Rechazar
+                        </button>
+                      </div>
+                      <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-sky-500/10 rounded-full blur-[80px]" />
+                    </div>
+                 </section>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isCreateModalOpen && (

@@ -11,7 +11,16 @@ export type EstatusExpediente =
 
 export type TipoTramite = 'CONSTITUCION' | 'EXTRAORDINARIA' | 'RECUPERACION';
 
-export type PlanPagos = 'unico' | '2_meses' | '4_meses';
+export type PlanPagos =
+  | 'unico'
+  | '2_meses'
+  | '4_meses'
+  | '3_msi'
+  | '6_msi'
+  | '12_msi'
+  | '18_msi'
+  | '2_pagos'
+  | '4_pagos';
 
 export type TipoDocumento =
   | 'ine_frente'
@@ -19,6 +28,19 @@ export type TipoDocumento =
   | 'comprobante_domicilio'
   | 'contrato_firmado'
   | 'comprobante_pago'
+  | 'curp'
+  | 'csf'
+  | 'efirma_representante'
+  | 'propuestas_nombre'
+  | 'autorizacion_nombre'
+  | 'acta_asamblea'
+  | 'proyecto_word'
+  | 'testimonio_notarial'
+  | 'acuse_cita_sat'
+  | 'rfc_moral'
+  | 'constancia_acreditacion'
+  | 'oficio_donataria'
+  | 'inscripcion_rpp'
   | 'otro';
 
 export type EstatusContrato = 'generado' | 'firmado_cliente' | 'doble_firma' | 'vigente';
@@ -99,6 +121,7 @@ export interface Contrato {
 export interface Documento {
   id: string;
   expediente_id: string;
+  integrante_id?: string | null;
   tipo: TipoDocumento;
   url_archivo: string;
   validado: boolean;
@@ -167,6 +190,17 @@ export interface NotaBitacora extends Bitacora {
   autor: { nombre_completo: string };
 }
 
+export interface ExpedienteIntegrante {
+  id: string;
+  expediente_id: string;
+  nombre_completo: string;
+  estado_civil?: string | null;
+  ocupacion?: string | null;
+  lugar_nacimiento?: string | null;
+  fecha_nacimiento?: string | null;
+  created_at: string;
+}
+
 export interface DatosConcentrado {
   id?: string;
   expediente_id: string;
@@ -202,6 +236,7 @@ export interface ExpedienteAvanzado extends Expediente {
   seguimiento_tareas?: SeguimientoTarea[];
   bitacora?: NotaBitacora[];
   datos_concentrado?: DatosConcentrado[];
+  integrantes?: ExpedienteIntegrante[];
 }
 
 // ============================

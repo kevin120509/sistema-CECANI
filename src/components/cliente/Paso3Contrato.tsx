@@ -52,7 +52,7 @@ export default function Paso3Contrato({
   const [progress, setProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const isWaitingForDirector = !contrato.url_pdf_generado;
+  const isWaitingForDirector = !contrato.url_pdf_generado || expediente.estatus === 'revision_directora';
 
   const handleDescargar = () => {
     if (isWaitingForDirector) return;

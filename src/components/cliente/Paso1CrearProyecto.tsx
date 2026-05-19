@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useTransition } from 'react';
 import { crearExpedienteCompleto, actualizarExpedienteCompleto } from '@/actions/expediente';
 import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato, TipoTramite } from '@/types/database';
-import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS } from '@/lib/constants';
+import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS, PLANES_PAGO_LABELS, PRECIOS_POR_PLAN } from '@/lib/constants';
 import { validateRFC, validateCURP } from '@/lib/validations';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -57,9 +57,14 @@ export default function Paso1CrearProyecto({
     planPagos: contrato?.plan_pagos || ('' as PlanPagos | ''),
     servicioBaseId: contrato?.servicio_base || '',
     extrasSeleccionados: contrato?.modulos_extra || ([] as string[]),
+    observacionesPago: (contrato as any)?.observaciones_pago || '',
   });
 
   // --- Lógica de Trámite ---
+  const [tipoServicio, setTipoServicio] = useState<'legal' | 'contabilidad'>(
+    (contrato as any)?.tipo_contrato === 'contabilidad' ? 'contabilidad' : 'legal'
+  );
+
   const [tieneActa, setTieneActa] = useState<boolean | null>(
     expediente?.tipo_tramite ? (expediente.tipo_tramite !== 'CONSTITUCION') : null
   );
@@ -69,42 +74,84 @@ export default function Paso1CrearProyecto({
   );
 
   const tipoTramite = useMemo((): TipoTramite | undefined => {
+    if (tipoServicio === 'contabilidad') return undefined;
     if (tieneActa === false) return 'CONSTITUCION';
     if (tieneActa === true && necesitaRenovar === true) return 'RECUPERACION';
     if (tieneActa === true && necesitaRenovar === false) return 'EXTRAORDINARIA';
     return undefined;
-  }, [tieneActa, necesitaRenovar]);
+  }, [tieneActa, necesitaRenovar, tipoServicio]);
 
   useEffect(() => {
-    const baseId = tipoTramite === 'CONSTITUCION' ? 'constitucion' : 
-                   tipoTramite === 'RECUPERACION' ? 'recuperacion' : 
-                   tipoTramite === 'EXTRAORDINARIA' ? 'acta_extra' : '';
-    setFormData(prev => ({ ...prev, servicioBaseId: baseId }));
-  }, [tipoTramite]);
+    let baseId = '';
+    if (tipoServicio === 'contabilidad') {
+      baseId = 'contabilidad';
+    } else if (tipoTramite === 'CONSTITUCION') {
+      baseId = 'constitucion';
+    } else if (tipoTramite === 'RECUPERACION') {
+      baseId = 'recuperacion';
+    } else if (tipoTramite === 'EXTRAORDINARIA') {
+      baseId = 'acta_extra';
+    }
+
+    if (baseId && baseId !== formData.servicioBaseId) {
+      setFormData(prev => ({ ...prev, servicioBaseId: baseId }));
+    }
+  }, [tipoTramite, tipoServicio]);
 
   // --- Calculadora ---
   const presupuestoTotal = useMemo(() => {
-    let total = 0;
-    const { servicioBaseId, extrasSeleccionados, planPagos } = formData;
-    const esPagoContado = planPagos === 'unico';
-    
-    const base = Object.values(SERVICIOS_PRINCIPALES).find(s => s.id === servicioBaseId);
-    if (base) total += esPagoContado ? base.precioEspecial : base.precioLista;
+    const { planPagos, extrasSeleccionados, servicioBaseId } = formData;
 
+    // Matriz de Precios CECANI 2026
+    const PRECIOS_BASE: Record<string, number> = {
+      'constitucion': 65000,
+      'acta_extra': 65000,
+      'recuperacion': 35000,
+      'contabilidad': 15000
+    };
+
+    // Matriz de Planes para Paquetes Completos ($65k -> $76k/78k)
+    const MATRIZ_PLANES: Record<string, number> = {
+      'unico': 65000,
+      '3_msi': 65000,
+      '6_msi': 65000,
+      '12_msi': 76000,
+      '18_msi': 78000,
+      '2_pagos': 71000,
+      '4_pagos': 82500
+    };
+
+    let total = 0;
+    const esPaqueteLegal65 = servicioBaseId === 'constitucion' || servicioBaseId === 'acta_extra';
+
+    // 1. Determinar Base
+    if (esPaqueteLegal65 && planPagos && MATRIZ_PLANES[planPagos]) {
+      total = MATRIZ_PLANES[planPagos];
+    } else {
+      total = PRECIOS_BASE[servicioBaseId] || 0;
+      // Recargo del 15% si no es de contado en servicios fuera de matriz
+      if (planPagos && planPagos !== 'unico' && total > 0 && !esPaqueteLegal65) {
+        total = total * 1.15;
+      }
+    }
+
+    // 2. Sumar Extras (Precios Especiales en Paquete)
     extrasSeleccionados.forEach(extraId => {
       const extra = Object.values(SERVICIOS_EXTRAS).find(e => e.id === extraId);
       if (!extra) return;
-      if (extraId === 'cluni') {
-        const esPaquete = ['constitucion', 'acta_extra'].includes(servicioBaseId);
-        total += esPaquete ? 10000 : 11600;
-      } else if (extraId === 'web') {
-        total += 4999 * 1.16;
+
+      // Aplicar precios de paquete si es constitución o acta
+      if (esPaqueteLegal65) {
+        if (extraId === 'cluni') total += 10000;
+        else if (extraId === 'web') total += 5000;
+        else total += extra.precio;
       } else {
         total += extra.precio;
       }
     });
+
     return Math.round(total);
-  }, [formData]);
+  }, [formData.planPagos, formData.extrasSeleccionados, formData.servicioBaseId]);
 
   // --- Handlers ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -171,6 +218,8 @@ export default function Paso1CrearProyecto({
         monto_total: presupuestoTotal,
         tipo_tramite: tipoTramite,
         servicios_extra: serviciosExtraMapped,
+        tipo_contrato: tipoServicio,
+        observaciones_pago: formData.observacionesPago,
       };
 
       const result = expediente?.id 
@@ -303,12 +352,38 @@ export default function Paso1CrearProyecto({
               )}
 
               {subStep === 2 && (
-                <StepContent key="organizacion" title="Detalles Institucionales" icon={<Building2 size={30} />} variants={itemVariants}>
-                  <div className="space-y-10">
+                <StepContent key="organizacion" title="Estructura del Proyecto" icon={<Building2 size={30} />} variants={itemVariants}>
+                  <div className="space-y-12">
+                    <div className="space-y-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Tipo de Servicio Requerido</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ToggleButton active={tipoServicio === 'legal'} onClick={() => setTipoServicio('legal')}>Trámite Legal (Constitución)</ToggleButton>
+                        <ToggleButton active={tipoServicio === 'contabilidad'} onClick={() => setTipoServicio('contabilidad')}>Servicios Contables</ToggleButton>
+                      </div>
+                    </div>
+
                     <InputCol label="Nombre de la Asociación o Empresa *" name="nombreEmpresa" value={formData.nombreEmpresa} onChange={handleInputChange} icon={<Building2 size={18} />} placeholder="Ej. Transformando Vidas A.C." />
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <SelectCol label="Figura Jurídica Recomendada *" name="figuraId" value={formData.figuraId} onChange={handleInputChange} icon={<Scale size={18} />} options={figuras.map(f => ({ value: f.id, label: `${f.siglas} — ${f.descripcion}` }))} />
-                      <SelectCol label="Plan de Liquidación *" name="planPagos" value={formData.planPagos} onChange={handleInputChange} icon={<CreditCard size={18} />} options={[{ value: 'unico', label: 'Pago Único (Precio Especial)' }, { value: '2_meses', label: '2 Mensualidades' }, { value: '4_meses', label: '4 Mensualidades' }]} />
+                      <SelectCol 
+                        label="Figura Jurídica *" 
+                        name="figuraId" 
+                        value={formData.figuraId} 
+                        onChange={handleInputChange} 
+                        icon={<Scale size={18} />} 
+                        options={figuras.map(f => ({ value: f.id, label: `${f.siglas} — ${f.descripcion}` }))} 
+                      />
+                      <SelectCol 
+                        label="Plan de Liquidación *" 
+                        name="planPagos" 
+                        value={formData.planPagos} 
+                        onChange={handleInputChange} 
+                        icon={<CreditCard size={18} />} 
+                        options={Object.keys(PLANES_PAGO_LABELS).map(key => ({ 
+                          value: key, 
+                          label: (PLANES_PAGO_LABELS as any)[key] 
+                        }))} 
+                      />
                     </div>
                   </div>
                 </StepContent>
@@ -355,6 +430,51 @@ export default function Paso1CrearProyecto({
                             </div>
                           </motion.div>
                         )}
+                      </div>
+
+                      {/* SERVICIOS EXTRAS (Restaurados) */}
+                      <div className="mt-12 space-y-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
+                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Módulos Especializados (Opcionales)</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {Object.values(SERVICIOS_EXTRAS).map(extra => (
+                            <button
+                              key={extra.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => {
+                                  const list = prev.extrasSeleccionados.includes(extra.id)
+                                    ? prev.extrasSeleccionados.filter(id => id !== extra.id)
+                                    : [...prev.extrasSeleccionados, extra.id];
+                                  return { ...prev, extrasSeleccionados: list };
+                                });
+                              }}
+                              className={`
+                                p-6 rounded-[2rem] border-2 text-left transition-all duration-300 flex flex-col justify-between min-h-[140px]
+                                ${formData.extrasSeleccionados.includes(extra.id) 
+                                  ? 'bg-sky-500 border-sky-400 text-white shadow-xl shadow-sky-500/20' 
+                                  : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-white/10'}
+                              `}
+                            >
+                              <div>
+                                <h5 className={`text-[10px] font-black uppercase tracking-widest mb-2 ${formData.extrasSeleccionados.includes(extra.id) ? 'text-white' : 'text-slate-300'}`}>
+                                  {extra.nombre}
+                                </h5>
+                                <p className={`text-[9px] font-medium leading-relaxed opacity-60 uppercase`}>
+                                  {extra.descripcion}
+                                </p>
+                              </div>
+                              <div className="mt-4 flex items-center justify-between">
+                                <span className="text-xs font-black tabular-nums">
+                                  {extra.precio === 0 ? 'Cotizar' : `+$${extra.precio.toLocaleString()}`}
+                                </span>
+                                {formData.extrasSeleccionados.includes(extra.id) && <CheckCircle2 size={14} />}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>

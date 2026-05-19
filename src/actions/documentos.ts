@@ -24,10 +24,11 @@ function getDocumentoService() {
 export async function registrarDocumento(
   expedienteId: string,
   tipo: TipoDocumento,
-  urlArchivo: string
+  urlArchivo: string,
+  integranteId?: string | null
 ): Promise<ActionResult<{ documento_id: string }>> {
   const service = getDocumentoService();
-  const result = await service.registrarDocumentoYNotificar(expedienteId, tipo, urlArchivo);
+  const result = await service.registrarDocumentoYNotificar(expedienteId, tipo, urlArchivo, integranteId);
 
   if (result.success) {
     revalidatePath('/directora');

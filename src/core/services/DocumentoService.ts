@@ -17,10 +17,11 @@ export class DocumentoService {
   async registrarDocumentoYNotificar(
     expedienteId: string,
     tipo: TipoDocumento,
-    urlArchivo: string
+    urlArchivo: string,
+    integranteId?: string | null
   ): Promise<ActionResult<{ documento_id: string }>> {
     try {
-      const documentoId = await this.documentoRepo.registrarDocumento(expedienteId, tipo, urlArchivo);
+      const documentoId = await this.documentoRepo.registrarDocumento(expedienteId, tipo, urlArchivo, integranteId);
 
       // Notificar a directoras
       const directoras = await this.notificationService.obtenerIdsPorRol('directora');
