@@ -13,6 +13,8 @@ export interface DatosContratoPDF {
   ocupacion: string | null;
   estadoCivil: string | null;
   domicilioCompleto: string | null;
+  tipoContrato?: 'legal' | 'contabilidad';
+  observacionesPago?: string | null;
 }
 
 export interface IPdfService {

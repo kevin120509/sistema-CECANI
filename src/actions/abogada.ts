@@ -83,12 +83,24 @@ export async function guardarDatosConcentrado(
   const adminClient = createAdminClient();
 
   try {
+    // 1. Separar datos de expediente si vienen incluidos
+    const { numero_control, ...datosRestantes } = datos;
+
+    if (numero_control !== undefined) {
+      const { error: expError } = await adminClient
+        .from('expedientes')
+        .update({ numero_control })
+        .eq('id', expedienteId);
+      if (expError) throw expError;
+    }
+
+    // 2. Guardar en datos_concentrado
     const { error } = await adminClient
       .from('datos_concentrado')
       .upsert(
         {
           expediente_id: expedienteId,
-          ...datos,
+          ...datosRestantes,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'expediente_id' }
@@ -101,5 +113,32 @@ export async function guardarDatosConcentrado(
   } catch (error) {
     console.error('Error al guardar datos concentrado:', error);
     return { success: false, error: 'Ocurrió un error al guardar los datos.' };
+  }
+}
+
+/**
+ * Agrega un nuevo integrante (asociado) al expediente.
+ */
+export async function agregarIntegrante(
+  expedienteId: string,
+  nombre: string
+): Promise<ActionResult> {
+  const adminClient = createAdminClient();
+
+  try {
+    const { error } = await adminClient
+      .from('expediente_integrantes')
+      .insert({
+        expediente_id: expedienteId,
+        nombre_completo: nombre,
+      });
+
+    if (error) throw error;
+
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en agregarIntegrante:', error);
+    return { success: false, error: error.message };
   }
 }

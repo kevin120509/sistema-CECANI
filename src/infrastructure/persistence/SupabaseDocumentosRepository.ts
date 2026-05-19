@@ -6,7 +6,8 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
   async registrarDocumento(
     expedienteId: string,
     tipo: TipoDocumento,
-    urlArchivo: string
+    urlArchivo: string,
+    integranteId?: string | null
   ): Promise<string> {
     const supabase = createAdminClient();
 
@@ -16,6 +17,7 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
         expediente_id: expedienteId,
         tipo,
         url_archivo: urlArchivo,
+        integrante_id: integranteId,
       })
       .select('id')
       .single();

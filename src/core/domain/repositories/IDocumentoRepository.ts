@@ -4,7 +4,8 @@ export interface IDocumentoRepository {
   registrarDocumento(
     expedienteId: string,
     tipo: TipoDocumento,
-    urlArchivo: string
+    urlArchivo: string,
+    integranteId?: string | null
   ): Promise<string>;
 }
 

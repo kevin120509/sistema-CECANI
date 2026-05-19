@@ -39,6 +39,8 @@ export class ContratoService {
         ocupacion: perfilData.ocupacion,
         estadoCivil: perfilData.estado_civil,
         domicilioCompleto: perfilData.domicilio_completo,
+        tipoContrato: contratoData.tipo_contrato as any,
+        observacionesPago: contratoData.observaciones_pago,
       };
 
       const pdfBuffer = await this.pdfService.generarContrato(datosPdf);

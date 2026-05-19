@@ -16,7 +16,8 @@ import {
   FileText, 
   Image as ImageIcon,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 
 interface Paso2Props {
@@ -47,6 +48,15 @@ export default function Paso2Documentacion({
   const [isPending, startTransition] = useTransition();
   const [progress, setProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+
+  const isUnderReview = expediente.estatus === 'revision_directora';
+  const docs = expediente.documentos || [];
+  
+  const docIneFrente = docs.find(d => d.tipo === 'ine_frente');
+  const docIneReverso = docs.find(d => d.tipo === 'ine_reverso');
+  const docComprobante = docs.find(d => d.tipo === 'comprobante_domicilio');
+
+  const allApproved = docIneFrente?.validado && docIneReverso?.validado && docComprobante?.validado;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: ArchivoSeleccionado) => void) => {
     const file = e.target.files?.[0] || null;
@@ -91,23 +101,25 @@ export default function Paso2Documentacion({
     e.preventDefault();
     setError(null);
 
-    if (!ineFrente.file || !ineReverso.file || !comprobanteDomicilio.file) {
-      setError('Por favor, asegúrate de subir todos los documentos requeridos.');
-      return;
-    }
+    // Solo requerir los que no están aprobados
+    if (!docIneFrente?.validado && !ineFrente.file) { setError('Falta INE Frente'); return; }
+    if (!docIneReverso?.validado && !ineReverso.file) { setError('Falta INE Reverso'); return; }
+    if (!docComprobante?.validado && !comprobanteDomicilio.file) { setError('Falta Comprobante'); return; }
 
     startTransition(async () => {
       try {
-        await subirYRegistrar(ineFrente.file!, 'ine_frente', 'INE Frente', 'INE_Frente');
-        await subirYRegistrar(ineReverso.file!, 'ine_reverso', 'INE Reverso', 'INE_Reverso');
-        await subirYRegistrar(comprobanteDomicilio.file!, 'comprobante_domicilio', 'Comprobante de Domicilio', 'Comprobante_Domicilio');
+        if (ineFrente.file) await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
+        if (ineReverso.file) await subirYRegistrar(ineReverso.file, 'ine_reverso', 'INE Reverso', 'INE_Reverso');
+        if (comprobanteDomicilio.file) await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante de Domicilio', 'Comprobante_Domicilio');
 
         await actualizarEstatusExpediente(expediente.id, 'revision_directora');
 
-        setProgress('Generando contrato inteligente...');
-        const contratoId = expediente.contratos?.[0]?.id;
-        if (contratoId) {
-          await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+        if (allApproved) {
+            setProgress('Generando contrato inteligente...');
+            const contratoId = expediente.contratos?.[0]?.id;
+            if (contratoId) {
+            await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+            }
         }
 
         await onComplete();
@@ -118,6 +130,35 @@ export default function Paso2Documentacion({
       }
     });
   };
+
+  if (isUnderReview && !error && !isPending) {
+    return (
+      <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-sky-50 text-sky-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-sky-100 animate-pulse">
+          <Clock size={48} />
+        </motion.div>
+        <div className="space-y-4">
+          <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Documentación en Revisión</h2>
+          <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+            Hemos recibido tus documentos correctamente. La Dirección Central está validando la información para proceder con la generación de tu contrato.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto pt-8">
+          {[
+            { label: 'INE Frente', validado: docIneFrente?.validado },
+            { label: 'INE Reverso', validado: docIneReverso?.validado },
+            { label: 'Domicilio', validado: docComprobante?.validado },
+          ].map((d, i) => (
+            <div key={i} className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 ${d.validado ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+              {d.validado ? <CheckCircle2 size={24} /> : <Loader2 className="animate-spin" size={24} />}
+              <span className="text-[10px] font-black uppercase tracking-widest">{d.label}</span>
+              <span className="text-[8px] font-bold uppercase">{d.validado ? 'Validado' : 'Pendiente'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-12">
