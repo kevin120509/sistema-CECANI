@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useTransition } from 'react';
 import { crearExpedienteCompleto, actualizarExpedienteCompleto } from '@/actions/expediente';
 import type { CatalogoFigura, PlanPagos, Expediente, Perfil, Contrato, TipoTramite } from '@/types/database';
 import { SERVICIOS_PRINCIPALES, SERVICIOS_EXTRAS, PLANES_PAGO_LABELS, PRECIOS_POR_PLAN } from '@/lib/constants';
+import { validateRFC, validateCURP } from '@/lib/validations';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Phone, MapPin, Building2, Scale, CreditCard, 
@@ -164,6 +165,18 @@ export default function Paso1CrearProyecto({
     if (step === 1) {
       if (!f.nombreCompleto.trim() || !f.telefono.trim() || !f.rfc.trim()) {
         setLocalError('Por favor completa los campos obligatorios marcados con *');
+        return false;
+      }
+      
+      // Validación de RFC
+      if (!validateRFC(f.rfc)) {
+        setLocalError('El formato del RFC no es válido. Debe tener 12 o 13 caracteres alfanuméricos.');
+        return false;
+      }
+
+      // Validación de CURP (opcional, pero si se pone debe ser válida)
+      if (f.curp.trim() && !validateCURP(f.curp)) {
+        setLocalError('El formato de la CURP no es válido. Debe tener 18 caracteres.');
         return false;
       }
     } else if (step === 2) {
