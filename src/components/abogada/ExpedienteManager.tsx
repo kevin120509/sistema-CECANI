@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { marcarHitoCompletado, agregarNotaBitacora, guardarDatosConcentrado, agregarIntegrante } from '@/actions/abogada';
 import { logoutAbogada } from '@/actions/auth-abogada';
@@ -9,7 +10,8 @@ import { registrarDocumento } from '@/actions/documentos';
 import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 import type { CatalogoHito, TipoDocumento, ExpedienteIntegrante } from '@/types/database';
 import type { ExpedienteAbogada } from '@/app/abogada/page';
-import { Search, Building2, User, FileText, ClipboardList, BookOpen, MessageSquare, ExternalLink, ShieldAlert, CheckCircle2, Clock, FileUp, AlertCircle, Users } from 'lucide-react';
+import { Search, Building2, User, FileText, ClipboardList, BookOpen, ExternalLink, ShieldAlert, CheckCircle2, Clock, FileUp, AlertCircle, Users, Loader2, Bell } from 'lucide-react';
+import { PLANES_PAGO_LABELS } from '@/lib/constants';
 
 interface ExpedienteManagerProps {
   expedientes: ExpedienteAbogada[];
@@ -90,19 +92,21 @@ function DocumentStage({ title, docs, color, onUpload, uploadingType, integrante
 }
 
 export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: ExpedienteManagerProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExpedienteId, setSelectedExpedienteId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'etapa_legal' | 'documentacion' | 'cronograma_legal' | 'entregables' | 'bitacora'>('etapa_legal');
+  const [activeTab, setActiveTab] = useState<'etapa_legal' | 'documentacion' | 'seguimiento_proceso' | 'entregables'>('etapa_legal');
   const [updatingHitoId, setUpdatingHitoId] = useState<string | null>(null);
+  const [hitosLocales, setHitosLocales] = useState<Record<string, boolean>>({});
+  const [expandedExpId, setExpandedExpId] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
+
   const CAMPOS_CONCENTRADO = [
-    'asesora_encargada', 'estado', 'vendedora', 'telefono_cliente', 'objeto_social_ventas',
+    'asesora_encargada', 'estado', 'telefono_cliente', 'objeto_social_ventas',
     'actividad', 'cluni', 'notaria', 'pago_notario', 'estatus_rpp',
-    'total_contrato', 'periodicidad_pagos', 'pago_entrega_donataria', 'cantidad_cobrar_proximo', 
+    'total_contrato', 'periodicidad_pagos', 'pago_entrega_donataria', 'cantidad_cobrar_proximo',
     'num_pagos_realizados', 'cantidad_pagada_acumulada', 'saldo_cliente', 'fecha_ultimo_pago', 'quien_cobra',
-    'link_reunion', 'fecha_reunion_acuerdos', 'fecha_contrato',
-    'estatus_detalle', 'accion_realizar', 'numero_control'
+    'fecha_contrato', 'numero_control'
   ];
 
   const [concentradoForm, setConcentradoForm] = useState<Record<string, string>>({});
@@ -118,12 +122,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
 
   const selectedExpediente = expedientes.find(e => e.id === selectedExpedienteId) || null;
 
-  const bitacoraOrdenada = useMemo(() => {
-    if (!selectedExpediente?.bitacora) return [];
-    return [...selectedExpediente.bitacora].sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }, [selectedExpediente]);
+  useEffect(() => { setHitosLocales({}); }, [selectedExpedienteId]);
 
   useEffect(() => {
     if (selectedExpediente) {
@@ -136,6 +135,12 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       const totalPagado = pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
       const montoContrato = Number(contrato?.monto_total || 0);
       const saldo = montoContrato - totalPagado;
+      const totalPagosNum = pagos.length;
+      const fechaUltimoPago = pagos.length > 0
+        ? pagos.sort((a, b) => new Date(b.fecha_pago || b.created_at).getTime() - new Date(a.fecha_pago || a.created_at).getTime())[0]?.fecha_pago || pagos[0]?.created_at?.split('T')[0] || ''
+        : '';
+      const planPagosLabel = contrato?.plan_pagos ? (PLANES_PAGO_LABELS[contrato.plan_pagos] || contrato.plan_pagos) : '';
+      const fechaContrato = contrato?.created_at ? contrato.created_at.split('T')[0] : '';
 
       const newForm: Record<string, string> = {};
       CAMPOS_CONCENTRADO.forEach(campo => {
@@ -145,9 +150,13 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           telefono_cliente: cliente?.telefono || '',
           total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
           saldo_cliente: montoContrato > 0 ? `$${saldo.toLocaleString()}` : '',
-          vendedora: asesora?.nombre_completo || '',
-          numero_control: (selectedExpediente as any).numero_control || '',
-          asesora_encargada: (dbData as any).asesora_encargada || '',
+          cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
+          num_pagos_realizados: totalPagosNum > 0 ? String(totalPagosNum) : '',
+          fecha_ultimo_pago: fechaUltimoPago,
+          periodicidad_pagos: planPagosLabel,
+          fecha_contrato: fechaContrato,
+          asesora_encargada: asesora?.nombre_completo || (dbData as any).asesora_encargada || '',
+          actividad: (selectedExpediente as any).figura?.descripcion || (dbData as any).actividad || '',
         };
         newForm[campo] = dbValue || defaults[campo] || '';
       });
@@ -177,7 +186,14 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const handleToggleHito = async (hitoId: string, isCompleted: boolean) => {
     if (!selectedExpediente) return;
     setUpdatingHitoId(hitoId);
-    await marcarHitoCompletado(selectedExpediente.id, hitoId, isCompleted);
+    setHitosLocales(prev => ({ ...prev, [hitoId]: isCompleted }));
+    const res = await marcarHitoCompletado(selectedExpediente.id, hitoId, isCompleted);
+    if (!(res as any)?.success) {
+      setHitosLocales(prev => { const n = { ...prev }; delete n[hitoId]; return n; });
+      alert('Error al actualizar el paso');
+    } else {
+      router.refresh();
+    }
     setUpdatingHitoId(null);
   };
 
@@ -249,53 +265,114 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
         </div>
 
         <div className="bg-white border-2 border-gray-100 rounded-[2.5rem] shadow-xl overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-slate-50 font-black text-slate-600 uppercase text-[11px] tracking-[0.2em]">
-              <tr>
-                <th className="px-6 py-5 text-left">Expediente / Control</th>
-                <th className="px-6 py-5 text-left">Cliente</th>
-                <th className="px-6 py-5 text-center">Avance Legal</th>
-                <th className="px-6 py-5 text-center">WhatsApp</th>
-                <th className="px-6 py-5 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {filteredExpedientes.map(exp => {
-                const nombreCliente = (exp as any).cliente?.nombre_completo || 'Sin nombre';
-                const tel = (exp as any).cliente?.telefono;
-                const completados = hitosLegales.filter(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length;
-                const pct = hitosLegales.length > 0 ? Math.round((completados / hitosLegales.length) * 100) : 0;
-                
-                return (
-                  <tr key={exp.id} className="hover:bg-blue-50/50 transition-all group">
-                    <td className="px-6 py-5">
-                      <div className="font-black text-slate-900 uppercase tracking-tighter text-sm group-hover:text-blue-600 transition-colors">{exp.nombre_empresa}</div>
+          {/* Cabecera */}
+          <div className="grid grid-cols-[2fr_1.5fr_2fr_1.2fr_1fr_1fr] bg-slate-50 border-b border-slate-100 px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">
+            <span>Expediente / Control</span>
+            <span>Cliente</span>
+            <span className="text-center">Avance Legal</span>
+            <span className="text-center">Capacitacion</span>
+            <span className="text-center">WhatsApp</span>
+            <span className="text-center">Accion</span>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {filteredExpedientes.map(exp => {
+              const nombreCliente = (exp as any).cliente?.nombre_completo || 'Sin nombre';
+              const tel = (exp as any).cliente?.telefono;
+              const completadosExp = hitosLegales.filter(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length;
+              const totalExp = hitosLegales.length;
+              const completadosCap = hitosCapacitacion.filter(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length;
+              const totalCap = hitosCapacitacion.length;
+              const isExpanded = expandedExpId === exp.id;
+              const pasoActualIdx = hitosLegales.findIndex(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus !== 'completado');
+              const pasoCapIdx = hitosCapacitacion.findIndex(h => exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus !== 'completado');
+              const proxRec = ((exp as any).recordatorios || []).filter((r: any) => r.estatus !== 'completado' && r.estatus !== 'cancelado').sort((a: any, b: any) => a.fecha.localeCompare(b.fecha))[0];
+              const hoyStr = new Date().toISOString().split('T')[0];
+
+              return (
+                <div key={exp.id}>
+                  <div className="grid grid-cols-[2fr_1.5fr_2fr_1.2fr_1fr_1fr] items-center px-6 py-4 hover:bg-blue-50/40 transition-all group">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-slate-900 uppercase tracking-tighter text-sm group-hover:text-blue-600 transition-colors">{exp.nombre_empresa}</span>
+                        {alertasHoy.some(a => a.id === exp.id) && (
+                          <span className="bg-rose-50 text-rose-600 border border-rose-100 rounded-full px-2 py-0.5 text-[7px] font-black uppercase tracking-widest animate-pulse flex items-center gap-1"><ShieldAlert size={9} /> Hoy</span>
+                        )}
+                      </div>
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{(exp as any).numero_control || 'S/N Control'}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="text-slate-800 font-bold text-xs uppercase">{nombreCliente}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col items-center gap-1.5 min-w-[100px]">
-                        <span className={`text-sm font-black ${pct === 100 ? 'text-emerald-600' : 'text-blue-600'}`}>{pct}%</span>
-                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div>
+                      <p className="text-slate-800 font-bold text-xs uppercase truncate">{nombreCliente}</p>
+                    </div>
+                    {/* Avance Legal */}
+                    <div className="flex flex-col items-center gap-1">
+                      <button onClick={() => setExpandedExpId(isExpanded ? null : exp.id)} className={`flex items-center gap-1.5 text-xs font-black transition-colors ${completadosExp === totalExp && totalExp > 0 ? 'text-emerald-600' : 'text-blue-600'}`}>
+                        {completadosExp === totalExp && totalExp > 0 ? <CheckCircle2 size={13} className="text-emerald-500" /> : <span className="text-[9px]">&#9660;</span>}
+                        Paso {completadosExp} de {totalExp}
+                      </button>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${completadosExp === totalExp && totalExp > 0 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: totalExp > 0 ? `${Math.round((completadosExp / totalExp) * 100)}%` : '0%' }} />
+                      </div>
+                      {proxRec && <span className={`text-[8px] font-black uppercase tracking-wide truncate ${proxRec.fecha < hoyStr ? 'text-rose-600' : proxRec.fecha === hoyStr ? 'text-amber-600' : 'text-slate-400'}`}>&#128276; {proxRec.titulo.substring(0, 20)}{proxRec.titulo.length > 20 ? '...' : ''}</span>}
+                    </div>
+                    {/* Capacitacion */}
+                    <div className="flex flex-col items-center gap-1">
+                      <button onClick={() => setExpandedExpId(isExpanded ? null : exp.id)} className={`flex items-center gap-1.5 text-xs font-black transition-colors ${completadosCap === totalCap && totalCap > 0 ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                        {completadosCap === totalCap && totalCap > 0 ? <CheckCircle2 size={13} className="text-emerald-500" /> : <span className="text-[9px]">&#9660;</span>}
+                        {completadosCap} de {totalCap}
+                      </button>
+                      <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${completadosCap === totalCap && totalCap > 0 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: totalCap > 0 ? `${Math.round((completadosCap / totalCap) * 100)}%` : '0%' }} />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      {tel && <a href={`https://wa.me/52${tel.replace(/\D/g, '')}`} target="_blank" className="text-green-600 font-black text-[10px] uppercase tracking-widest hover:underline">{tel}</a>}
+                    </div>
+                    <div className="text-center">
+                      <button onClick={() => setSelectedExpedienteId(exp.id)} className="bg-slate-900 text-white px-5 py-2 rounded-xl text-[10px] font-black hover:bg-slate-700 transition-all uppercase tracking-widest">Gestionar</button>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="bg-slate-50 border-t border-slate-100 px-8 py-5">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600 mb-3">Avance del Tramite — Paso {completadosExp} de {totalExp}</p>
+                          <div className="space-y-1.5">
+                            {hitosLegales.map((h, i) => {
+                              const done = exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+                              const esCurrent = i === pasoActualIdx;
+                              return (
+                                <div key={h.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all ${done ? 'bg-emerald-50 border-emerald-100 opacity-70' : esCurrent ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-100'}`}>
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 ${done ? 'bg-emerald-500 text-white' : esCurrent ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}>{done ? '✓' : i + 1}</div>
+                                  <span className={`text-[9px] font-black uppercase tracking-wide leading-tight flex-1 ${done ? 'text-emerald-700 line-through' : esCurrent ? 'text-blue-900' : 'text-slate-500'}`}>{h.nombre}</span>
+                                  {esCurrent && <span className="text-[7px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded-full shrink-0">ACTUAL</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 mb-3">Capacitacion — {completadosCap} de {totalCap}</p>
+                          <div className="space-y-1.5">
+                            {hitosCapacitacion.map((h, i) => {
+                              const done = exp.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+                              const esCurrent = i === pasoCapIdx;
+                              return (
+                                <div key={h.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all ${done ? 'bg-indigo-50 border-indigo-100 opacity-70' : esCurrent ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-white border-slate-100'}`}>
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black shrink-0 ${done ? 'bg-indigo-500 text-white' : esCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>{done ? '✓' : i + 1}</div>
+                                  <span className={`text-[9px] font-black uppercase tracking-wide leading-tight flex-1 ${done ? 'text-indigo-700 line-through' : esCurrent ? 'text-indigo-900' : 'text-slate-500'}`}>{h.nombre}</span>
+                                  {esCurrent && <span className="text-[7px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded-full shrink-0">ACTUAL</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      {tel && (
-                        <a href={`https://wa.me/52${tel.replace(/\D/g, '')}`} target="_blank" className="text-green-600 font-black text-[10px] uppercase tracking-widest hover:underline">{tel}</a>
-                      )}
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <button onClick={() => setSelectedExpedienteId(exp.id)} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black hover:bg-slate-800 transition-all uppercase tracking-widest">Gestionar</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -343,12 +420,11 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[700px]">
         <nav className="flex overflow-x-auto bg-slate-50 border-b border-slate-100">
           {[
-            { id: 'etapa_legal', label: 'Concentración', icon: <ClipboardList size={14} /> },
-            { id: 'documentacion', label: 'Documentación', icon: <FileText size={14} /> },
-            { id: 'cronograma_legal', label: 'Cronograma', icon: <Clock size={14} /> },
-            { id: 'entregables', label: 'Capacitación', icon: <BookOpen size={14} /> },
-            { id: 'bitacora', label: 'Bitácora', icon: <MessageSquare size={14} /> },
-          ].map((tab) => (
+            { id: 'etapa_legal', label: 'Concentracion', icon: <ClipboardList size={14} /> },
+            { id: 'documentacion', label: 'Documentacion', icon: <FileText size={14} /> },
+            { id: 'seguimiento_proceso', label: 'Seguimiento del Proceso', icon: <Clock size={14} /> },
+            { id: 'entregables', label: 'Capacitacion', icon: <BookOpen size={14} /> },
+          ].map((tab: any) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 py-5 px-8 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 border-b-4 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
               {tab.icon} {tab.label}
             </button>
@@ -358,106 +434,63 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
         <div className="p-8">
           {activeTab === 'etapa_legal' && (
             <div className="space-y-10">
-              {/* SECCIÓN CRÍTICA: SITUACIÓN ACTUAL (Separada) */}
-              <div className="bg-amber-50 border-4 border-amber-200 rounded-[3rem] p-10 shadow-2xl shadow-amber-900/5 space-y-8">
-                <div className="flex items-center gap-4 border-b border-amber-200 pb-6">
-                  <div className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><AlertCircle size={24} /></div>
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.3em] text-amber-900">Situación Operativa Actual</h3>
-                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">Estatus Crítico y Próximos Pasos</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-amber-800 tracking-[0.2em] ml-1">Estatus Detallado (Reporte Excel)</label>
-                    <textarea 
-                      value={concentradoForm.estatus_detalle || ''} 
-                      onChange={e => handleConcentradoChange('estatus_detalle', e.target.value)} 
-                      className="w-full bg-white border-2 border-amber-100 rounded-[2rem] p-6 text-xs font-bold uppercase text-amber-950 outline-none focus:border-amber-500 min-h-[120px] shadow-inner resize-none"
-                      placeholder="Describa el estado actual del trámite..."
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-amber-800 tracking-[0.2em] ml-1">Acción Inmediata a Realizar</label>
-                    <textarea 
-                      value={concentradoForm.accion_realizar || ''} 
-                      onChange={e => handleConcentradoChange('accion_realizar', e.target.value)} 
-                      className="w-full bg-white border-2 border-amber-100 rounded-[2rem] p-6 text-xs font-bold uppercase text-amber-950 outline-none focus:border-amber-500 min-h-[120px] shadow-inner resize-none"
-                      placeholder="¿Qué se debe hacer a continuación?"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* 1. Perfil y Ventas */}
-                <ConcentradoCard title="1. Perfil y Asignación" color="slate">
+                <ConcentradoCard title="1. Datos del Cliente" color="slate">
                   {[
-                    { l: 'Asesora Encargada (Legal)', c: 'asesora_encargada' },
-                    { l: 'Vendedora (Comercial)', c: 'vendedora' },
-                    { l: 'Estado (Ubicación)', c: 'estado' },
-                    { l: 'Teléfono Directo', c: 'telefono_cliente' },
+                    { l: 'Asesora Asignada', c: 'asesora_encargada' },
+                    { l: 'Estado / Ubicacion', c: 'estado' },
+                    { l: 'Telefono Directo', c: 'telefono_cliente' },
                   ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
                 </ConcentradoCard>
 
-                {/* 2. Gestión Legal */}
-                <ConcentradoCard title="2. Gestión Legal y Notaría" color="blue">
+                <ConcentradoCard title="2. Gestion Legal y Notaria" color="blue">
                   {[
                     { l: 'Actividad Principal', c: 'actividad' },
-                    { l: 'Número CLUNI', c: 'cluni' },
+                    { l: 'Numero CLUNI', c: 'cluni' },
                     { l: 'Estatus RPP', c: 'estatus_rpp' },
-                    { l: 'Notaría Protocolizó', c: 'notaria' },
+                    { l: 'Notaria Protocolo', c: 'notaria' },
                     { l: 'Pago Notario (Responsable)', c: 'pago_notario' },
                   ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
                 </ConcentradoCard>
 
-                {/* 3. Estructura Financiera */}
-                <ConcentradoCard title="3. Estructura de Contrato" color="indigo">
+                <ConcentradoCard title="3. Contrato" color="indigo">
                   {[
-                    { l: 'Total del Contrato', c: 'total_contrato' },
-                    { l: 'Periodicidad de Pagos', c: 'periodicidad_pagos' },
+                    { l: 'Monto Total del Contrato', c: 'total_contrato' },
+                    { l: 'Plan de Pagos Elegido', c: 'periodicidad_pagos' },
+                    { l: 'Fecha de Firma del Contrato', c: 'fecha_contrato' },
                     { l: 'Pago Entrega Donataria', c: 'pago_entrega_donataria' },
-                    { l: 'Fecha de Contrato', c: 'fecha_contrato' },
                   ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
                 </ConcentradoCard>
 
-                {/* 4. Control de Pagos */}
-                <ConcentradoCard title="4. Control de Cobranza" color="emerald" className="lg:col-span-2">
+                <ConcentradoCard title="4. Estado de Cobranza" color="emerald" className="lg:col-span-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[
-                      { l: 'Saldo del Cliente', c: 'saldo_cliente' },
-                      { l: 'Monto Acumulado', c: 'cantidad_pagada_acumulada' },
-                      { l: 'Núm. Pagos Realizados', c: 'num_pagos_realizados' },
-                      { l: 'Cant. Próximo Cobro', c: 'cantidad_cobrar_proximo' },
-                      { l: 'Fecha Último Pago', c: 'fecha_ultimo_pago' },
-                      { l: 'Quien Cobra o Negocia', c: 'quien_cobra' },
+                      { l: 'Saldo Pendiente', c: 'saldo_cliente' },
+                      { l: 'Total Pagado', c: 'cantidad_pagada_acumulada' },
+                      { l: 'Numero de Pagos Realizados', c: 'num_pagos_realizados' },
+                      { l: 'Fecha del Ultimo Pago', c: 'fecha_ultimo_pago' },
+                      { l: 'Proximo Cobro (Monto)', c: 'cantidad_cobrar_proximo' },
+                      { l: 'Responsable de Cobro', c: 'quien_cobra' },
                     ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
                   </div>
                 </ConcentradoCard>
 
-                {/* 5. Acuerdos y Logística */}
-                <ConcentradoCard title="5. Logística y Acuerdos" color="violet">
-                  <div className="space-y-4">
-                    {[
-                      { l: 'Link de Reunión', c: 'link_reunion' },
-                      { l: 'Fecha Reunión Acuerdos', c: 'fecha_reunion_acuerdos' },
-                    ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase text-violet-600 tracking-widest">Objeto Social (Ventas)</label>
-                      <textarea 
-                        value={concentradoForm.objeto_social_ventas || ''} 
-                        onChange={e => handleConcentradoChange('objeto_social_ventas', e.target.value)} 
-                        className="w-full bg-violet-50 border border-violet-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none focus:border-violet-500 min-h-[80px] resize-none"
-                        placeholder="Detalles captados por ventas..."
-                      />
-                    </div>
+                <ConcentradoCard title="5. Objeto Social" color="violet">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-violet-600 tracking-widest">Descripcion / Objeto Social</label>
+                    <textarea
+                      value={concentradoForm.objeto_social_ventas || ''}
+                      onChange={e => handleConcentradoChange('objeto_social_ventas', e.target.value)}
+                      className="w-full bg-violet-50 border border-violet-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none focus:border-violet-500 min-h-[120px] resize-none"
+                      placeholder="Descripcion del objeto social..."
+                    />
                   </div>
                 </ConcentradoCard>
               </div>
 
               <div className="flex justify-end pt-6">
-                <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="bg-slate-900 text-white px-16 py-6 rounded-[2rem] text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-slate-800 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                  {isSavingConcentrado ? 'Sincronizando...' : 'Guardar Cambios en Concentrado'}
+                <button onClick={handleSaveConcentrado} disabled={isSavingConcentrado} className="flex items-center gap-3 bg-slate-900 text-white px-16 py-6 rounded-[2rem] text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-slate-800 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                  {isSavingConcentrado ? <><Loader2 size={16} className="animate-spin" /> Sincronizando...</> : <><FileText size={16} /> Guardar Cambios</>}
                 </button>
               </div>
             </div>
@@ -571,28 +604,35 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
             </div>
           )}
 
-          {activeTab === 'cronograma_legal' && (
-            <div className="max-w-4xl mx-auto space-y-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black uppercase tracking-tighter text-slate-900">Avance del Trámite</h2>
-                <div className="bg-blue-600 text-white px-6 py-2 rounded-xl text-lg font-black tracking-widest shadow-xl">
-                  {hitosLegales.length > 0 ? Math.round((hitosLegales.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosLegales.length) * 100) : 0}%
+          {activeTab === 'seguimiento_proceso' && (
+            <div className="max-w-3xl mx-auto space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tighter text-slate-900">Seguimiento del Proceso</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{selectedExpediente.nombre_empresa}</p>
+                </div>
+                <div className={`px-6 py-3 rounded-2xl text-sm font-black tracking-widest shadow-lg ${
+                  hitosLegales.filter(h => (h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado')).length === hitosLegales.length
+                    ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white'
+                }`}>
+                  Paso {hitosLegales.filter(h => (h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado')).length} de {hitosLegales.length}
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                 {hitosLegales.map((h, i) => {
-                  const done = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+                  const done = h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+                  const isUpdating = updatingHitoId === h.id.toString();
                   return (
-                    <div key={h.id} className={`p-6 rounded-[2rem] border-2 transition-all flex items-center justify-between ${done ? 'bg-emerald-50 border-emerald-100 opacity-60' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="flex items-center gap-6">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${done ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>{i + 1}</div>
-                        <div>
-                          <h4 className={`font-black uppercase tracking-tight ${done ? 'text-emerald-900 line-through' : 'text-slate-900'}`}>{h.nombre}</h4>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{h.descripcion || '—'}</p>
-                        </div>
+                    <div key={h.id} className={`flex items-center gap-4 px-6 py-4 border-b border-slate-100 last:border-0 transition-all ${done ? 'bg-emerald-50/60' : 'bg-white hover:bg-slate-50'}`}>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 ${done ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {done ? <CheckCircle2 size={16} /> : i + 1}
                       </div>
-                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} className={`px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${done ? 'bg-emerald-200 text-emerald-800' : 'bg-blue-600 text-white'}`}>
-                        {done ? 'Completado' : 'Marcar'}
+                      <div className="flex-1">
+                        <p className={`text-xs font-black uppercase tracking-tight ${done ? 'text-emerald-700 line-through' : 'text-slate-900'}`}>{h.nombre}</p>
+                        {h.descripcion && <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{h.descripcion}</p>}
+                      </div>
+                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} disabled={isUpdating} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-60 ${done ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                        {isUpdating ? <Loader2 size={12} className="animate-spin" /> : done ? <><CheckCircle2 size={12} /> Completado</> : 'Marcar'}
                       </button>
                     </div>
                   );
@@ -602,58 +642,41 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
           )}
 
           {activeTab === 'entregables' && (
-            <div className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-indigo-900 rounded-[2.5rem] p-10 text-white flex justify-between items-center shadow-2xl">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <div className="bg-indigo-900 rounded-[2.5rem] p-8 text-white flex justify-between items-center shadow-2xl">
                 <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter">Control de Capacitación</h2>
-                  <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mt-2">Seguimiento de entregas operativas</p>
+                  <h2 className="text-2xl font-black uppercase tracking-tighter">Control de Capacitacion</h2>
+                  <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mt-1">
+                    {(selectedExpediente as any).figura?.descripcion || 'Figura no asignada'} — {selectedExpediente.nombre_empresa}
+                  </p>
                 </div>
-                <div className="text-5xl font-black">{hitosCapacitacion.length > 0 ? Math.round((hitosCapacitacion.filter(h => selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado').length / hitosCapacitacion.length) * 100) : 0}%</div>
+                <div className="flex flex-col items-end">
+                  <div className="text-4xl font-black">
+                    {hitosCapacitacion.filter(h => (h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado')).length}
+                    <span className="text-xl opacity-60"> / {hitosCapacitacion.length}</span>
+                  </div>
+                  <span className="text-indigo-300 text-[9px] font-black uppercase tracking-widest mt-1">entregas completadas</span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {hitosCapacitacion.map(h => {
-                  const done = selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                {hitosCapacitacion.map((h, i) => {
+                  const done = h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
+                  const isUpdating = updatingHitoId === h.id.toString();
                   return (
-                    <div key={h.id} className={`p-6 rounded-3xl border-2 transition-all flex flex-col justify-between gap-4 ${done ? 'bg-indigo-50 border-indigo-100' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div>
-                        <h4 className={`font-black uppercase tracking-tight text-sm ${done ? 'text-indigo-900 line-through' : 'text-slate-900'}`}>{h.nombre}</h4>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{h.descripcion || '—'}</p>
+                    <div key={h.id} className={`flex items-center gap-4 px-6 py-4 border-b border-slate-100 last:border-0 transition-all ${done ? 'bg-indigo-50/60' : 'bg-white hover:bg-slate-50'}`}>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 ${done ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {done ? <CheckCircle2 size={16} /> : i + 1}
                       </div>
-                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} className={`w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${done ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-600 text-white'}`}>
-                        {done ? 'Entregado' : 'Marcar Entrega'}
+                      <div className="flex-1">
+                        <p className={`text-xs font-black uppercase tracking-tight ${done ? 'text-indigo-700 line-through' : 'text-slate-900'}`}>{h.nombre}</p>
+                        {h.descripcion && <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{h.descripcion}</p>}
+                      </div>
+                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} disabled={isUpdating} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-60 ${done ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                        {isUpdating ? <Loader2 size={12} className="animate-spin" /> : done ? <><CheckCircle2 size={12} /> Entregado</> : 'Marcar'}
                       </button>
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'bitacora' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="bg-slate-50 p-10 rounded-[2.5rem] border-2 border-slate-100 space-y-8">
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Nuevo Registro de Bitácora</h3>
-                <form action={async f => { const r = await agregarNotaBitacora(f); if(r.success) (document.getElementById('form-bitacora') as HTMLFormElement)?.reset(); else alert(r.error); }} id="form-bitacora" className="space-y-4">
-                  <input type="hidden" name="expediente_id" value={selectedExpediente.id} />
-                  <textarea name="nota" required rows={5} className="w-full p-6 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none text-xs font-bold text-slate-800 uppercase" placeholder="Describe los avances o acuerdos..."></textarea>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="date" name="fecha_proximo_seguimiento" required className="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none text-xs font-black uppercase" />
-                    <input type="time" name="hora" className="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none text-xs font-black uppercase" />
-                  </div>
-                  <SubmitButton label="GUARDAR EN BITÁCORA" className="w-full py-5 rounded-xl font-black tracking-widest text-[10px]" />
-                </form>
-              </div>
-              <div className="space-y-6 overflow-y-auto max-h-[600px] pr-4 custom-scrollbar">
-                {bitacoraOrdenada.map(n => (
-                  <div key={n.id} className="p-6 bg-white border-2 border-slate-50 rounded-3xl shadow-sm space-y-3">
-                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
-                      <span className="text-blue-600">{n.autor?.nombre_completo}</span>
-                      <span className="text-slate-400">{new Date(n.created_at).toLocaleDateString()} {n.hora?.substring(0, 5)}</span>
-                    </div>
-                    <p className="text-xs font-bold text-slate-800 uppercase leading-relaxed">{n.nota}</p>
-                    {n.fecha_proximo_seguimiento && <div className="text-[8px] font-black text-amber-600 uppercase tracking-tighter">Prox. Seguimiento: {new Date(n.fecha_proximo_seguimiento).toLocaleDateString()}</div>}
-                  </div>
-                ))}
               </div>
             </div>
           )}
