@@ -114,12 +114,12 @@ export default function Paso2Documentacion({
 
         await actualizarEstatusExpediente(expediente.id, 'revision_directora');
 
-        if (allApproved) {
-            setProgress('Generando contrato inteligente...');
-            const contratoId = expediente.contratos?.[0]?.id;
-            if (contratoId) {
-            await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
-            }
+        // Generamos el contrato automáticamente al terminar de subir documentos
+        // para que la directora pueda revisarlo en su panel de validación
+        setProgress('Generando contrato inteligente...');
+        const contratoId = expediente.contratos?.[0]?.id;
+        if (contratoId) {
+          await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
         }
 
         await onComplete();

@@ -56,7 +56,7 @@ export default function Paso3Contrato({
 
   const handleDescargar = () => {
     if (isWaitingForDirector) return;
-    window.open(contrato.url_pdf_generado!, '_blank');
+    window.open(`/api/r2/download?url=${encodeURIComponent(contrato.url_pdf_generado!)}`, '_blank');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: ArchivoSeleccionado) => void) => {

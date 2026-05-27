@@ -107,11 +107,15 @@ export default function DirectorDashboard({
   const [asesoraId, setAsesoraId] = useState('');
 
   const validacion = useMemo(() => {
-    return concentrado.filter(exp => exp.estatus === 'revision_directora');
-  }, [concentrado]);
+    return porAsignar.filter(exp => exp.estatus === 'revision_directora');
+  }, [porAsignar]);
+
+  const listosParaAsignar = useMemo(() => {
+    return porAsignar.filter(exp => exp.estatus !== 'revision_directora');
+  }, [porAsignar]);
 
   const filteredData = useMemo(() => {
-    let result = activeTab === 'por_asignar' ? porAsignar : activeTab === 'validacion' ? validacion : concentrado;
+    let result = activeTab === 'por_asignar' ? listosParaAsignar : activeTab === 'validacion' ? validacion : concentrado;
     
     if (activeTab === 'concentrado' && selectedAsesoraName !== 'all') {
       const q = selectedAsesoraName.toLowerCase();
@@ -129,7 +133,7 @@ export default function DirectorDashboard({
       );
     }
     return result;
-  }, [activeTab, porAsignar, concentrado, validacion, selectedAsesoraName, searchQuery]);
+  }, [activeTab, listosParaAsignar, concentrado, validacion, selectedAsesoraName, searchQuery]);
 
   const individualAsesoras = useMemo(() => {
     const names = new Set<string>();
@@ -271,7 +275,7 @@ export default function DirectorDashboard({
         </div>
 
         <nav className="flex-1 px-4 md:px-6 space-y-2 overflow-y-auto custom-scrollbar min-h-0">
-          <SidebarLink icon={<LayoutDashboard size={20} />} label="Por Asignar" active={activeTab === 'por_asignar'} onClick={() => { setActiveTab('por_asignar'); setIsSidebarOpen(false); }} badge={porAsignar.length} />
+          <SidebarLink icon={<LayoutDashboard size={20} />} label="Por Asignar" active={activeTab === 'por_asignar'} onClick={() => { setActiveTab('por_asignar'); setIsSidebarOpen(false); }} badge={listosParaAsignar.length} />
           <SidebarLink icon={<ShieldCheck size={20} />} label="Validación" active={activeTab === 'validacion'} onClick={() => { setActiveTab('validacion'); setIsSidebarOpen(false); }} badge={validacion.length} />
           <SidebarLink icon={<Users size={20} />} label="Concentrado" active={activeTab === 'concentrado'} onClick={() => { setActiveTab('concentrado'); setIsSidebarOpen(false); }} />
           
@@ -436,7 +440,7 @@ export default function DirectorDashboard({
                              </div>
                              <div>
                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p>
-                               <a href={doc.url_archivo} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
+                               <a href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
                              </div>
                            </div>
                            <div className="flex gap-1">
@@ -449,6 +453,26 @@ export default function DirectorDashboard({
                              >
                                {doc.validado ? 'Aprobado' : 'Aprobar'}
                              </button>
+                             {!doc.validado && (
+                               <button 
+                                 onClick={async () => {
+                                   const motivo = prompt('Motivo de rechazo para ' + doc.tipo.replace(/_/g, ' ').toUpperCase() + ':');
+                                   if (!motivo) return;
+                                   const { rechazarDocumentoR2Action } = await import('@/actions/directora');
+                                   startTransition(async () => {
+                                     const res = await rechazarDocumentoR2Action(doc.id, doc.tipo, selectedExpediente.id, selectedExpediente.cliente_id, motivo, doc.url_archivo);
+                                     if (res.success) {
+                                       setIsValidationModalOpen(false);
+                                     } else {
+                                       alert('Error: ' + res.error);
+                                     }
+                                   });
+                                 }}
+                                 className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all bg-white text-slate-400 border border-slate-200 hover:border-red-500 hover:text-red-500"
+                               >
+                                 Rechazar
+                               </button>
+                             )}
                            </div>
                          </div>
                        ))}
@@ -468,11 +492,34 @@ export default function DirectorDashboard({
                       </div>
                       
                       <div className="flex flex-col sm:flex-row gap-4 relative z-10">
-                        {selectedExpediente.contratos?.[0]?.url_pdf_generado && (
-                          <a href={selectedExpediente.contratos[0].url_pdf_generado} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 backdrop-blur-md transition-all">
-                            <Download size={16}/> Previsualizar PDF
-                          </a>
-                        )}
+                        {(() => {
+                          const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
+                          const urlPDF = contrato?.url_pdf_generado || contrato?.url_pdf_doble_firma || contrato?.url_pdf_firmado_cliente;
+                          if (!urlPDF) return (
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-slate-400 font-bold px-4 py-4">PDF no generado</span>
+                              <button 
+                                onClick={async () => {
+                                  if (!contrato?.id) return alert('No hay registro de contrato para este cliente.');
+                                  const { generarContratoAutomatico } = await import('@/actions/contrato');
+                                  startTransition(async () => {
+                                    const res = await generarContratoAutomatico(selectedExpediente.cliente_id, selectedExpediente.id, contrato.id);
+                                    if (!res.success) alert('Error al generar: ' + res.error);
+                                    else setIsValidationModalOpen(false);
+                                  });
+                                }}
+                                className="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all"
+                              >
+                                Generar Ahora
+                              </button>
+                            </div>
+                          );
+                          return (
+                            <a href={`/api/r2/download?url=${encodeURIComponent(urlPDF)}`} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 backdrop-blur-md transition-all">
+                              <Download size={16}/> Previsualizar PDF
+                            </a>
+                          );
+                        })()}
                         <button 
                           disabled={isPending}
                           onClick={async () => {

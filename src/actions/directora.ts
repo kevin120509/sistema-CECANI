@@ -344,6 +344,57 @@ export async function validarDocumentoAction(documentoId: string, validado: bool
 }
 
 /**
+ * Rechaza un documento individual, notificando al cliente y borrándolo para que pueda resubirlo.
+ */
+export async function rechazarDocumentoR2Action(
+  documentoId: string, 
+  tipoDocumento: string, 
+  expedienteId: string, 
+  clienteId: string, 
+  motivo: string,
+  urlArchivo: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // 1. Borrar el registro de la tabla documentos
+    const { error: deleteError } = await adminSupabase
+      .from('documentos')
+      .delete()
+      .eq('id', documentoId);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Intentar borrar el archivo físico en R2
+    if (urlArchivo) {
+      const { borrarArchivoR2 } = await import('@/lib/r2');
+      await borrarArchivoR2(urlArchivo);
+    }
+
+    // 3. Regresar el estatus del expediente a en_registro para que el cliente atienda el pendiente
+    await adminSupabase
+      .from('expedientes')
+      .update({ estatus: 'en_registro' })
+      .eq('id', expedienteId);
+
+    // 4. Enviar notificación Push al cliente indicando el motivo
+    const nombreDoc = tipoDocumento.replace(/_/g, ' ').toUpperCase();
+    await sendPushNotification({
+      userIds: [clienteId],
+      title: `Documento Rechazado: ${nombreDoc}`,
+      message: `Tu documento fue rechazado por el siguiente motivo: ${motivo}. Por favor, vuelve a subirlo.`,
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Aprueba el expediente completo (documentos + contrato) y notifica al cliente.
  */
 export async function aprobarExpedienteAction(expedienteId: string): Promise<{ success?: boolean; error?: string }> {

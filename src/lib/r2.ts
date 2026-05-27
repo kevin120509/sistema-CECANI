@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
  * Obtiene el cliente de S3 configurado para R2.
@@ -93,4 +94,70 @@ export async function subirBufferR2(
     console.error("Error en subirBufferR2:", error);
     throw error;
   }
+}
+
+/**
+ * Borra un archivo de Cloudflare R2 utilizando su URL pública.
+ */
+export async function borrarArchivoR2(urlArchivo: string): Promise<boolean> {
+  const bucketName = process.env.R2_BUCKET_NAME;
+  const publicUrl = process.env.R2_PUBLIC_URL;
+
+  if (!bucketName || !publicUrl) {
+    throw new Error("R2_BUCKET_NAME o R2_PUBLIC_URL no están configurados.");
+  }
+
+  try {
+    // Extraer el Key (ruta del archivo) de la URL pública
+    const baseUrl = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl;
+    let key = urlArchivo.replace(baseUrl, "");
+    if (key.startsWith('/')) {
+      key = key.substring(1);
+    }
+    
+    // Si la URL usa .r2.dev u otro formato en producción, decodificamos el key
+    key = decodeURIComponent(key);
+
+    const client = getR2Client();
+    const command = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    await client.send(command);
+    return true;
+  } catch (error) {
+    console.error("Error en borrarArchivoR2:", error);
+    // No lanzamos error para que no bloquee el flujo si el archivo ya no existía
+    return false;
+  }
+}
+
+/**
+ * Genera una URL firmada (temporal) válida por 24 horas para acceder a un archivo privado en R2.
+ */
+export async function generarUrlFirmadaR2(urlArchivo: string): Promise<string> {
+  const bucketName = process.env.R2_BUCKET_NAME;
+  const publicUrl = process.env.R2_PUBLIC_URL;
+
+  if (!bucketName || !publicUrl) {
+    throw new Error("R2_BUCKET_NAME o R2_PUBLIC_URL no están configurados.");
+  }
+
+  // Extraer el Key
+  const baseUrl = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl;
+  let key = urlArchivo.replace(baseUrl, "");
+  if (key.startsWith('/')) {
+    key = key.substring(1);
+  }
+  key = decodeURIComponent(key);
+
+  const client = getR2Client();
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  });
+
+  // Expira en 24 horas (86400 segundos)
+  return await getSignedUrl(client, command, { expiresIn: 86400 });
 }
