@@ -47,7 +47,12 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
 ## 6. Bitácora de Sesión
-### 27 de Mayo, 2026 - Corrección de Generador de Contratos PDF
+### [2026-05-27] - Optimización del Modal de Gestión y Fix de Subida (Directora)
+- **Acción**: Se rediseñó el modal de Gestión para agrupar todas las validaciones antes de asignar abogada. Se arregló un bug al subir la Doble Firma.
+- **Cambios**: `src/components/directora/DirectorDashboard.tsx`, `task.md`.
+- **Pendientes**: Ninguno crítico. El flujo de subida a R2 y actualización a Supabase de la "Doble Firma" ya funciona correctamente y la interfaz es fluida.
+
+### [2026-05-27] - Generación de Contratos Completadatos PDF
 - **Acción**: Se actualizaron las cláusulas del generador de contratos en PDF para incluir los 14 puntos completos del template legal de CECANI de manera generalizada y personalizada.
 - **Cambios**: `src/lib/pdf-generator.ts`
 - **Pendientes**: Ninguno asociado a esta tarea.
