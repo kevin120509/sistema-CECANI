@@ -163,22 +163,8 @@ export default function Paso1CrearProyecto({
     setLocalError(null);
     const f = formData;
     if (step === 1) {
-      if (!f.nombreCompleto.trim() || !f.telefono.trim() || !f.rfc.trim()) {
-        setLocalError('Por favor completa los campos obligatorios marcados con *');
-        return false;
-      }
-      
-      // Validación de RFC
-      if (!validateRFC(f.rfc)) {
-        setLocalError('El formato del RFC no es válido. Debe tener 12 o 13 caracteres alfanuméricos.');
-        return false;
-      }
-
-      // Validación de CURP (opcional, pero si se pone debe ser válida)
-      if (f.curp.trim() && !validateCURP(f.curp)) {
-        setLocalError('El formato de la CURP no es válido. Debe tener 18 caracteres.');
-        return false;
-      }
+      // Validaciones eliminadas a petición del usuario para permitir mayor flexibilidad
+      return true;
     } else if (step === 2) {
       if (!f.nombreEmpresa.trim() || !f.figuraId || !f.planPagos) {
         setLocalError('La configuración de la empresa y el plan de pagos son requeridos.');

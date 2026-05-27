@@ -105,6 +105,8 @@ export default function DirectorDashboard({
   const [uploadProgress, setUploadProgress] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [asesoraId, setAsesoraId] = useState('');
+  const [dobleFirmaFile, setDobleFirmaFile] = useState<File | null>(null);
+  const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
 
   const validacion = useMemo(() => {
     return porAsignar.filter(exp => exp.estatus === 'revision_directora');
@@ -627,35 +629,129 @@ export default function DirectorDashboard({
 
         {isAssignModalOpen && selectedExpediente && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden">
-               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && !isUploadingDobleFirma && setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden">
+               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-6">
                    <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><FileText size={24}/></div>
-                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Gestión</h2>
+                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Gestión y Asignación</h2>
                  </div>
-                 <button onClick={() => setIsAssignModalOpen(false)} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+                 <button onClick={() => { setIsAssignModalOpen(false); setDobleFirmaFile(null); }} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
                </div>
+
                <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar space-y-12">
-                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                   <DataField label="Representante" value={selectedExpediente.cliente?.nombre_completo} icon={<Users size={14}/>} />
-                   <DataField label="RFC" value={selectedExpediente.cliente?.rfc} icon={<FileText size={14}/>} />
-                   <DataField label="CURP" value={selectedExpediente.cliente?.curp} icon={<ShieldCheck size={14}/>} />
-                   <DataField label="WhatsApp" value={selectedExpediente.cliente?.telefono} icon={<Users size={14}/>} />
-                   <DataField label="Ocupación" value={selectedExpediente.cliente?.ocupacion} icon={<Scale size={14}/>} />
-                   <DataField label="Estado Civil" value={selectedExpediente.cliente?.estado_civil} icon={<Users size={14}/>} />
-                   <div className="sm:col-span-2 lg:col-span-3"><DataField label="Domicilio" value={selectedExpediente.cliente?.domicilio_completo} icon={<MapPin size={14}/>} /></div>
+                 
+                 {/* Sección 1: Contrato y Pago */}
+                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                   {/* Contrato Firmado */}
+                   <div className="bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-8 flex flex-col justify-between">
+                     <div>
+                       <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2"><FileSignature size={16}/> Contrato Cliente</h3>
+                       {(() => {
+                         const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
+                         if (contrato?.url_pdf_firmado_cliente) {
+                           return (
+                             <a href={`/api/r2/download?url=${encodeURIComponent(contrato.url_pdf_firmado_cliente)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 bg-white border-2 border-sky-100 text-sky-600 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-sky-500 hover:bg-sky-50 transition-all shadow-sm">
+                               <Download size={18}/> Descargar Contrato Firmado
+                             </a>
+                           );
+                         }
+                         return <p className="text-xs font-bold text-slate-400 uppercase">El cliente aún no ha subido el contrato firmado.</p>;
+                       })()}
+                     </div>
+                   </div>
+
+                   {/* Validación de Pago */}
+                   <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] p-8 flex flex-col justify-between">
+                     <div>
+                       <h3 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-6 flex items-center gap-2"><ShieldCheck size={16}/> Validación de Pago</h3>
+                       {(() => {
+                         const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
+                         const pago = Array.isArray(selectedExpediente.pagos) ? selectedExpediente.pagos[0] : (selectedExpediente.pagos as any);
+                         
+                         return (
+                           <div className="space-y-4">
+                             <div className="flex justify-between items-center bg-white/60 p-4 rounded-2xl border border-emerald-100/50">
+                               <span className="text-[10px] font-black uppercase text-emerald-800/60">Total Contrato:</span>
+                               <span className="text-sm font-black text-slate-900">${contrato?.monto_total?.toLocaleString('es-MX', {minimumFractionDigits: 2}) || '0.00'}</span>
+                             </div>
+                             {pago ? (
+                               <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-emerald-200">
+                                 <span className="text-[10px] font-black uppercase text-emerald-600">Monto Pagado:</span>
+                                 <span className="text-lg font-black text-emerald-600">${pago.monto?.toLocaleString('es-MX', {minimumFractionDigits: 2}) || '0.00'}</span>
+                               </div>
+                             ) : (
+                               <p className="text-xs font-bold text-slate-400 uppercase">Sin registro de pago.</p>
+                             )}
+                             {pago?.url_comprobante && (
+                               <a href={`/api/r2/download?url=${encodeURIComponent(pago.url_comprobante)}`} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase text-emerald-600 hover:text-emerald-700 hover:underline">
+                                 <Download size={14}/> Ver Comprobante
+                               </a>
+                             )}
+                           </div>
+                         );
+                       })()}
+                     </div>
+                   </div>
                  </section>
-                 <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   {selectedExpediente.documentos?.map((doc: any) => (
-                     <a key={doc.id} href={doc.url_archivo} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl hover:border-sky-500 transition-all group">
-                       <div className="flex items-center gap-3"><div className="p-2 bg-white rounded-lg text-slate-400 group-hover:text-sky-500 shadow-sm"><Download size={16}/></div><div className="text-left"><p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p></div></div>
-                       <ChevronRight size={14} className="text-slate-300 group-hover:text-sky-500" />
-                     </a>
-                   ))}
+
+                 {/* Sección 2: Subir Doble Firma */}
+                 <section className="bg-sky-50 border-2 border-sky-100 rounded-[2rem] p-8">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-sky-600 mb-6 flex items-center gap-2"><UploadCloud size={16}/> Contrato Doble Firma</h3>
+                    {(() => {
+                       const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
+                       if (contrato?.url_pdf_doble_firma) {
+                         return (
+                           <div className="flex items-center gap-4">
+                             <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><ShieldCheck size={20}/></div>
+                             <div>
+                               <p className="text-xs font-black uppercase text-slate-900">Doble Firma Registrada</p>
+                               <a href={`/api/r2/download?url=${encodeURIComponent(contrato.url_pdf_doble_firma)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-sky-500 uppercase hover:underline">Descargar PDF</a>
+                             </div>
+                           </div>
+                         );
+                       }
+                       return (
+                         <div className="flex flex-col sm:flex-row gap-4 items-center">
+                           <div className="flex-1 w-full">
+                             <FileUploader label="PDF Doble Firma" icon={<FileSignature size={18}/>} onChange={f => setDobleFirmaFile(f || null)} file={dobleFirmaFile || undefined} />
+                           </div>
+                           <button 
+                             disabled={!dobleFirmaFile || isUploadingDobleFirma}
+                             onClick={async () => {
+                               if (!dobleFirmaFile || !contrato?.id) return;
+                               setIsUploadingDobleFirma(true);
+                               try {
+                                 const fdDb = new FormData();
+                                 fdDb.append('expediente_id', selectedExpediente.id);
+                                 fdDb.append('contrato_id', contrato.id);
+                                 fdDb.append('file', dobleFirmaFile);
+                                 
+                                 const resDb = await subirContratoDobleFirma(fdDb);
+                                 if (!resDb.success) throw new Error(resDb.error || 'Error guardando en BD');
+                                 
+                                 setDobleFirmaFile(null);
+                                 setIsAssignModalOpen(false); 
+                                 setActiveTab('concentrado');
+                                 setTimeout(() => { setActiveTab('por_asignar'); setIsAssignModalOpen(true); }, 100);
+                               } catch (err: any) {
+                                 alert(err.message);
+                               } finally {
+                                 setIsUploadingDobleFirma(false);
+                               }
+                             }}
+                             className="w-full sm:w-auto bg-sky-600 text-white px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-sky-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                           >
+                             {isUploadingDobleFirma ? <Loader2 className="animate-spin" size={16}/> : <UploadCloud size={16}/>} Subir y Guardar
+                           </button>
+                         </div>
+                       );
+                    })()}
                  </section>
+
+                 {/* Sección 3: Asignar Asesora */}
                  <section className="bg-slate-950 rounded-[2rem] p-8 md:p-10 text-white text-center space-y-8">
-                   <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Designar Asesora</h3>
+                   <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Designar Asesora Titular</h3>
                       <form onSubmit={async (e) => { 
                         e.preventDefault(); 
                         startTransition(async () => { 
@@ -665,7 +761,7 @@ export default function DirectorDashboard({
                           const res = await asignarAbogada(fd); 
                           if (res.success) {
                             setIsAssignModalOpen(false);
-                            setAsesoraId(''); // Limpiar selección
+                            setAsesoraId(''); 
                           } else {
                             alert('Error: ' + res.error);
                           }
@@ -675,9 +771,34 @@ export default function DirectorDashboard({
                         <option value="" className="bg-slate-900">Seleccionar...</option>
                         {abogadas.map(a => <option key={a.id} value={a.id} className="bg-slate-900">{a.nombre_completo}</option>)}
                       </select>
-                      <button type="submit" disabled={isPending} className="w-full bg-sky-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center gap-3">{isPending ? <Loader2 className="animate-spin" size={16}/> : 'Confirmar'}</button>
+                      <button type="submit" disabled={isPending} className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center gap-3">{isPending ? <Loader2 className="animate-spin" size={16}/> : 'Confirmar Asignación'}</button>
                    </form>
                  </section>
+
+                 {/* Sección 4: Referencias */}
+                 <section className="pt-8 border-t border-slate-100">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">Datos de Identidad (Referencia)</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                      <DataField label="Representante" value={selectedExpediente.cliente?.nombre_completo} icon={<Users size={14}/>} />
+                      <DataField label="RFC" value={selectedExpediente.cliente?.rfc} icon={<FileText size={14}/>} />
+                      <DataField label="CURP" value={selectedExpediente.cliente?.curp} icon={<ShieldCheck size={14}/>} />
+                      <DataField label="WhatsApp" value={selectedExpediente.cliente?.telefono} icon={<Users size={14}/>} />
+                      <DataField label="Ocupación" value={selectedExpediente.cliente?.ocupacion} icon={<Scale size={14}/>} />
+                      <DataField label="Estado Civil" value={selectedExpediente.cliente?.estado_civil} icon={<Users size={14}/>} />
+                      <div className="sm:col-span-2 lg:col-span-3"><DataField label="Domicilio" value={selectedExpediente.cliente?.domicilio_completo} icon={<MapPin size={14}/>} /></div>
+                    </div>
+                    
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">Documentos Básicos</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {selectedExpediente.documentos?.map((doc: any) => (
+                        <a key={doc.id} href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl hover:border-sky-500 transition-all group">
+                          <div className="flex items-center gap-3"><div className="p-2 bg-white rounded-lg text-slate-400 group-hover:text-sky-500 shadow-sm"><Download size={16}/></div><div className="text-left"><p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p></div></div>
+                          <ChevronRight size={14} className="text-slate-300 group-hover:text-sky-500" />
+                        </a>
+                      ))}
+                    </div>
+                 </section>
+
                </div>
             </motion.div>
           </div>

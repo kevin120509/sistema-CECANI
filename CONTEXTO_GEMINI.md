@@ -45,3 +45,18 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 1.  **Validación de Directora:** Adaptar el panel de la directora para que pueda visualizar estos nuevos campos legales y los archivos desde R2.
 2.  **Doble Firma:** Implementar la subida del contrato con la firma de CECANI (Doble firma) hacia la carpeta `contratos/` en R2.
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
+
+## 6. Bitácora de Sesión
+### 27 de Mayo, 2026 - Corrección de Generador de Contratos PDF
+- **Acción**: Se actualizaron las cláusulas del generador de contratos en PDF para incluir los 14 puntos completos del template legal de CECANI de manera generalizada y personalizada.
+- **Cambios**: `src/lib/pdf-generator.ts`
+- **Pendientes**: Ninguno asociado a esta tarea.
+
+### [27 Mayo 2026] - Corrección de Visibilidad en Panel de Abogada
+- **Acción:** Se corrigió el problema por el cual los expedientes asignados no aparecían en el panel de la abogada.
+- **Cambios:**
+    - Modificación en `src/app/abogada/page.tsx` para incluir el rol `'abogada'` en los roles permitidos (evita redirecciones accidentales al login).
+    - Actualización de la consulta de expedientes para soportar tanto la columna legacy `asesora_id` como la nueva tabla relacional `expediente_asesoras`.
+    - Implementación de manejo de errores en la consulta relacional para mantener compatibilidad si la tabla aún no existe en el esquema.
+- **Resultado:** Las abogadas/asesoras ahora pueden ver correctamente los casos que les han sido asignados por la directora.
+- **Pendientes:** Asegurar que el usuario ejecute las actualizaciones de base de datos (`database_updates.sql`) para habilitar la tabla relacional de forma definitiva.

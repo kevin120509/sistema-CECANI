@@ -33,7 +33,7 @@ export default async function AbogadaPage() {
     .eq('id', user.id)
     .single();
 
-  if (!perfilData || !['asesora', 'admin', 'directora'].includes(perfilData.rol)) {
+  if (!perfilData || !['asesora', 'abogada', 'admin', 'directora'].includes(perfilData.rol)) {
     return <AbogadaAuth />;
   }
 
@@ -68,7 +68,23 @@ export default async function AbogadaPage() {
     `);
 
   if (!esAdmin) {
-    query = query.eq('asesora_id', user.id);
+    // Intentar obtener expedientes asignados mediante la tabla relacional (Muchos a Muchos)
+    // Usamos un bloque try/catch o verificamos el error para que no rompa la página si la tabla no existe
+    const { data: relData, error: relError } = await supabaseAdmin
+      .from('expediente_asesoras')
+      .select('expediente_id')
+      .eq('asesora_id', user.id);
+    
+    const idsRelacionales = (!relError && relData) ? relData.map(r => r.expediente_id) : [];
+
+    if (idsRelacionales.length > 0) {
+      // Filtramos por la columna legacy OR por pertenecer a la tabla relacional
+      const idsString = idsRelacionales.map(id => `"${id}"`).join(',');
+      query = query.or(`asesora_id.eq.${user.id},id.in.(${idsString})`);
+    } else {
+      // Modo legacy: solo por la columna asesora_id
+      query = query.eq('asesora_id', user.id);
+    }
   }
 
   const { data: expedientesData } = await query.order('created_at', { ascending: false });

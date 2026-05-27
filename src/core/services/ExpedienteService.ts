@@ -128,15 +128,8 @@ export class ExpedienteService {
   private validarDatosBase(datos: DatosPersonales, form: CrearExpedienteForm): Result<true> {
     if (!datos.nombre_completo?.trim()) return Result.fail('El nombre completo es requerido.');
     
-    // Validar RFC
-    if (!datos.rfc?.trim()) return Result.fail('El RFC es obligatorio para el contrato.');
-    if (!validateRFC(datos.rfc)) return Result.fail('El formato del RFC no es válido.');
-
-    // Validar CURP (opcional pero si se provee debe ser válida)
-    if (datos.curp?.trim() && !validateCURP(datos.curp)) {
-      return Result.fail('El formato de la CURP no es válido.');
-    }
-
+    // Validaciones de RFC y CURP eliminadas a petición para mayor flexibilidad en el registro inicial
+    
     if (!form.nombre_empresa?.trim()) return Result.fail('El nombre de la empresa es requerido.');
     if (!form.figura_id) return Result.fail('Selecciona un tipo de figura legal.');
     return Result.ok(true);
