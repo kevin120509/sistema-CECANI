@@ -47,6 +47,11 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
 ## 6. Bitácora de Sesión
+### [28 Mayo 2026] - Sincronización Local-Vercel
+- **Acción**: Se realiza un commit de sincronización para asegurar que los cambios locales se reflejen en Vercel. Se incluyen archivos de utilidad en la carpeta scratch.
+- **Cambios**: `CONTEXTO_GEMINI.md`, `scratch/*.js`.
+- **Pendientes**: Verificar despliegue exitoso en Vercel.
+
 ### [2026-05-27] - Optimización del Modal de Gestión y Fix de Subida (Directora)
 - **Acción**: Se rediseñó el modal de Gestión para agrupar todas las validaciones antes de asignar abogada. Se arregló un bug al subir la Doble Firma.
 - **Cambios**: `src/components/directora/DirectorDashboard.tsx`, `task.md`.
