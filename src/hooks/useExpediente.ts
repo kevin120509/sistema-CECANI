@@ -13,7 +13,7 @@ import type {
   Perfil,
 } from '@/types/database';
 
-export type PasoActual = 1 | 2 | 3 | 4;
+export type PasoActual = 1 | 2 | 2.5 | 3 | 4;
 
 export interface UseExpedienteReturn {
   currentStep: PasoActual;
@@ -25,6 +25,7 @@ export interface UseExpedienteReturn {
   userId: string;
   isLoading: boolean;
   error: string | null;
+  hasDocumentosRechazados: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -102,7 +103,12 @@ export function useExpediente(): UseExpedienteReturn {
       if (expedienteRaw) {
         // @ts-ignore - The action returns this embedded
         const { contratos: contratosArr, ...exp } = expedienteRaw;
-        expedienteFinal = { ...exp, contratos: contratosArr } as any;
+        // Inyectamos documentos y contratos para que los componentes hijos los tengan disponibles
+        expedienteFinal = { 
+          ...exp, 
+          contratos: contratosArr, 
+          documentos: documentos as Documento[] 
+        } as any;
         contratoFinal = (contratosArr?.[0] as Contrato) || null;
       }
 
@@ -129,6 +135,38 @@ export function useExpediente(): UseExpedienteReturn {
       fetchData();
     }
 
+    // --- SUSCRIPCIÓN EN TIEMPO REAL ---
+    const supabase = supabaseRef.current;
+    const clienteId = getOrCreateClienteId();
+
+    const channel = supabase
+      .channel(`expediente_realtime_${clienteId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expedientes', filter: `cliente_id=eq.${clienteId}` },
+        () => {
+          console.log('Realtime: Cambio en expediente detectado.');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'documentos' },
+        () => {
+          console.log('Realtime: Cambio en documentos detectado.');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contratos' },
+        () => {
+          console.log('Realtime: Cambio en contratos detectado.');
+          fetchData();
+        }
+      )
+      .subscribe();
+
     // Escuchar cambios en localStorage (cuando Paso 1 guarda el ID real)
     const handleStorageChange = () => {
       const nuevoId = localStorage.getItem('cecani_cliente_id');
@@ -139,10 +177,16 @@ export function useExpediente(): UseExpedienteReturn {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      supabase.removeChannel(channel);
+    };
   }, [fetchData]);
 
   const currentStep = calcularPaso(data.expediente, data.contrato, data.documentos);
+  const hasDocumentosRechazados = (data.documentos || []).some(
+    d => d.motivo_rechazo || (d.url_archivo === '' && !d.validado)
+  );
 
   return {
     currentStep,
@@ -154,6 +198,7 @@ export function useExpediente(): UseExpedienteReturn {
     userId: clienteIdRef.current || '',
     isLoading,
     error,
+    hasDocumentosRechazados,
     refetch: fetchData,
   };
 }
@@ -165,21 +210,27 @@ function calcularPaso(
 ): PasoActual {
   if (!expediente) return 1;
 
-  // Si no ha subido documentación básica, está en Paso 2
-  // Verificamos usando los nuevos tipos de documentos alineados al manual
-  const tieneIne = documentos.some(d => d.tipo === 'ine_frente');
-  const tieneComprobante = documentos.some(d => d.tipo === 'comprobante_domicilio');
-  const tieneContratoSuscrito = documentos.some(d => d.tipo === 'contrato_firmado');
-  const tienePago = documentos.some(d => d.tipo === 'comprobante_pago');
+  // 1. Verificar si hay documentos rechazados
+  const hasDocumentosRechazados = documentos.some(d => !!d.motivo_rechazo);
 
-  // Si falta lo básico y NO está en un estatus superior, mostrar Paso 2
-  if ((!tieneIne || !tieneComprobante || !tieneContratoSuscrito || !tienePago) && expediente.estatus === 'en_registro') {
+  // 2. Verificar existencia de archivos físicos (no vacíos)
+  const tieneIne         = documentos.some(d => d.tipo === 'ine_frente'      && !!d.url_archivo);
+  const tieneComprobante = documentos.some(d => d.tipo === 'comprobante_domicilio' && !!d.url_archivo);
+
+  // --- REGLA PASO 2 ---
+  // Se queda en Paso 2 si:
+  // - Aún está en registro inicial (falta algún doc)
+  // - O si ya está en revisión pero la directora RECHAZÓ algún documento específico
+  if (
+    (expediente.estatus === 'en_registro' && (!tieneIne || !tieneComprobante)) ||
+    (expediente.estatus === 'revision_directora' && hasDocumentosRechazados)
+  ) {
     return 2;
   }
 
-  // Si la documentación está, pero el estatus es 'en_registro', 'revision_directora'
-  // o 'en_proceso' pero no ha firmado el contrato, está en Paso 3.
-  // Aquí se manejan los rechazos (el paso 3 mostrará qué falta).
+  // --- REGLA PASO 3 ---
+  // Si la documentación está OK (subida o validada), pero el estatus es 'en_registro', 
+  // 'revision_directora' (esperando aprobación global) o 'en_proceso' (firmando).
   const tieneDobleFirma = contrato?.url_pdf_doble_firma != null;
   const tieneContratoFirmado = contrato?.url_pdf_firmado_cliente != null;
 
