@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 };
 
 import OneSignalInitializer from "@/components/OneSignalInitializer";
+import { Toaster } from 'sonner';
 
 export default function RootLayout({
   children,
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased" suppressHydrationWarning>
         <OneSignalInitializer />
+        <Toaster position="top-right" richColors expand={true} />
         {children}
       </body>
     </html>

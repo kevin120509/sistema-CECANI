@@ -9,6 +9,7 @@ import { registrarDocumento } from '@/actions/documentos';
 import { logoutAbogada } from '@/actions/auth-abogada';
 import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { 
   LayoutDashboard, 
   Users, 
@@ -30,7 +31,8 @@ import {
   ChevronRight,
   UserCircle,
   CheckCircle2,
-  Menu
+  Menu,
+  Eye
 } from 'lucide-react';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
@@ -111,18 +113,43 @@ export default function DirectorDashboard({
   const [asesoraId, setAsesoraId] = useState('');
   const [dobleFirmaFile, setDobleFirmaFile] = useState<File | null>(null);
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
+  const [quickViewUrl, setQuickViewUrl] = useState<string | null>(null);
 
   // --- REALTIME INTEGRATION ---
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel('director_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, (payload: any) => {
         console.log('Realtime: Cambio en expedientes, refrescando...');
+        
+        // Notificación Toast para nuevos registros o correcciones
+        if (payload.eventType === 'INSERT') {
+          toast.success('¡Nuevo expediente registrado!', {
+            description: 'Un cliente ha iniciado un trámite.',
+            action: { label: 'Ver', onClick: () => setActiveTab('validacion') }
+          });
+        } else if (payload.eventType === 'UPDATE' && payload.new.estatus === 'revision_directora') {
+          toast.info('Actualización de expediente', {
+            description: `El proyecto "${payload.new.nombre_empresa}" ha enviado documentos para validar.`,
+            action: { label: 'Revisar', onClick: () => setActiveTab('validacion') }
+          });
+        }
+        
         router.refresh();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'documentos' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documentos' }, (payload: any) => {
         console.log('Realtime: Cambio en documentos, refrescando...');
+        
+        // Notificación si un cliente sube un documento (INSERT) o actualiza uno rechazado (UPDATE con url_archivo)
+        if (payload.eventType === 'INSERT' || (payload.eventType === 'UPDATE' && payload.new.url_archivo !== '')) {
+          const tipo = payload.new.tipo.replace(/_/g, ' ').toUpperCase();
+          toast.message(`Documento Recibido: ${tipo}`, {
+            description: 'Se ha cargado un nuevo archivo en un expediente.',
+            icon: <FileText size={16} className="text-sky-500" />
+          });
+        }
+        
         router.refresh();
       })
       .subscribe();
@@ -474,7 +501,16 @@ export default function DirectorDashboard({
                                <div>
                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p>
                                  {!isRejected ? (
-                                   <a href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
+                                   <div className="flex items-center gap-2">
+                                     <button 
+                                       onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)}
+                                       className="text-[8px] font-black text-sky-500 uppercase hover:text-sky-700 flex items-center gap-1"
+                                     >
+                                       <Eye size={10}/> Ver
+                                     </button>
+                                     <span className="text-slate-200">|</span>
+                                     <a href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-slate-400 uppercase hover:underline">Abrir</a>
+                                   </div>
                                  ) : (
                                    <p className="text-[8px] font-bold text-rose-500 uppercase">Pendiente de corrección</p>
                                  )}
@@ -921,6 +957,36 @@ export default function DirectorDashboard({
                     </div>
                  </section>
 
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {quickViewUrl && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuickViewUrl(null)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white rounded-[2.5rem] shadow-2xl w-full h-full flex flex-col overflow-hidden">
+               <div className="bg-slate-900 p-6 flex items-center justify-between border-b border-white/5">
+                 <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 bg-sky-500 text-white rounded-xl flex items-center justify-center shadow-lg"><Eye size={20}/></div>
+                   <h2 className="text-lg font-bold text-white uppercase tracking-tight">Previsualización de Documento</h2>
+                 </div>
+                 <div className="flex items-center gap-3">
+                   <a href={quickViewUrl} download className="p-3 bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"><Download size={20}/></a>
+                   <button onClick={() => setQuickViewUrl(null)} className="p-3 bg-white/5 text-slate-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all"><X size={20}/></button>
+                 </div>
+               </div>
+               <div className="flex-1 bg-slate-100 flex items-center justify-center p-4 md:p-8 overflow-hidden">
+                 {quickViewUrl.toLowerCase().includes('.pdf') || quickViewUrl.includes('signed-url') ? (
+                    <iframe src={quickViewUrl} className="w-full h-full rounded-2xl bg-white shadow-inner" title="Preview" />
+                 ) : (
+                    <img src={quickViewUrl} alt="Document Preview" className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" />
+                 )}
+               </div>
+               <div className="bg-white p-4 text-center border-t border-slate-100">
+                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Visor Inteligente CECANI &bull; Control Directive</p>
                </div>
             </motion.div>
           </div>
