@@ -42,9 +42,14 @@ export default function Paso2Documentacion({
   const [progress, setProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const isUnderReview = expediente.estatus === 'revision_directora';
   const docs = expediente.documentos || [];
   
+  // Lógica de revisión: Si está en estatus revisión PERO algún documento tiene motivo de rechazo, 
+  // significa que la directora ya interactuó y rechazó algo. En ese caso NO mostramos la pantalla de "En Revisión",
+  // sino que permitimos que el cliente corrija.
+  const isUnderReview = expediente.estatus === 'revision_directora' && docs.every(d => !d.motivo_rechazo);
+  const hasAnyRejection = docs.some(d => !!d.motivo_rechazo) || !!expediente.motivo_rechazo;
+
   const docIneFrente = docs.find(d => d.tipo === 'ine_frente');
   const docIneVuelta = docs.find(d => d.tipo === 'ine_reverso');
   const docComprobante = docs.find(d => d.tipo === 'comprobante_domicilio');
@@ -88,31 +93,61 @@ export default function Paso2Documentacion({
     return urlPublicaR2;
   };
 
+  // Helper: un doc necesita re-subirse si no existe, si fue rechazado (motivo_rechazo), o si su url está vacía
+  const docNecesitaArchivo = (doc: any) =>
+    !doc || !doc.url_archivo || !!doc.motivo_rechazo;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!docIneFrente?.validado && !ineFrente.file) { setError('Falta INE Frente'); return; }
-    if (!docIneVuelta?.validado && !ineVuelta.file) { setError('Falta INE Vuelta'); return; }
-    if (!docComprobante?.validado && !comprobanteDomicilio.file) { setError('Falta Comprobante Domicilio'); return; }
+    // Validación inteligente: Solo exigir archivo si no existe ya en la DB y no está validado
+    if (docNecesitaArchivo(docIneFrente) && !ineFrente.file) { setError('Falta INE Frente o corregir el actual.'); return; }
+    if (docNecesitaArchivo(docIneVuelta) && !ineVuelta.file) { setError('Falta INE Vuelta o corregir el actual.'); return; }
+    if (docNecesitaArchivo(docComprobante) && !comprobanteDomicilio.file) { setError('Falta Comprobante Domicilio o corregir el actual.'); return; }
 
     startTransition(async () => {
       try {
-        if (ineFrente.file) await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
-        if (ineVuelta.file) await subirYRegistrar(ineVuelta.file, 'ine_reverso', 'INE Vuelta', 'INE_Vuelta');
-        if (comprobanteDomicilio.file) await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante Domicilio', 'Comprobante_Domicilio');
-
-        await actualizarEstatusExpediente(expediente.id, 'revision_directora');
-
-        setProgress('Generando contrato inteligente...');
-        const contratoId = expediente.contratos?.[0]?.id;
-        if (contratoId) {
-          await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+        console.log('Iniciando proceso de subida quirúrgica...');
+        
+        // Solo subimos lo que el usuario seleccionó de nuevo
+        if (ineFrente.file) {
+          console.log('Subiendo nueva INE Frente...');
+          await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
+        }
+        
+        if (ineVuelta.file) {
+          console.log('Subiendo nueva INE Vuelta...');
+          await subirYRegistrar(ineVuelta.file, 'ine_reverso', 'INE Vuelta', 'INE_Vuelta');
+        }
+        
+        if (comprobanteDomicilio.file) {
+          console.log('Subiendo nuevo Comprobante Domicilio...');
+          await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante Domicilio', 'Comprobante_Domicilio');
         }
 
+        console.log('Actualizando estatus del expediente a revisión...');
+        const resEstatus = await actualizarEstatusExpediente(expediente.id, 'revision_directora');
+        if (!resEstatus.success) throw new Error(resEstatus.error || 'Error al actualizar estatus.');
+
+        // Si es la primera vez que sube todo, intentamos generar el contrato
+        const contratoId = expediente.contratos?.[0]?.id;
+        if (contratoId && expediente.estatus === 'en_registro') {
+          setProgress('Generando contrato inteligente...');
+          const resContrato = await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
+          if (!resContrato.success) console.warn('Error no crítico al generar contrato:', resContrato.error);
+        }
+
+        console.log('Proceso completado exitosamente.');
         await onComplete();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error inesperado.');
+        console.error('Error en handleSubmit:', err);
+        const msg = err instanceof Error ? err.message : 'Error inesperado.';
+        if (msg.includes('foreign key constraint') || msg.includes('violates foreign key')) {
+          setError('Tu sesión de expediente ha expirado. Por favor, reinicia el registro.');
+        } else {
+          setError(msg);
+        }
       } finally {
         setProgress('');
       }
@@ -154,8 +189,20 @@ export default function Paso2Documentacion({
           <ShieldCheck size={32} />
         </div>
         <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
-        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">Sube copias legibles de tus documentos oficiales.</p>
+        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          {hasAnyRejection ? 'Por favor, corrige los documentos marcados en rojo para continuar.' : 'Sube copias legibles de tus documentos oficiales.'}
+        </p>
       </motion.div>
+
+      {error && (
+        <div className="bg-rose-50 border-4 border-rose-100 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
+          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-rose-900 uppercase tracking-tight">Ocurrió un error</h3>
+            <p className="text-sm font-semibold text-rose-700 leading-relaxed uppercase">{error}</p>
+          </div>
+        </div>
+      )}
 
       {expediente.motivo_rechazo && (
         <div className="bg-rose-50 border-4 border-rose-100 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
@@ -184,8 +231,22 @@ export default function Paso2Documentacion({
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Identificación Oficial</h4>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <UploadCard label="INE Frente *" archivo={ineFrente} disabled={isPending} onFileChange={(e: any) => handleFileChange(e, setIneFrente)} onClear={() => setIneFrente({ file: null, preview: null })} />
-              <UploadCard label="INE Vuelta *" archivo={ineVuelta} disabled={isPending} onFileChange={(e: any) => handleFileChange(e, setIneVuelta)} onClear={() => setIneVuelta({ file: null, preview: null })} />
+              <UploadCard 
+                label="INE Frente *" 
+                archivo={ineFrente} 
+                dbDoc={docIneFrente}
+                disabled={isPending || (!!docIneFrente?.url_archivo && !docIneFrente?.motivo_rechazo && docIneFrente?.validado)} 
+                onFileChange={(e: any) => handleFileChange(e, setIneFrente)} 
+                onClear={() => setIneFrente({ file: null, preview: null })} 
+              />
+              <UploadCard 
+                label="INE Vuelta *" 
+                archivo={ineVuelta} 
+                dbDoc={docIneVuelta}
+                disabled={isPending || (!!docIneVuelta?.url_archivo && !docIneVuelta?.motivo_rechazo && docIneVuelta?.validado)} 
+                onFileChange={(e: any) => handleFileChange(e, setIneVuelta)} 
+                onClear={() => setIneVuelta({ file: null, preview: null })} 
+              />
             </div>
           </section>
 
@@ -195,13 +256,20 @@ export default function Paso2Documentacion({
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Fiscal y Domicilio</h4>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <UploadCard label="Comprobante Domicilio *" archivo={comprobanteDomicilio} disabled={isPending} onFileChange={(e: any) => handleFileChange(e, setComprobanteDomicilio)} onClear={() => setComprobanteDomicilio({ file: null, preview: null })} />
+              <UploadCard 
+                label="Comprobante Domicilio *" 
+                archivo={comprobanteDomicilio} 
+                dbDoc={docComprobante}
+                disabled={isPending || (!!docComprobante?.url_archivo && !docComprobante?.motivo_rechazo && docComprobante?.validado)} 
+                onFileChange={(e: any) => handleFileChange(e, setComprobanteDomicilio)} 
+                onClear={() => setComprobanteDomicilio({ file: null, preview: null })} 
+              />
             </div>
           </section>
 
           <footer className="pt-10 border-t border-slate-100 flex justify-end">
             <button type="submit" disabled={isPending} className="bg-slate-900 text-white px-12 py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all flex items-center gap-4 group disabled:opacity-50">
-              Enviar a Revisión <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              {hasAnyRejection ? 'Enviar Correcciones' : 'Enviar a Revisión'} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </footer>
         </form>
@@ -210,21 +278,100 @@ export default function Paso2Documentacion({
   );
 }
 
-function UploadCard({ label, archivo, disabled, onFileChange, onClear }: any) {
+function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: any) {
+  // Estado del documento:
+  // - validado: aprobado por directora (bloqueado)
+  // - rechazado: tiene motivo_rechazo o url vacía con registro existente (editable con aviso)
+  // - resguardado: subido pero pendiente de revisión (bloqueado visualmente, no editable)
+  // - vacío: nunca subido (editable)
+  const isRejected = dbDoc && dbDoc.motivo_rechazo && !dbDoc.validado;
+  const isResguardado = dbDoc && dbDoc.url_archivo && !dbDoc.motivo_rechazo && !dbDoc.validado;
+
   return (
     <div className="group relative">
-      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block ml-1">{label}</label>
-      <div className={`relative h-48 rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-6 ${archivo.file ? 'border-sky-500 bg-sky-50/20' : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-sky-300'}`}>
+      <div className="flex justify-between items-end mb-4 ml-1">
+        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{label}</label>
+        {dbDoc?.validado && (
+          <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
+            <CheckCircle2 size={10} /> Validado
+          </span>
+        )}
+        {isResguardado && (
+          <span className="text-[8px] font-black text-sky-500 uppercase tracking-tighter bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100 flex items-center gap-1">
+            <Clock size={10} /> En revisión
+          </span>
+        )}
+        {isRejected && (
+          <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 flex items-center gap-1">
+            <AlertCircle size={10} /> Rechazado
+          </span>
+        )}
+      </div>
+
+      <div className={`relative h-48 rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-6 
+        ${archivo.file ? 'border-sky-500 bg-sky-50/20' : 
+          dbDoc?.validado ? 'border-emerald-200 bg-emerald-50/10 opacity-60' :
+          isRejected ? 'border-rose-300 bg-rose-50/30' :
+          isResguardado ? 'border-sky-200 bg-sky-50/20 opacity-70' :
+          'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-sky-300'}
+        ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+        
         {archivo.preview && <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-20" />}
+        {!archivo.preview && (dbDoc?.validado || isResguardado || (isRejected && !archivo.file)) && dbDoc?.url_archivo && (
+          <div className="absolute inset-0 w-full h-full bg-slate-900/5 flex items-center justify-center">
+            <FileText className="text-slate-200" size={64} />
+          </div>
+        )}
+
         <div className="relative z-10 text-center space-y-2">
-          {archivo.file ? <CheckCircle2 className="text-sky-500 mx-auto" size={32} /> : <FileUp className="text-slate-400 mx-auto" size={32} />}
-          <p className="text-[10px] font-bold uppercase truncate max-w-[200px]">{archivo.file ? archivo.file.name : 'Click para subir'}</p>
+          {dbDoc?.validado ? (
+            <CheckCircle2 className="text-emerald-500 mx-auto" size={32} />
+          ) : archivo.file ? (
+            <CheckCircle2 className="text-sky-500 mx-auto" size={32} />
+          ) : isRejected ? (
+            <AlertCircle className="text-rose-500 mx-auto" size={32} />
+          ) : isResguardado ? (
+            <Clock className="text-sky-400 mx-auto" size={32} />
+          ) : (
+            <FileUp className="text-slate-400 mx-auto" size={32} />
+          )}
+          <p className="text-[10px] font-bold uppercase truncate max-w-[200px]">
+            {archivo.file ? archivo.file.name : 
+             dbDoc?.validado ? 'Documento Resguardado' :
+             isRejected ? 'Requiere Corrección' :
+             isResguardado ? 'En Revisión' :
+             'Click para subir'}
+          </p>
         </div>
-        <input type="file" onChange={onFileChange} disabled={disabled} accept="image/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
+
+        <input 
+          type="file" 
+          onChange={onFileChange} 
+          disabled={disabled} 
+          accept="image/*,.pdf" 
+          className={`absolute inset-0 w-full h-full opacity-0 z-20 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
+        />
+        
         {archivo.file && !disabled && (
           <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }} className="absolute top-4 right-4 z-30 w-8 h-8 rounded-lg bg-white text-red-500 shadow-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
         )}
       </div>
+
+      <AnimatePresence>
+        {isRejected && !archivo.file && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 p-4 bg-rose-50 border border-rose-100 rounded-2xl shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle size={12} className="text-rose-400" />
+              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Motivo de Rechazo:</p>
+            </div>
+            <p className="text-[11px] font-bold text-rose-700 leading-tight uppercase pl-5">{dbDoc.motivo_rechazo}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
