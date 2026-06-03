@@ -36,7 +36,6 @@ export default function Paso2Documentacion({
 }: Paso2Props) {
   const [ineFrente, setIneFrente] = useState<ArchivoSeleccionado>({ file: null, preview: null });
   const [ineVuelta, setIneVuelta] = useState<ArchivoSeleccionado>({ file: null, preview: null });
-  const [curp, setCurp] = useState<ArchivoSeleccionado>({ file: null, preview: null });
   const [comprobanteDomicilio, setComprobanteDomicilio] = useState<ArchivoSeleccionado>({ file: null, preview: null });
 
   const [isPending, startTransition] = useTransition();
@@ -48,7 +47,6 @@ export default function Paso2Documentacion({
   
   const docIneFrente = docs.find(d => d.tipo === 'ine_frente');
   const docIneVuelta = docs.find(d => d.tipo === 'ine_reverso');
-  const docCurp = docs.find(d => d.tipo === 'curp');
   const docComprobante = docs.find(d => d.tipo === 'comprobante_domicilio');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: ArchivoSeleccionado) => void) => {
@@ -96,14 +94,12 @@ export default function Paso2Documentacion({
 
     if (!docIneFrente?.validado && !ineFrente.file) { setError('Falta INE Frente'); return; }
     if (!docIneVuelta?.validado && !ineVuelta.file) { setError('Falta INE Vuelta'); return; }
-    if (!docCurp?.validado && !curp.file) { setError('Falta CURP'); return; }
     if (!docComprobante?.validado && !comprobanteDomicilio.file) { setError('Falta Comprobante Domicilio'); return; }
 
     startTransition(async () => {
       try {
         if (ineFrente.file) await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
         if (ineVuelta.file) await subirYRegistrar(ineVuelta.file, 'ine_reverso', 'INE Vuelta', 'INE_Vuelta');
-        if (curp.file) await subirYRegistrar(curp.file, 'curp', 'CURP', 'CURP');
         if (comprobanteDomicilio.file) await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante Domicilio', 'Comprobante_Domicilio');
 
         await actualizarEstatusExpediente(expediente.id, 'revision_directora');
@@ -135,11 +131,10 @@ export default function Paso2Documentacion({
             Estamos validando tus documentos para generar tu contrato oficial.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto pt-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto pt-8">
           {[
             { label: 'INE Frente', validado: docIneFrente?.validado },
             { label: 'INE Vuelta', validado: docIneVuelta?.validado },
-            { label: 'CURP', validado: docCurp?.validado },
             { label: 'Domicilio', validado: docComprobante?.validado },
           ].map((d, i) => (
             <div key={i} className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 ${d.validado ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
@@ -200,7 +195,6 @@ export default function Paso2Documentacion({
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Fiscal y Domicilio</h4>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <UploadCard label="CURP *" archivo={curp} disabled={isPending} onFileChange={(e: any) => handleFileChange(e, setCurp)} onClear={() => setCurp({ file: null, preview: null })} />
               <UploadCard label="Comprobante Domicilio *" archivo={comprobanteDomicilio} disabled={isPending} onFileChange={(e: any) => handleFileChange(e, setComprobanteDomicilio)} onClear={() => setComprobanteDomicilio({ file: null, preview: null })} />
             </div>
           </section>
