@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { asignarAbogada, subirContratoDobleFirma, crearClienteManualAction, eliminarExpedienteAction } from '@/actions/directora';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
 import { registrarDocumento } from '@/actions/documentos';
@@ -27,6 +29,7 @@ import {
   MapPin,
   ChevronRight,
   UserCircle,
+  CheckCircle2,
   Menu
 } from 'lucide-react';
 
@@ -83,6 +86,7 @@ export default function DirectorDashboard({
   porAsignar: ExpedienteDirector[];
   concentrado: ExpedienteDirector[];
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'por_asignar' | 'concentrado' | 'validacion'>('por_asignar');
   const [selectedExpediente, setSelectedExpediente] = useState<ExpedienteDirector | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -108,12 +112,36 @@ export default function DirectorDashboard({
   const [dobleFirmaFile, setDobleFirmaFile] = useState<File | null>(null);
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
 
+  // --- REALTIME INTEGRATION ---
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('director_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, () => {
+        console.log('Realtime: Cambio en expedientes, refrescando...');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documentos' }, () => {
+        console.log('Realtime: Cambio en documentos, refrescando...');
+        router.refresh();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [router]);
+
   const validacion = useMemo(() => {
-    return porAsignar.filter(exp => exp.estatus === 'revision_directora');
+    return porAsignar.filter(exp => {
+      const hasRejection = exp.documentos?.some(d => !!d.motivo_rechazo);
+      return exp.estatus === 'revision_directora' || hasRejection;
+    });
   }, [porAsignar]);
 
   const listosParaAsignar = useMemo(() => {
-    return porAsignar.filter(exp => exp.estatus !== 'revision_directora');
+    return porAsignar.filter(exp => {
+      const hasRejection = exp.documentos?.some(d => !!d.motivo_rechazo);
+      return exp.estatus !== 'revision_directora' && !hasRejection;
+    });
   }, [porAsignar]);
 
   const filteredData = useMemo(() => {
@@ -434,50 +462,70 @@ export default function DirectorDashboard({
                    <div className="space-y-6">
                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-4">Documentación Cargada</h3>
                      <div className="space-y-3">
-                       {selectedExpediente.documentos?.map((doc: any) => (
-                         <div key={doc.id} className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl group">
-                           <div className="flex items-center gap-3">
-                             <div className={`p-2 rounded-lg ${doc.validado ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 shadow-sm'}`}>
-                               {doc.validado ? <ShieldCheck size={16}/> : <FileText size={16}/>}
+                       {selectedExpediente.documentos?.map((doc: any) => {
+                         const isRejected = !!doc.motivo_rechazo && !doc.validado;
+                         return (
+                         <div key={doc.id} className="flex flex-col p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl group gap-3">
+                           <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-3">
+                               <div className={`p-2 rounded-lg ${doc.validado ? 'bg-emerald-100 text-emerald-600' : isRejected ? 'bg-rose-100 text-rose-600' : 'bg-white text-slate-400 shadow-sm'}`}>
+                                 {doc.validado ? <ShieldCheck size={16}/> : isRejected ? <X size={16}/> : <FileText size={16}/>}
+                               </div>
+                               <div>
+                                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p>
+                                 {!isRejected ? (
+                                   <a href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
+                                 ) : (
+                                   <p className="text-[8px] font-bold text-rose-500 uppercase">Pendiente de corrección</p>
+                                 )}
+                               </div>
                              </div>
-                             <div>
-                               <p className="text-[9px] font-black uppercase tracking-widest text-slate-900">{doc.tipo.replace(/_/g, ' ')}</p>
-                               <a href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} target="_blank" rel="noopener noreferrer" className="text-[8px] font-bold text-sky-500 uppercase hover:underline">Ver Documento</a>
+                             <div className="flex gap-1">
+                               {!isRejected && (
+                                 <button 
+                                   onClick={async () => {
+                                     const { validarDocumentoAction } = await import('@/actions/directora');
+                                     startTransition(async () => { await validarDocumentoAction(doc.id, !doc.validado); });
+                                   }}
+                                   className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${doc.validado ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:border-emerald-500 hover:text-emerald-500'}`}
+                                 >
+                                   {doc.validado ? 'Aprobado' : 'Aprobar'}
+                                 </button>
+                               )}
+                               {!doc.validado && !isRejected && (
+                                 <button 
+                                   onClick={async () => {
+                                     const motivo = prompt('Motivo de rechazo para ' + doc.tipo.replace(/_/g, ' ').toUpperCase() + ':');
+                                     if (!motivo) return;
+                                     const { rechazarDocumentoR2Action } = await import('@/actions/directora');
+                                     startTransition(async () => {
+                                       const res = await rechazarDocumentoR2Action(doc.id, doc.tipo, selectedExpediente.id, selectedExpediente.cliente_id, motivo, doc.url_archivo);
+                                       if (!res.success) {
+                                         alert('Error: ' + res.error);
+                                       }
+                                     });
+                                   }}
+                                   className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all bg-white text-slate-400 border border-slate-200 hover:border-red-500 hover:text-red-500"
+                                 >
+                                   Rechazar
+                                 </button>
+                               )}
+                               {isRejected && (
+                                 <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase bg-rose-50 text-rose-500 border border-rose-100">
+                                   Rechazado
+                                 </span>
+                               )}
                              </div>
                            </div>
-                           <div className="flex gap-1">
-                             <button 
-                               onClick={async () => {
-                                 const { validarDocumentoAction } = await import('@/actions/directora');
-                                 startTransition(async () => { await validarDocumentoAction(doc.id, !doc.validado); });
-                               }}
-                               className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${doc.validado ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:border-emerald-500 hover:text-emerald-500'}`}
-                             >
-                               {doc.validado ? 'Aprobado' : 'Aprobar'}
-                             </button>
-                             {!doc.validado && (
-                               <button 
-                                 onClick={async () => {
-                                   const motivo = prompt('Motivo de rechazo para ' + doc.tipo.replace(/_/g, ' ').toUpperCase() + ':');
-                                   if (!motivo) return;
-                                   const { rechazarDocumentoR2Action } = await import('@/actions/directora');
-                                   startTransition(async () => {
-                                     const res = await rechazarDocumentoR2Action(doc.id, doc.tipo, selectedExpediente.id, selectedExpediente.cliente_id, motivo, doc.url_archivo);
-                                     if (res.success) {
-                                       setIsValidationModalOpen(false);
-                                     } else {
-                                       alert('Error: ' + res.error);
-                                     }
-                                   });
-                                 }}
-                                 className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all bg-white text-slate-400 border border-slate-200 hover:border-red-500 hover:text-red-500"
-                               >
-                                 Rechazar
-                               </button>
-                             )}
-                           </div>
+                           {isRejected && (
+                             <div className="bg-rose-50/50 p-3 rounded-xl border border-rose-100">
+                               <p className="text-[8px] font-black uppercase tracking-widest text-rose-400 mb-1">Motivo enviado al cliente:</p>
+                               <p className="text-[10px] font-bold text-rose-700 uppercase leading-tight">{doc.motivo_rechazo}</p>
+                             </div>
+                           )}
                          </div>
-                       ))}
+                         );
+                       })}
                      </div>
                    </div>
                  </section>
@@ -651,9 +699,27 @@ export default function DirectorDashboard({
                          const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
                          if (contrato?.url_pdf_firmado_cliente) {
                            return (
-                             <a href={`/api/r2/download?url=${encodeURIComponent(contrato.url_pdf_firmado_cliente)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 bg-white border-2 border-sky-100 text-sky-600 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-sky-500 hover:bg-sky-50 transition-all shadow-sm">
-                               <Download size={18}/> Descargar Contrato Firmado
-                             </a>
+                             <div className="space-y-4">
+                               <a href={`/api/r2/download?url=${encodeURIComponent(contrato.url_pdf_firmado_cliente)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 bg-white border-2 border-sky-100 text-sky-600 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-sky-500 hover:bg-sky-50 transition-all shadow-sm">
+                                 <Download size={18}/> Descargar Contrato Firmado
+                               </a>
+                               {!contrato?.url_pdf_doble_firma && (
+                                 <button 
+                                   onClick={async () => {
+                                     const motivo = prompt('Motivo del rechazo del contrato:');
+                                     if (!motivo) return;
+                                     const { rechazarContratoClienteAction } = await import('@/actions/directora');
+                                     startTransition(async () => {
+                                       const res = await rechazarContratoClienteAction(contrato.id, selectedExpediente.id, selectedExpediente.cliente_id, motivo, contrato.url_pdf_firmado_cliente);
+                                       if (res.error) alert(res.error);
+                                     });
+                                   }}
+                                   className="block w-full bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
+                                 >
+                                   <X size={14} className="inline mr-2"/> Rechazar Contrato
+                                 </button>
+                               )}
+                             </div>
                            );
                          }
                          return <p className="text-xs font-bold text-slate-400 uppercase">El cliente aún no ha subido el contrato firmado.</p>;
@@ -687,6 +753,41 @@ export default function DirectorDashboard({
                                <a href={`/api/r2/download?url=${encodeURIComponent(pago.url_comprobante)}`} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase text-emerald-600 hover:text-emerald-700 hover:underline">
                                  <Download size={14}/> Ver Comprobante
                                </a>
+                             )}
+                             {pago && !pago.verificado && (
+                               <div className="flex gap-2 mt-4">
+                                 <button 
+                                   onClick={async () => {
+                                     const { validarPagoAction } = await import('@/actions/directora');
+                                     startTransition(async () => {
+                                       const res = await validarPagoAction(pago.id, selectedExpediente.id, selectedExpediente.cliente_id);
+                                       if (res.error) alert(res.error);
+                                     });
+                                   }}
+                                   className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
+                                 >
+                                   <CheckCircle2 size={14} className="inline mr-1"/> Aprobar
+                                 </button>
+                                 <button 
+                                   onClick={async () => {
+                                     const motivo = prompt('Motivo del rechazo del pago:');
+                                     if (!motivo) return;
+                                     const { rechazarPagoAction } = await import('@/actions/directora');
+                                     startTransition(async () => {
+                                       const res = await rechazarPagoAction(pago.id, selectedExpediente.id, selectedExpediente.cliente_id, motivo, pago.url_comprobante);
+                                       if (res.error) alert(res.error);
+                                     });
+                                   }}
+                                   className="flex-1 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
+                                 >
+                                   <X size={14} className="inline mr-1"/> Rechazar
+                                 </button>
+                               </div>
+                             )}
+                             {pago?.verificado && (
+                               <div className="mt-2 text-center text-[10px] font-black uppercase text-emerald-500 flex items-center justify-center gap-1">
+                                 <CheckCircle2 size={14} /> Pago Verificado
+                               </div>
                              )}
                            </div>
                          );
@@ -754,15 +855,15 @@ export default function DirectorDashboard({
                    const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
                    const pago = Array.isArray(selectedExpediente.pagos) ? selectedExpediente.pagos[0] : (selectedExpediente.pagos as any);
                    const hasDobleFirma = !!contrato?.url_pdf_doble_firma;
-                   const hasPago = !!pago?.url_comprobante;
+                   const pagoVerificado = !!pago?.verificado;
 
-                   if (!hasDobleFirma || !hasPago) {
+                   if (!hasDobleFirma || !pagoVerificado) {
                      return (
                        <section className="bg-slate-50 border-2 border-slate-100 border-dashed rounded-[2rem] p-8 md:p-10 text-center space-y-4">
                          <div className="w-16 h-16 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2"><ShieldCheck size={32}/></div>
                          <h3 className="text-xl font-black uppercase tracking-tighter leading-none text-slate-400">Asignación Bloqueada</h3>
                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-relaxed">
-                           Para designar una asesora y comenzar la gestión, primero debe validar el comprobante de pago del cliente y subir el contrato con la firma conjunta (Doble Firma).
+                           Para designar una asesora y comenzar la gestión, primero debe validar y aprobar el comprobante de pago del cliente y subir el contrato con la firma conjunta (Doble Firma).
                          </p>
                        </section>
                      );
