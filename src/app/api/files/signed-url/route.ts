@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { obtenerUrlFirmada } from '@/lib/r2';
+import { generarUrlFirmadaR2 } from '@/lib/r2';
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Generar la pre-signed URL temporal (expira en 15 minutos)
-    const signedUrl = await obtenerUrlFirmada(fileUrl);
+    const signedUrl = await generarUrlFirmadaR2(fileUrl);
 
     // 4. Redirigir temporalmente (307 Redirect) al navegador
     return NextResponse.redirect(signedUrl, 307);

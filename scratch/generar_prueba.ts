@@ -17,7 +17,7 @@ async function test() {
     estadoCivil: 'Casado',
     domicilioCompleto: 'Av. Paseo de la Reforma 222, Col. Juárez, Cuauhtémoc, CDMX, C.P. 06600',
     tipoContrato: 'legal',
-    observaciones_pago: 'Ninguna'
+    observacionesPago: 'Ninguna'
   });
 
   const outputPath = path.join(process.cwd(), 'scratch', 'test_contrato.pdf');

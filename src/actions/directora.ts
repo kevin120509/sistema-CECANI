@@ -450,10 +450,20 @@ export async function rechazarExpedienteAction(expedienteId: string, motivo: str
     // 1. Regresar estatus a 'en_registro'
     const { error } = await adminSupabase
       .from('expedientes')
-      .update({ estatus: 'en_registro' })
+      .update({
+        estatus: 'en_registro'
+      })
       .eq('id', expedienteId);
 
     if (error) throw error;
+    
+    // Guardar el motivo en el concentrado (estatus_detalle)
+    await adminSupabase
+      .from('datos_concentrado')
+      .upsert({
+         expediente_id: expedienteId,
+         estatus_detalle: `RECHAZADO: ${motivo}`
+      }, { onConflict: 'expediente_id' });
 
     // 2. Notificar al cliente
     if (expData?.cliente_id) {

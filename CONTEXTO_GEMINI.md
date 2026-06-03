@@ -47,6 +47,36 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
 ## 6. Bitácora de Sesión
+### [3 Junio 2026] - Sincronización y Persistencia de Versión
+- **Acción**: Verificación de la permanencia de actualizaciones en el sistema. Se realizó un bump de versión a 0.1.1 en `package.json` para formalizar los cambios acumulados y se sincronizó el estado del repositorio.
+- **Cambios**:
+    - `package.json`: Versión actualizada a 0.1.1.
+    - Sincronización total de cambios pendientes en Git para garantizar la persistencia entre sesiones de Gemini CLI.
+- **Pendientes**:
+    - Resolver 365 errores de lint detectados (principalmente tipos `any` y accesos a refs en render).
+    - Continuar con la validación de la Directora y la Doble Firma según el plan original.
+
+### [2 Junio 2026] - Rediseño Premium de Paneles y Revisión Funcional
+- **Acción**: Implementación de una interfaz "Luxury Premium Aesthetic" en los paneles de Cliente, Directora y Abogada para presentar una estética altamente profesional (eliminando redondeos exagerados de `rounded-[4rem]` por `rounded-3xl` e implementando tipografías más ligeras y legibles junto a Glassmorphism avanzado `backdrop-blur`).
+- **Cambios**:
+    - `src/components/cliente/Paso1CrearProyecto.tsx`, `Paso2Documentacion.tsx`, `Paso3Contrato.tsx`: Estética mejorada para botones, tarjetas y campos, mejorando la confianza visual del usuario final.
+    - `src/components/directora/DirectorDashboard.tsx`: Suavización de modales utilizando blur en vez de opacidad total oscura, y mejoras en la tabla para facilitar lectura.
+    - `src/components/abogada/ExpedienteManager.tsx`: Estandarización de `border-radius` y colores de sombra en el panel. Revisión del tipado de TypeScript.
+- **Pendientes**:
+    - Generar y revisar screenshots desde los navegadores locales para confirmar el render final si hay futuras modificaciones.
+
+### [1 Junio 2026] - Sincronización Avanzada: Flujo Legal e Información Oficial
+- **Acción**: Rediseño integral del panel de abogada para alinearlo 100% con los manuales de la carpeta `flujo` y contratos de `informacion`. Se implementó la gestión dinámica de asociados y el sistema de recordatorios con plantillas inteligentes. Se corrigió el flujo de validación Cliente-Directora.
+- **Cambios**:
+    - `ExpedienteManager.tsx`: Implementación de "Gestión de Asociados". Nuevo formulario de recordatorios que redacta automáticamente fecha/hora y lista de documentos en base al hito legal. Ajuste de zona horaria (UTC a Local) para los recordatorios de WhatsApp.
+    - `DirectorDashboard.tsx`: Se bloqueó la asignación de abogada hasta que el contrato esté firmado (doble firma) y el pago del cliente validado.
+    - `Paso2Documentacion.tsx` / `Paso3Contrato.tsx` / `useExpediente.ts`: Se implementó el campo `motivo_rechazo`. Si la directora rechaza la información, el cliente ve claramente el motivo y puede resubir los documentos sin que el sistema se trabe. Al resubir, el motivo se limpia y el estatus vuelve a revisión.
+    - `database.ts`: Sincronización de enums de documentos.
+    - `directora.ts` / `expediente.ts`: Modificación en Server Actions para manejar el flujo de rechazo con notificación y persistencia de DB en `datos_concentrado`.
+- **Pendientes**:
+    - Probar la subida masiva de asociados para expedientes con más de 10 integrantes.
+    - Configurar las alertas visuales de "Urgencia" para que se basen en la fecha de los recordatorios vencidos.
+
 ### [28 Mayo 2026] - Sincronización Local-Vercel
 - **Acción**: Se realiza un commit de sincronización para asegurar que los cambios locales se reflejen en Vercel. Se incluyen archivos de utilidad en la carpeta scratch.
 - **Cambios**: `CONTEXTO_GEMINI.md`, `scratch/*.js`.

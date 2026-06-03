@@ -98,7 +98,7 @@ export default function DirectorDashboard({
   const [files, setFiles] = useState<{
     contrato?: File,
     ine_frente?: File,
-    ine_reverso?: File,
+    curp?: File,
     domicilio?: File
   }>({});
   const [finalAsesoraId, setFinalAsesoraId] = useState('');
@@ -213,12 +213,12 @@ export default function DirectorDashboard({
           await registrarDocumento(newClientInfo.expediente_id, 'contrato_firmado', url);
         }
         if (files.ine_frente) {
-          const url = await uploadFile(files.ine_frente, docFolder, 'INE Frente');
+          const url = await uploadFile(files.ine_frente, docFolder, 'INE Asociado');
           await registrarDocumento(newClientInfo.expediente_id, 'ine_frente', url);
         }
-        if (files.ine_reverso) {
-          const url = await uploadFile(files.ine_reverso, docFolder, 'INE Reverso');
-          await registrarDocumento(newClientInfo.expediente_id, 'ine_reverso', url);
+        if (files.curp) {
+          const url = await uploadFile(files.curp, docFolder, 'CURP Asociado');
+          await registrarDocumento(newClientInfo.expediente_id, 'curp', url);
         }
         if (files.domicilio) {
           const url = await uploadFile(files.domicilio, docFolder, 'Comprobante Domicilio');
@@ -262,7 +262,7 @@ export default function DirectorDashboard({
       </AnimatePresence>
 
       <aside className={
-        "fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-slate-950 text-white flex flex-col border-r border-white/5 shadow-2xl transition-transform duration-300 transform " + 
+        "fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-slate-900 text-white flex flex-col border-r border-white/10 shadow-2xl transition-transform duration-300 transform " + 
         (isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")
       }>
         <div className="p-6 md:p-8 flex items-center justify-between">
@@ -337,14 +337,14 @@ export default function DirectorDashboard({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredData.map((exp) => (
-                    <tr key={exp.id} className="group hover:bg-slate-50/5 transition-colors">
+                    <tr key={exp.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-6 align-top">
                         <div className="flex flex-col gap-3">
                           <div className="space-y-1">
-                            <p className="text-lg font-black text-slate-900 uppercase break-words max-w-[450px] leading-tight">
+                            <p className="text-lg font-bold text-slate-900 uppercase break-words max-w-[450px] leading-tight">
                               {exp.nombre_empresa || 'SIN NOMBRE'}
                             </p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               {exp.cliente?.nombre_completo || 'SIN TITULAR'}
                             </p>
                           </div>
@@ -408,14 +408,14 @@ export default function DirectorDashboard({
       <AnimatePresence>
         {isValidationModalOpen && selectedExpediente && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-5xl w-full flex flex-col max-h-[95vh] overflow-hidden">
-               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/40 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[95vh] overflow-hidden">
+               <div className="bg-slate-900 p-6 md:p-8 flex items-center justify-between">
                  <div className="flex items-center gap-6">
-                   <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><ShieldCheck size={24}/></div>
-                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Validación de Expediente</h2>
+                   <div className="w-12 h-12 bg-sky-500 text-white rounded-xl flex items-center justify-center shadow-lg"><ShieldCheck size={24}/></div>
+                   <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight leading-none">Validación de Expediente</h2>
                  </div>
-                 <button onClick={() => setIsValidationModalOpen(false)} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+                 <button onClick={() => setIsValidationModalOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
                </div>
                
                <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar space-y-12">
@@ -576,12 +576,12 @@ export default function DirectorDashboard({
       <AnimatePresence>
         {isCreateModalOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && resetCreateState()} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
-             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && resetCreateState()} className="fixed inset-0 bg-slate-950/40 backdrop-blur-md" />
+             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+               <div className="bg-slate-900 p-6 md:p-8 flex items-center justify-between">
                  <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><UserPlus size={24}/></div>
-                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Alta Maestra</h2>
+                   <div className="w-12 h-12 bg-sky-500 text-white rounded-xl flex items-center justify-center shadow-lg"><UserPlus size={24}/></div>
+                   <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight leading-none">Alta Maestra</h2>
                  </div>
                  <div className="flex gap-2">
                    {[1, 2, 3].map(s => <div key={s} className={"w-2.5 h-2.5 rounded-full transition-all duration-500 " + (createStep === s ? "bg-sky-500 scale-125" : createStep > s ? "bg-emerald-500" : "bg-white/10")} />)}
@@ -604,8 +604,8 @@ export default function DirectorDashboard({
                      <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <FileUploader label="Contrato" icon={<FileSignature size={18}/>} onChange={f => setFiles({...files, contrato: f})} file={files.contrato} />
-                         <FileUploader label="INE Frente" icon={<ShieldCheck size={18}/>} onChange={f => setFiles({...files, ine_frente: f})} file={files.ine_frente} />
-                         <FileUploader label="INE Reverso" icon={<ShieldCheck size={18}/>} onChange={f => setFiles({...files, ine_reverso: f})} file={files.ine_reverso} />
+                         <FileUploader label="INE Asociado" icon={<ShieldCheck size={18}/>} onChange={f => setFiles({...files, ine_frente: f})} file={files.ine_frente} />
+                         <FileUploader label="CURP Asociado" icon={<ShieldCheck size={18}/>} onChange={f => setFiles({...files, curp: f})} file={files.curp} />
                          <FileUploader label="Domicilio" icon={<MapPin size={18}/>} onChange={f => setFiles({...files, domicilio: f})} file={files.domicilio} />
                        </div>
                        {uploadProgress && <div className="p-4 bg-sky-50 text-sky-600 rounded-xl flex items-center gap-3 border border-sky-100 animate-pulse"><Loader2 size={16} className="animate-spin"/><span className="text-[10px] font-black uppercase">{uploadProgress}</span></div>}
@@ -629,12 +629,12 @@ export default function DirectorDashboard({
 
         {isAssignModalOpen && selectedExpediente && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && !isUploadingDobleFirma && setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-[3rem] shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden">
-               <div className="bg-slate-950 p-6 md:p-8 flex items-center justify-between shrink-0">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isPending && !isUploadingDobleFirma && setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/40 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden">
+               <div className="bg-slate-900 p-6 md:p-8 flex items-center justify-between shrink-0">
                  <div className="flex items-center gap-6">
-                   <div className="w-12 h-12 bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><FileText size={24}/></div>
-                   <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none">Gestión y Asignación</h2>
+                   <div className="w-12 h-12 bg-sky-500 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={24}/></div>
+                   <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight leading-none">Gestión y Asignación</h2>
                  </div>
                  <button onClick={() => { setIsAssignModalOpen(false); setDobleFirmaFile(null); }} className="p-2 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
                </div>
@@ -750,30 +750,51 @@ export default function DirectorDashboard({
                  </section>
 
                  {/* Sección 3: Asignar Asesora */}
-                 <section className="bg-slate-950 rounded-[2rem] p-8 md:p-10 text-white text-center space-y-8">
-                   <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Designar Asesora Titular</h3>
-                      <form onSubmit={async (e) => { 
-                        e.preventDefault(); 
-                        startTransition(async () => { 
-                          const fd = new FormData(); 
-                          fd.append('expediente_id', selectedExpediente.id); 
-                          fd.append('asesora_id', asesoraId); 
-                          const res = await asignarAbogada(fd); 
-                          if (res.success) {
-                            setIsAssignModalOpen(false);
-                            setAsesoraId(''); 
-                          } else {
-                            alert('Error: ' + res.error);
-                          }
-                        }); 
-                      }} className="space-y-4 max-w-sm mx-auto">
-                      <select required value={asesoraId} onChange={e => setAsesoraId(e.target.value)} className="w-full p-5 bg-white/5 border-2 border-white/10 rounded-2xl font-black text-xs uppercase outline-none focus:border-sky-500 text-white appearance-none text-center">
-                        <option value="" className="bg-slate-900">Seleccionar...</option>
-                        {abogadas.map(a => <option key={a.id} value={a.id} className="bg-slate-900">{a.nombre_completo}</option>)}
-                      </select>
-                      <button type="submit" disabled={isPending} className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center gap-3">{isPending ? <Loader2 className="animate-spin" size={16}/> : 'Confirmar Asignación'}</button>
-                   </form>
-                 </section>
+                 {(() => {
+                   const contrato = Array.isArray(selectedExpediente.contratos) ? selectedExpediente.contratos[0] : (selectedExpediente.contratos as any);
+                   const pago = Array.isArray(selectedExpediente.pagos) ? selectedExpediente.pagos[0] : (selectedExpediente.pagos as any);
+                   const hasDobleFirma = !!contrato?.url_pdf_doble_firma;
+                   const hasPago = !!pago?.url_comprobante;
+
+                   if (!hasDobleFirma || !hasPago) {
+                     return (
+                       <section className="bg-slate-50 border-2 border-slate-100 border-dashed rounded-[2rem] p-8 md:p-10 text-center space-y-4">
+                         <div className="w-16 h-16 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2"><ShieldCheck size={32}/></div>
+                         <h3 className="text-xl font-black uppercase tracking-tighter leading-none text-slate-400">Asignación Bloqueada</h3>
+                         <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-relaxed">
+                           Para designar una asesora y comenzar la gestión, primero debe validar el comprobante de pago del cliente y subir el contrato con la firma conjunta (Doble Firma).
+                         </p>
+                       </section>
+                     );
+                   }
+
+                   return (
+                     <section className="bg-slate-950 rounded-[2rem] p-8 md:p-10 text-white text-center space-y-8">
+                       <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Designar Asesora Titular</h3>
+                          <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            startTransition(async () => {
+                              const fd = new FormData();
+                              fd.append('expediente_id', selectedExpediente.id);
+                              fd.append('asesora_id', asesoraId);
+                              const res = await asignarAbogada(fd);
+                              if (res.success) {
+                                setIsAssignModalOpen(false);
+                                setAsesoraId('');
+                              } else {
+                                alert('Error: ' + res.error);
+                              }
+                            });
+                          }} className="space-y-4 max-w-sm mx-auto">
+                          <select required value={asesoraId} onChange={e => setAsesoraId(e.target.value)} className="w-full p-5 bg-white/5 border-2 border-white/10 rounded-2xl font-black text-xs uppercase outline-none focus:border-sky-500 text-white appearance-none text-center">
+                            <option value="" className="bg-slate-900">Seleccionar...</option>
+                            {abogadas.map(a => <option key={a.id} value={a.id} className="bg-slate-900">{a.nombre_completo}</option>)}
+                          </select>
+                          <button type="submit" disabled={isPending} className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center gap-3">{isPending ? <Loader2 className="animate-spin" size={16}/> : 'Confirmar Asignación'}</button>
+                       </form>
+                     </section>
+                   );
+                 })()}
 
                  {/* Sección 4: Referencias */}
                  <section className="pt-8 border-t border-slate-100">

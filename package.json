@@ -1,12 +1,13 @@
 {
   "name": "portal-cliente",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check": "node scratch/check_abogada_expedientes.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1046.0",

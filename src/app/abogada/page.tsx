@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import ExpedienteManager from '@/components/abogada/ExpedienteManager';
 import AbogadaAuth from '@/components/abogada/AbogadaAuth';
-import type { CatalogoHito, ExpedienteAvanzado, SeguimientoTarea, NotaBitacora } from '@/types/database';
+import type { CatalogoHito, ExpedienteAvanzado, SeguimientoTarea, NotaBitacora, Recordatorio } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,10 +12,11 @@ export const metadata = {
   title: 'Panel de Abogada | CECANI',
 };
 
-// Extensión del tipo ExpedienteAvanzado para incluir seguimientos y bitácora
+// Extensión del tipo ExpedienteAvanzado para incluir seguimientos, bitácora y recordatorios
 export interface ExpedienteAbogada extends ExpedienteAvanzado {
   seguimiento_tareas: SeguimientoTarea[];
   bitacora: NotaBitacora[];
+  recordatorios: Recordatorio[];
 }
 
 export default async function AbogadaPage() {
@@ -61,12 +62,14 @@ export default async function AbogadaPage() {
       seguimiento_tareas(*),
       pagos(*),
       integrantes:expediente_integrantes(*),
+      recordatorios(*),
       bitacora(
         *,
         autor:perfiles!autor_id(nombre_completo)
       )
     `);
 
+  /*
   if (!esAdmin) {
     // Intentar obtener expedientes asignados mediante la tabla relacional (Muchos a Muchos)
     // Usamos un bloque try/catch o verificamos el error para que no rompa la página si la tabla no existe
@@ -86,8 +89,12 @@ export default async function AbogadaPage() {
       query = query.eq('asesora_id', user.id);
     }
   }
+  */
 
-  const { data: expedientesData } = await query.order('created_at', { ascending: false });
+  const { data: expedientesData, error: expedientesError } = await query.order('created_at', { ascending: false });
+  if (expedientesError) {
+    console.error("SUPABASE QUERY ERROR IN ABOGADA/PAGE:", expedientesError);
+  }
 
   // Fetch datos_concentrado separately with admin client (bypasses RLS)
   const expedienteIds = (expedientesData || []).map(e => e.id);

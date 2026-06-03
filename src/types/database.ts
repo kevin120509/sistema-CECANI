@@ -49,6 +49,9 @@ export type RolUsuario = 'cliente' | 'asesora' | 'directora' | 'admin';
 
 export type EstatusTarea = 'pendiente' | 'en_progreso' | 'completada';
 
+export type TipoRecordatorio = 'meet_cliente' | 'entrega_docs' | 'cita_notaria' | 'seguimiento' | 'pago' | 'otro';
+export type EstatusRecordatorio = 'pendiente' | 'enviado' | 'completado' | 'cancelado';
+
 // ============================
 // Interfaces - Tablas principales
 // ============================
@@ -83,6 +86,7 @@ export interface Expediente {
   estatus: EstatusExpediente;
   tipo_tramite?: TipoTramite;
   servicios_extra?: string[];
+  motivo_rechazo?: string | null;
   created_at: string;
   updated_at: string;
 
@@ -229,6 +233,31 @@ export interface DatosConcentrado {
   fecha_reunion_acuerdos: string;
 }
 
+export interface Recordatorio {
+  id: string;
+  expediente_id: string;
+  creado_por: string;
+  tipo: TipoRecordatorio;
+  titulo: string;
+  descripcion?: string;
+  fecha: string;
+  hora?: string;
+  link_reunion?: string;
+  docs_requeridos: string[];
+  notificar_abogada: boolean;
+  notificar_cliente_whatsapp: boolean;
+  whatsapp_enviado: boolean;
+  push_enviado: boolean;
+  estatus: EstatusRecordatorio;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordatorioConRelaciones extends Recordatorio {
+  expediente?: Expediente;
+  autor?: Perfil;
+}
+
 export interface ExpedienteAvanzado extends Expediente {
   // Las relaciones base ya están en Expediente, 
   // aquí extendemos con relaciones adicionales específicas de vistas complejas
@@ -237,6 +266,7 @@ export interface ExpedienteAvanzado extends Expediente {
   bitacora?: NotaBitacora[];
   datos_concentrado?: DatosConcentrado[];
   integrantes?: ExpedienteIntegrante[];
+  recordatorios?: Recordatorio[];
 }
 
 // ============================
@@ -252,6 +282,19 @@ export interface CrearExpedienteForm {
   monto_total?: number;
   tipo_tramite?: TipoTramite;
   servicios_extra?: string[];
+}
+
+export interface CrearRecordatorioForm {
+  expediente_id: string;
+  tipo: TipoRecordatorio;
+  titulo: string;
+  descripcion?: string;
+  fecha: string;
+  hora?: string;
+  link_reunion?: string;
+  docs_requeridos?: string[];
+  notificar_abogada?: boolean;
+  notificar_cliente_whatsapp?: boolean;
 }
 
 export interface SubirDocumentosForm {

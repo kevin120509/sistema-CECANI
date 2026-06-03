@@ -58,9 +58,14 @@ export async function actualizarEstatusExpediente(
   try {
     const supabase = createAdminClient();
 
+    const updateData: any = { estatus: nuevoEstatus, updated_at: new Date().toISOString() };
+    if (nuevoEstatus === 'revision_directora' || nuevoEstatus === 'en_proceso') {
+      updateData.motivo_rechazo = null;
+    }
+
     const { error } = await supabase
       .from('expedientes')
-      .update({ estatus: nuevoEstatus, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', expedienteId);
 
     if (error) {

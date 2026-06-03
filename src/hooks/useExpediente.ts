@@ -164,23 +164,28 @@ function calcularPaso(
   documentos: Documento[]
 ): PasoActual {
   if (!expediente) return 1;
-  
+
   // Si no ha subido documentación básica, está en Paso 2
-  const tieneIneFrente = documentos.some(d => d.tipo === 'ine_frente');
-  const tieneIneReverso = documentos.some(d => d.tipo === 'ine_reverso');
+  // Verificamos usando los nuevos tipos de documentos alineados al manual
+  const tieneIne = documentos.some(d => d.tipo === 'ine_frente');
   const tieneComprobante = documentos.some(d => d.tipo === 'comprobante_domicilio');
-  
-  if (!tieneIneFrente || !tieneIneReverso || !tieneComprobante) {
+  const tieneContratoSuscrito = documentos.some(d => d.tipo === 'contrato_firmado');
+  const tienePago = documentos.some(d => d.tipo === 'comprobante_pago');
+
+  // Si falta lo básico y NO está en un estatus superior, mostrar Paso 2
+  if ((!tieneIne || !tieneComprobante || !tieneContratoSuscrito || !tienePago) && expediente.estatus === 'en_registro') {
     return 2;
   }
-  
+
   // Si la documentación está, pero el estatus es 'en_registro', 'revision_directora'
   // o 'en_proceso' pero no ha firmado el contrato, está en Paso 3.
+  // Aquí se manejan los rechazos (el paso 3 mostrará qué falta).
+  const tieneDobleFirma = contrato?.url_pdf_doble_firma != null;
   const tieneContratoFirmado = contrato?.url_pdf_firmado_cliente != null;
-  
+
   if (
     ['en_registro', 'revision_directora'].includes(expediente.estatus) ||
-    (expediente.estatus === 'en_proceso' && !tieneContratoFirmado)
+    (expediente.estatus === 'en_proceso' && (!tieneContratoFirmado || !tieneDobleFirma))
   ) {
     return 3;
   }

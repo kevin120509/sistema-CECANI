@@ -255,13 +255,13 @@ export default function Paso1CrearProyecto({
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-[1600px] mx-auto py-4">
       {/* Sidebar: Sub-pasos dinámicos */}
       <aside className="lg:w-[320px] shrink-0">
-        <div className="sticky top-28 bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl overflow-hidden border border-white/5 group">
+        <div className="sticky top-28 bg-slate-900 rounded-3xl p-10 text-white shadow-2xl overflow-hidden border border-white/10 group">
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-10">
               <div className="p-2 bg-sky-500/20 rounded-lg">
                 <Sparkles className="text-sky-400" size={18} />
               </div>
-              <h2 className="text-[10px] font-black tracking-[0.3em] uppercase text-sky-400">Paso 1: Perfil Legal</h2>
+              <h2 className="text-xs font-semibold tracking-wider uppercase text-sky-400">Paso 1: Perfil Legal</h2>
             </div>
             
             <nav className="space-y-12">
@@ -602,14 +602,14 @@ function OptionButton({ active, children, onClick }: any) {
 
 function SuccessView({ isUpdate }: { isUpdate: boolean }) {
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.9, rotateX: 20 }} 
-      animate={{ opacity: 1, scale: 1, rotateX: 0 }} 
-      className="max-w-2xl mx-auto bg-white rounded-[4rem] p-16 text-center shadow-[0_50px_100px_rgba(0,0,0,0.1)] border border-slate-100"
-    >
-      <div className="w-28 h-28 bg-emerald-50 text-emerald-500 rounded-[3rem] flex items-center justify-center mx-auto mb-10 shadow-inner">
-        <CheckCircle2 size={56} />
-      </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, rotateX: 20 }} 
+            animate={{ opacity: 1, scale: 1, rotateX: 0 }} 
+            className="max-w-2xl mx-auto bg-white rounded-3xl p-16 text-center shadow-2xl shadow-slate-200/50 border border-slate-100"
+          >
+            <div className="w-28 h-28 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-inner">
+              <CheckCircle2 size={56} />
+            </div>
       <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6 leading-tight">
         {isUpdate ? 'Expediente Actualizado' : 'Misión Cumplida'}
       </h2>

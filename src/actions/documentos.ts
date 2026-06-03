@@ -8,6 +8,8 @@ import { DocumentoService } from '@/core/services/DocumentoService';
 import { SupabaseDocumentoRepository, SupabasePagoRepository } from '@/infrastructure/persistence/SupabaseDocumentosRepository';
 import { CloudflareStorageService } from '@/infrastructure/storage/CloudflareStorageService';
 import { OneSignalNotificationService } from '@/infrastructure/external/OneSignalNotificationService';
+import { borrarArchivoR2 } from '@/lib/r2';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 function getDocumentoService() {
   return new DocumentoService(
@@ -27,8 +29,20 @@ export async function registrarDocumento(
   urlArchivo: string,
   integranteId?: string | null
 ): Promise<ActionResult<{ documento_id: string }>> {
+  // Mapeo preventivo para evitar errores de enum en base de datos legacy
+  const enumsValidos = [
+    'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'contrato_firmado', 
+    'comprobante_pago', 'curp', 'csf', 'efirma_representante', 
+    'propuestas_nombre', 'autorizacion_nombre', 'acta_asamblea', 
+    'proyecto_word', 'testimonio_notarial', 'acuse_cita_sat', 
+    'rfc_moral', 'constancia_acreditacion', 'oficio_donataria', 
+    'inscripcion_rpp', 'otro'
+  ];
+
+  const tipoFinal = enumsValidos.includes(tipo) ? tipo : 'otro' as TipoDocumento;
+
   const service = getDocumentoService();
-  const result = await service.registrarDocumentoYNotificar(expedienteId, tipo, urlArchivo, integranteId);
+  const result = await service.registrarDocumentoYNotificar(expedienteId, tipoFinal, urlArchivo, integranteId);
 
   if (result.success) {
     revalidatePath('/directora');
@@ -98,4 +112,34 @@ export async function subirYRegistrarPago(
   }
 
   return { success: false, error: result.error };
+}
+
+
+/**
+ * Elimina un documento de R2 y de la base de datos.
+ */
+export async function eliminarDocumentoAction(documentoId: string, urlArchivo: string): Promise<ActionResult> {
+  try {
+    const supabase = createAdminClient();
+
+    // 1. Borrar de R2
+    await borrarArchivoR2(urlArchivo);
+
+    // 2. Borrar de la DB
+    const { error } = await supabase
+      .from('documentos')
+      .delete()
+      .eq('id', documentoId);
+
+    if (error) throw error;
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    revalidatePath('/');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en eliminarDocumentoAction:', error);
+    return { success: false, error: error.message };
+  }
 }

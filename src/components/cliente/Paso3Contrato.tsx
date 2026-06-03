@@ -133,6 +133,18 @@ export default function Paso3Contrato({
         </p>
       </motion.div>
 
+      {expediente.motivo_rechazo && !isWaitingForDirector && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto mb-8 bg-rose-50 border-4 border-rose-100 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 text-rose-100/50"><AlertCircle size={100} /></div>
+          <div className="w-16 h-16 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-xl relative z-10"><AlertCircle size={32} /></div>
+          <div className="space-y-2 relative z-10">
+            <h3 className="text-xl font-bold text-rose-900 uppercase tracking-tight">Validación Rechazada</h3>
+            <p className="text-sm font-semibold text-rose-700 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
+            <p className="text-[10px] font-bold uppercase text-rose-500 tracking-widest pt-2">Por favor, corrija la firma o el comprobante y vuelva a subir los archivos solicitados.</p>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Información y Descarga */}
         <div className="lg:col-span-5 space-y-8">
@@ -143,17 +155,17 @@ export default function Paso3Contrato({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
-                className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 relative overflow-hidden"
+                className="bg-slate-900 rounded-3xl p-10 text-white shadow-xl border border-white/5 relative overflow-hidden"
               >
                 <div className="relative z-10 space-y-6">
                   <div className="w-14 h-14 bg-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center animate-pulse">
                     <History size={28} />
                   </div>
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Bajo Revisión Legal</h3>
+                  <h3 className="text-2xl font-black uppercase tracking-tight">Bajo Revisión Legal</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
                     Nuestros analistas están verificando tu información para generar el contrato digital. 
                   </p>
-                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">
+                  <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400">
                     <Loader2 className="animate-spin" size={14} />
                     Sincronizando con Dirección...
                   </div>
@@ -165,7 +177,7 @@ export default function Paso3Contrato({
                 key="ready"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-sky-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-sky-200 border border-sky-500 relative overflow-hidden group"
+                className="bg-sky-600 rounded-3xl p-10 text-white shadow-xl shadow-sky-200/50 border border-sky-500 relative overflow-hidden group"
               >
                 <div className="relative z-10 space-y-8">
                   <div className="flex justify-between items-start">
@@ -213,7 +225,7 @@ export default function Paso3Contrato({
 
         {/* Lado Derecho: Formulario de Subida */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] border border-slate-100 relative overflow-hidden">
+          <div className="bg-white rounded-3xl p-8 md:p-14 shadow-2xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
             <AnimatePresence>
               {isPending && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
@@ -229,8 +241,8 @@ export default function Paso3Contrato({
             <form onSubmit={handleSubmit} className="space-y-12">
               <section className="space-y-8">
                 <header className="flex items-center gap-4 border-b border-slate-100 pb-6">
-                  <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center shadow-lg"><UploadCloud size={18} /></div>
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Carga de Documentación Final</h4>
+                  <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><UploadCloud size={18} /></div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Carga de Documentación Final</h4>
                 </header>
 
                 <div className="grid grid-cols-1 gap-10">
@@ -278,7 +290,7 @@ export default function Paso3Contrato({
                 <button
                   type="submit"
                   disabled={isPending || isWaitingForDirector}
-                  className="w-full bg-slate-950 text-white py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-600 transition-all duration-500 shadow-2xl shadow-slate-200 flex items-center justify-center gap-4 group disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all duration-500 shadow-2xl shadow-slate-200 flex items-center justify-center gap-4 group disabled:opacity-50"
                 >
                   {isPending ? 'Sincronizando...' : 'Completar Registro Legal'} 
                   {!isPending && <CheckCircle2 size={16} className="group-hover:scale-110 transition-transform" />}
