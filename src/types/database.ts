@@ -96,6 +96,7 @@ export interface Expediente {
   figura?: CatalogoFigura;
   contratos?: Contrato[];
   documentos?: Documento[];
+  pagos?: any[];
   expediente_asesoras?: ExpedienteAsesora[];
 }
 

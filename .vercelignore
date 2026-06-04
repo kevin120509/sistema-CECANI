@@ -1,0 +1,17 @@
+# Ignore build errors in scratch and scripts
+scratch/
+scripts/
+latest-build.log
+file_list.txt
+pdf-text-dump.txt
+pdf-text-dump-all.txt
+template-text.txt
+parse-pdf.js
+parse-pdf.mjs
+scratch_db.ts
+scratch_test.js
+scratch_test.ts
+base.sql
+database_updates.sql
+migration_motivo_rechazo.sql
+find_excel.js

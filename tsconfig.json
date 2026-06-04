@@ -30,5 +30,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "scratch",
+    "scripts",
+    "find_excel.js",
+    "parse-pdf.js"
+  ]
 }

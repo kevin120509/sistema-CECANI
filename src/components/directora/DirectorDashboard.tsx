@@ -68,8 +68,8 @@ export type ExpedienteDirector = Record<string, unknown> & {
     servicio_base?: string;
     modulos_extra?: string[];
   }>;
-  pagos?: Array<{ monto: number; url_comprobante?: string; fecha_pago?: string }>;
-  documentos?: Array<{ id: string; tipo: string; url_archivo: string; validado: boolean }>;
+  pagos?: Array<{ monto: number; url_comprobante?: string; fecha_pago?: string; verificado?: boolean }>;
+  documentos?: Array<{ id: string; tipo: string; url_archivo: string; validado: boolean; motivo_rechazo?: string | null }>;
   servicios_extra?: string[];
 };
 
