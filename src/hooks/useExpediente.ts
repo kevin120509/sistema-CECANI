@@ -103,11 +103,12 @@ export function useExpediente(): UseExpedienteReturn {
       if (expedienteRaw) {
         // @ts-ignore - The action returns this embedded
         const { contratos: contratosArr, ...exp } = expedienteRaw;
-        // Inyectamos documentos y contratos para que los componentes hijos los tengan disponibles
+        // Inyectamos documentos, contratos y pagos para que los componentes hijos los tengan disponibles
         expedienteFinal = { 
           ...exp, 
           contratos: contratosArr, 
-          documentos: documentos as Documento[] 
+          documentos: documentos as Documento[],
+          pagos: (result.data as any).pagos || []
         } as any;
         contratoFinal = (contratosArr?.[0] as Contrato) || null;
       }
@@ -162,6 +163,14 @@ export function useExpediente(): UseExpedienteReturn {
         { event: '*', schema: 'public', table: 'contratos' },
         () => {
           console.log('Realtime: Cambio en contratos detectado.');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pagos' },
+        () => {
+          console.log('Realtime: Cambio en pagos detectado.');
           fetchData();
         }
       )
@@ -226,6 +235,16 @@ function calcularPaso(
     (expediente.estatus === 'revision_directora' && hasDocumentosRechazados)
   ) {
     return 2;
+  }
+
+  // --- REGLA PASO 4 (FINALIZADO) ---
+  // Si ya tiene contrato firmado por el cliente Y el pago está verificado por dirección,
+  // el cliente ya terminó su parte y pasa a la vista de seguimiento legal.
+  const isContratoValidado = documentos.some(d => d.tipo === 'contrato_firmado' && d.validado);
+  const isPagoVerificado = (expediente.pagos as any)?.some((p: any) => p.verificado) || documentos.some(d => d.tipo === 'comprobante_pago' && d.validado);
+
+  if (isContratoValidado && isPagoVerificado) {
+    return 4;
   }
 
   // --- REGLA PASO 3 ---

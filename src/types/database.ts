@@ -129,6 +129,7 @@ export interface Documento {
   tipo: TipoDocumento;
   url_archivo: string;
   validado: boolean;
+  motivo_rechazo?: string | null;
   created_at: string;
 }
 

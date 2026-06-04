@@ -49,12 +49,12 @@ export default async function AbogadaPage() {
 
   const hitos = (hitosData || []) as CatalogoHito[];
 
-  // Fetch 2: Expedientes (Filtro por asesora si no es admin)
+  // Fetch 2: Expedientes (Filtro de Privacidad y Flujo)
   let query = supabaseAdmin
     .from('expedientes')
     .select(`
       *,
-      cliente:perfiles!cliente_id(nombre_completo, telefono, estado),
+      cliente:perfiles!cliente_id(nombre_completo, telefono, estado, rfc, curp, estado_civil, ocupacion, domicilio_completo),
       asesora:perfiles!asesora_id(nombre_completo),
       figura:catalogo_figuras(descripcion),
       contratos(*),
@@ -69,27 +69,24 @@ export default async function AbogadaPage() {
       )
     `);
 
-  /*
+  // --- REGLA DE NEGOCIO CRÍTICA ---
+  // Un expediente SOLO debe aparecer en el panel legal si:
+  // 1. Tiene una abogada asignada (asesora_id no es nulo).
+  // 2. Ya superó la validación de la directora (estatus NO es en_registro ni revision_directora).
+  
   if (!esAdmin) {
-    // Intentar obtener expedientes asignados mediante la tabla relacional (Muchos a Muchos)
-    // Usamos un bloque try/catch o verificamos el error para que no rompa la página si la tabla no existe
-    const { data: relData, error: relError } = await supabaseAdmin
-      .from('expediente_asesoras')
-      .select('expediente_id')
-      .eq('asesora_id', user.id);
-    
-    const idsRelacionales = (!relError && relData) ? relData.map(r => r.expediente_id) : [];
-
-    if (idsRelacionales.length > 0) {
-      // Filtramos por la columna legacy OR por pertenecer a la tabla relacional
-      const idsString = idsRelacionales.map(id => `"${id}"`).join(',');
-      query = query.or(`asesora_id.eq.${user.id},id.in.(${idsString})`);
-    } else {
-      // Modo legacy: solo por la columna asesora_id
-      query = query.eq('asesora_id', user.id);
-    }
+    // Si es abogada estándar: Solo ve sus propios expedientes asignados y validados
+    query = query
+      .not('asesora_id', 'is', null)
+      .eq('asesora_id', user.id)
+      .not('estatus', 'in', '("en_registro","revision_directora")');
+  } else {
+    // Si es admin/directora en el panel legal: Ve todos los asignados para supervisión, 
+    // pero OCULTAMOS los no asignados para evitar ruido y errores de flujo.
+    query = query
+      .not('asesora_id', 'is', null)
+      .not('estatus', 'in', '("en_registro","revision_directora")');
   }
-  */
 
   const { data: expedientesData, error: expedientesError } = await query.order('created_at', { ascending: false });
   if (expedientesError) {

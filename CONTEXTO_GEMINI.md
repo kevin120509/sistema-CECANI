@@ -47,6 +47,18 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
 ## 6. Bitácora de Sesión
+### [3 Junio 2026] - Sincronización Global Realtime y Blindaje de Privacidad
+- **Acción**: Implementación de sistema "Zero-Refresh" y corrección de flujos críticos de validación y privacidad.
+- **Cambios**:
+    - `RealtimeSyncProvider.tsx` & `layout.tsx`: Sistema de escucha global de cambios en Supabase (expedientes, pagos, documentos).
+    - `abogada/page.tsx`: Blindaje total de privacidad (abogadas solo ven lo asignado y validado).
+    - `Paso3Contrato.tsx` & `useExpediente.ts`: Lógica de transición automática al Paso 4 tras validación dual (Pago + Contrato).
+    - `directora/DirectorDashboard.tsx`: Integración de visor inteligente (Quick-View), notificaciones Toast y botones de validación de contrato.
+    - `directora.ts`: Nueva acción `validarContratoAction`.
+- **Pendientes**:
+    - Monitorear la carga de archivos pesados en R2 con el nuevo flujo quirúrgico.
+    - Verificar si las abogadas requieren filtros adicionales por "Hitos Pendientes".
+
 ### [3 Junio 2026] - Sincronización y Persistencia de Versión
 - **Acción**: Verificación de la permanencia de actualizaciones en el sistema. Se realizó un bump de versión a 0.1.1 en `package.json` para formalizar los cambios acumulados y se sincronizó el estado del repositorio.
 - **Cambios**:

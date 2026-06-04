@@ -77,6 +77,7 @@ CREATE TABLE public.documentos (
   tipo USER-DEFINED NOT NULL,
   url_archivo text NOT NULL,
   validado boolean DEFAULT false,
+  motivo_rechazo text,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT documentos_pkey PRIMARY KEY (id),
   CONSTRAINT documentos_expediente_id_fkey FOREIGN KEY (expediente_id) REFERENCES public.expedientes(id)
@@ -88,6 +89,7 @@ CREATE TABLE public.expedientes (
   figura_id integer NOT NULL,
   nombre_empresa character varying NOT NULL,
   estatus USER-DEFINED DEFAULT 'en_registro'::estatus_expediente,
+  motivo_rechazo text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   tipo_tramite text,
@@ -105,6 +107,7 @@ CREATE TABLE public.pagos (
   url_comprobante text NOT NULL,
   es_pago_inicial boolean DEFAULT false,
   verificado boolean DEFAULT false,
+  motivo_rechazo text,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT pagos_pkey PRIMARY KEY (id),
   CONSTRAINT pagos_expediente_id_fkey FOREIGN KEY (expediente_id) REFERENCES public.expedientes(id)

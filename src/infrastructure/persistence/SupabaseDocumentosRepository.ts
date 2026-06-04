@@ -11,6 +11,16 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
   ): Promise<string> {
     const supabase = createAdminClient();
 
+    // Eliminar versión previa del mismo tipo para este expediente (y opcionalmente este integrante)
+    // Esto asegura que si el documento fue rechazado (url_archivo=''), se borre antes de insertar el nuevo
+    let query = supabase.from('documentos').delete().eq('expediente_id', expedienteId).eq('tipo', tipo);
+    if (integranteId) {
+      query = query.eq('integrante_id', integranteId);
+    } else {
+      query = query.is('integrante_id', null);
+    }
+    await query;
+
     const { data, error } = await supabase
       .from('documentos')
       .insert({

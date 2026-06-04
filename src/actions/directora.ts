@@ -357,13 +357,17 @@ export async function rechazarDocumentoR2Action(
   try {
     const adminSupabase = createAdminClient();
     
-    // 1. Borrar el registro de la tabla documentos
-    const { error: deleteError } = await adminSupabase
+    // 1. Actualizar el registro de la tabla documentos para mantener el motivo de rechazo
+    const { error: updateError } = await adminSupabase
       .from('documentos')
-      .delete()
+      .update({
+        validado: false,
+        motivo_rechazo: motivo,
+        url_archivo: '' // Borramos la URL para que la UI sepa que no hay archivo
+      })
       .eq('id', documentoId);
 
-    if (deleteError) throw deleteError;
+    if (updateError) throw updateError;
 
     // 2. Intentar borrar el archivo físico en R2
     if (urlArchivo) {
@@ -383,6 +387,40 @@ export async function rechazarDocumentoR2Action(
       userIds: [clienteId],
       title: `Documento Rechazado: ${nombreDoc}`,
       message: `Tu documento fue rechazado por el siguiente motivo: ${motivo}. Por favor, vuelve a subirlo.`,
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Aprueba el contrato firmado por el cliente.
+ */
+export async function validarContratoAction(contratoId: string, expedienteId: string, clienteId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // 1. Marcar el documento como validado en la tabla de documentos
+    const { error: docError } = await adminSupabase
+      .from('documentos')
+      .update({ validado: true, motivo_rechazo: null })
+      .eq('expediente_id', expedienteId)
+      .eq('tipo', 'contrato_firmado');
+
+    if (docError) {
+      console.warn('Advertencia al validar documento contrato:', docError.message);
+    }
+
+    // 2. Notificar al cliente
+    await sendPushNotification({
+      userIds: [clienteId],
+      title: 'Contrato Validado',
+      message: 'Tu contrato firmado ha sido verificado y aprobado por la dirección.',
       url: '/documentacion'
     });
 
@@ -533,5 +571,137 @@ export async function subirContratoDobleFirma(formData: FormData): Promise<{ suc
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Error desconocido' };
+  }
+}
+
+/**
+ * Valida un pago y notifica.
+ */
+export async function validarPagoAction(pagoId: string, expedienteId: string, clienteId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // 1. Marcar el pago como verificado
+    const { error: pagoError } = await adminSupabase
+      .from('pagos')
+      .update({ verificado: true })
+      .eq('id', pagoId);
+
+    if (pagoError) throw pagoError;
+
+    // 2. Sincronizar la tabla de documentos para que el checklist visual del cliente se actualice
+    // Buscamos el documento tipo 'comprobante_pago' para este expediente
+    const { error: docError } = await adminSupabase
+      .from('documentos')
+      .update({ validado: true, motivo_rechazo: null })
+      .eq('expediente_id', expedienteId)
+      .eq('tipo', 'comprobante_pago');
+
+    if (docError) {
+      console.warn('Advertencia: No se pudo actualizar el checklist visual, pero el pago es válido:', docError.message);
+    }
+    
+    // Opcional: Notificar al cliente que su pago fue verificado
+    await sendPushNotification({
+      userIds: [clienteId],
+      title: 'Pago Verificado',
+      message: 'Tu pago ha sido verificado correctamente por la dirección.',
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Rechaza un pago, elimina su registro (o vacía url) y notifica al cliente.
+ */
+export async function rechazarPagoAction(
+  pagoId: string, 
+  expedienteId: string, 
+  clienteId: string, 
+  motivo: string,
+  urlArchivo: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // Para el pago, lo eliminamos y que el cliente lo vuelva a subir 
+    // O lo actualizamos como con documentos. En este caso lo borramos 
+    // y la UI pedirá subir uno nuevo ya que no hay pago inicial registrado.
+    const { error: deleteError } = await adminSupabase
+      .from('pagos')
+      .delete()
+      .eq('id', pagoId);
+
+    if (deleteError) throw deleteError;
+
+    // Borrar el archivo físico en R2
+    if (urlArchivo) {
+      const { borrarArchivoR2 } = await import('@/lib/r2');
+      await borrarArchivoR2(urlArchivo);
+    }
+
+    await sendPushNotification({
+      userIds: [clienteId],
+      title: 'Comprobante de Pago Rechazado',
+      message: `Tu comprobante de pago fue rechazado: ${motivo}. Por favor, vuelve a subirlo.`,
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Rechaza el contrato firmado por el cliente.
+ */
+export async function rechazarContratoClienteAction(
+  contratoId: string, 
+  expedienteId: string, 
+  clienteId: string, 
+  motivo: string,
+  urlArchivo: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // Limpiamos el PDF firmado del cliente y regresamos el estatus a generado
+    const { error: updateError } = await adminSupabase
+      .from('contratos')
+      .update({
+        url_pdf_firmado_cliente: null,
+        estatus: 'generado' // Para que pueda volver a firmarlo y subirlo
+      })
+      .eq('id', contratoId);
+
+    if (updateError) throw updateError;
+
+    // Borrar el archivo físico en R2
+    if (urlArchivo) {
+      const { borrarArchivoR2 } = await import('@/lib/r2');
+      await borrarArchivoR2(urlArchivo);
+    }
+
+    await sendPushNotification({
+      userIds: [clienteId],
+      title: 'Contrato Rechazado',
+      message: `Tu contrato firmado fue rechazado: ${motivo}. Por favor, vuélvelo a subir corregido.`,
+      url: '/documentacion'
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

@@ -126,13 +126,22 @@ export async function obtenerDashboardData(clienteId: string) {
     ]);
 
     let documentosData = [];
+    let pagosData = [];
     if (expedienteResult.data?.id) {
-      const docsReq = await supabase
-        .from('documentos')
-        .select('*')
-        .eq('expediente_id', expedienteResult.data.id)
-        .order('created_at', { ascending: true });
+      const [docsReq, pagosReq] = await Promise.all([
+        supabase
+          .from('documentos')
+          .select('*')
+          .eq('expediente_id', expedienteResult.data.id)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('pagos')
+          .select('*')
+          .eq('expediente_id', expedienteResult.data.id)
+          .order('created_at', { ascending: false })
+      ]);
       documentosData = docsReq.data || [];
+      pagosData = pagosReq.data || [];
     }
 
     return {
@@ -142,6 +151,7 @@ export async function obtenerDashboardData(clienteId: string) {
         expediente: expedienteResult.data,
         figuras: figurasResult.data || [],
         documentos: documentosData,
+        pagos: pagosData,
       }
     };
   } catch (error) {

@@ -91,6 +91,7 @@ export class SupabaseExpedienteRepository implements IExpedienteRepository {
         tipo_tramite: form.tipo_tramite,
         servicios_extra: form.servicios_extra || [],
         updated_at: new Date().toISOString(),
+        motivo_rechazo: null,
       })
       .eq('id', expedienteId);
 

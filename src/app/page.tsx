@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useExpediente } from '@/hooks/useExpediente';
 import Paso1CrearProyecto from '@/components/cliente/Paso1CrearProyecto';
 import Paso2Documentacion from '@/components/cliente/Paso2Documentacion';
+import PasoCorreccionDocs from '@/components/cliente/PasoCorreccionDocs';
 import Paso3Contrato from '@/components/cliente/Paso3Contrato';
 import Paso4SoloLectura from '@/components/cliente/Paso4SoloLectura';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +30,7 @@ export default function HomePage() {
     userId,
     isLoading,
     error,
+    hasDocumentosRechazados,
     refetch,
   } = useExpediente();
 
@@ -219,13 +221,23 @@ export default function HomePage() {
                 )}
 
                 {currentStep === 2 && expediente && userId && (
-                  <Paso2Documentacion
-                    expediente={expediente}
-                    onComplete={async () => {
-                      setActiveStep(null);
-                      await refetch();
-                    }}
-                  />
+                  hasDocumentosRechazados ? (
+                    <PasoCorreccionDocs
+                      expediente={expediente}
+                      onComplete={async () => {
+                        setActiveStep(null);
+                        await refetch();
+                      }}
+                    />
+                  ) : (
+                    <Paso2Documentacion
+                      expediente={expediente}
+                      onComplete={async () => {
+                        setActiveStep(null);
+                        await refetch();
+                      }}
+                    />
+                  )
                 )}
 
                 {currentStep === 3 && expediente && contrato && userId && (

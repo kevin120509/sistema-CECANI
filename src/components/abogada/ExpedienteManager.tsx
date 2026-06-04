@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { marcarHitoCompletado, guardarDatosConcentrado, agregarIntegrante } from '@/actions/abogada';
 import { logoutAbogada } from '@/actions/auth-abogada';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
@@ -173,6 +174,29 @@ function DocumentStage({ title, docs, color, onUpload, uploadingType, integrante
 
 export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: ExpedienteManagerProps) {
   const router = useRouter();
+  
+  // --- REALTIME SYNC ---
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('lawyer_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, () => {
+        console.log('Realtime: Cambio en expedientes detectado por Abogada.');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'seguimiento_tareas' }, () => {
+        console.log('Realtime: Cambio en hitos detectado.');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recordatorios' }, () => {
+        console.log('Realtime: Cambio en recordatorios detectado.');
+        router.refresh();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [router]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExpedienteId, setSelectedExpedienteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'etapa_legal' | 'documentacion' | 'seguimiento_proceso' | 'entregables'>('etapa_legal');
@@ -190,11 +214,12 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const [isAgregandoIntegrante, setIsAgregandoIntegrante] = useState(false);
 
   const CAMPOS_CONCENTRADO = [
-    'asesora_encargada', 'estado', 'telefono_cliente', 'objeto_social_ventas',
-    'actividad', 'cluni', 'notaria', 'pago_notario', 'estatus_rpp',
-    'total_contrato', 'periodicidad_pagos', 'pago_entrega_donataria', 'cantidad_cobrar_proximo',
-    'num_pagos_realizados', 'cantidad_pagada_acumulada', 'saldo_cliente', 'fecha_ultimo_pago', 'quien_cobra',
-    'fecha_contrato', 'numero_control', 'folio_rpp', 'volumen_rpp', 'libro_rpp'
+    'nombre_completo', 'rfc', 'curp', 'estado_civil', 'ocupacion', 'domicilio_completo',
+    'estado', 'telefono_cliente', 'objeto_social_ventas',
+    'actividad', 'numero_control', 'notaria', 'estatus_rpp',
+    'folio_rpp', 'libro_rpp', 'volumen_rpp',
+    'total_contrato', 'periodicidad_pagos', 'num_pagos_realizados', 'saldo_cliente',
+    'asesora_encargada'
   ];
 
   const [concentradoForm, setConcentradoForm] = useState<Record<string, string>>({});
@@ -211,6 +236,16 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   }, [expedientes, searchTerm]);
 
   const selectedExpediente = expedientes.find(e => e.id === selectedExpedienteId) || null;
+
+  // EFECTO DE LIMPIEZA POST-ELIMINACIÓN:
+  // Si el expediente seleccionado ya no existe en la lista de entrada (porque fue eliminado),
+  // limpiamos la selección para que la UI no se quede "colgada" con datos viejos.
+  useEffect(() => {
+    if (selectedExpedienteId && !expedientes.find(e => e.id === selectedExpedienteId)) {
+      console.log('Sync: El expediente seleccionado fue eliminado, limpiando panel...');
+      setSelectedExpedienteId(null);
+    }
+  }, [expedientes, selectedExpedienteId]);
 
   useEffect(() => { setHitosLocales({}); }, [selectedExpedienteId]);
 
@@ -236,17 +271,20 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
       CAMPOS_CONCENTRADO.forEach(campo => {
         const dbValue = (dbData as any)[campo] || '';
         const defaults: any = {
+          nombre_completo: cliente?.nombre_completo || '',
+          rfc: cliente?.rfc || '',
+          curp: cliente?.curp || '',
+          estado_civil: cliente?.estado_civil || '',
+          ocupacion: cliente?.ocupacion || '',
+          domicilio_completo: cliente?.domicilio_completo || '',
           estado: cliente?.estado || '',
           telefono_cliente: cliente?.telefono || '',
           total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
           saldo_cliente: montoContrato > 0 ? `$${saldo.toLocaleString()}` : '',
-          cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
           num_pagos_realizados: totalPagosNum > 0 ? String(totalPagosNum) : '',
-          fecha_ultimo_pago: fechaUltimoPago,
           periodicidad_pagos: planPagosLabel,
-          fecha_contrato: fechaContrato,
-          asesora_encargada: asesora?.nombre_completo || (dbData as any).asesora_encargada || '',
           actividad: (selectedExpediente as any).figura?.descripcion || (dbData as any).actividad || '',
+          numero_control: (selectedExpediente as any).numero_control || '',
         };
         newForm[campo] = dbValue || defaults[campo] || '';
       });
@@ -537,10 +575,17 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                 <ConcentradoCard title="I. Identidad del Cliente" color="slate">
                   {[
-                    { l: 'Asesora Asignada', c: 'asesora_encargada' },
+                    { l: 'Nombre del Cliente', c: 'nombre_completo' },
+                    { l: 'RFC', c: 'rfc' },
+                    { l: 'CURP', c: 'curp' },
+                    { l: 'Estado Civil', c: 'estado_civil' },
+                    { l: 'Ocupación', c: 'ocupacion' },
                     { l: 'Estado / Entidad', c: 'estado' },
                     { l: 'Teléfono Contacto', c: 'telefono_cliente' },
                   ].map(f => <ConcentradoField key={f.c} {...f} value={concentradoForm[f.c]} onChange={handleConcentradoChange} />)}
+                  <div className="col-span-full">
+                    <ConcentradoField l="Domicilio Completo" c="domicilio_completo" value={concentradoForm.domicilio_completo} onChange={handleConcentradoChange} />
+                  </div>
                 </ConcentradoCard>
 
                 <ConcentradoCard title="II. Detalles del Proceso" color="blue">
@@ -630,17 +675,13 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                     <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md"><Building2 size={20}/></div>
                     <h3 className="text-lg md:text-xl font-bold uppercase tracking-tight text-slate-900">Documentos de la Organización y Cliente</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     <DocumentStage title="Identidad Titular" color="blue" onUpload={handleFileUpload} uploadingType={uploadingType} onDelete={handleDeleteDocument}
                       docs={[
                         { label: 'INE (Frente)', type: 'ine_frente', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'ine_frente' && (!d.integrante_id || d.integrante_id === ''))?.id), url: (selectedExpediente.documentos?.find(d => d.tipo === 'ine_frente' && (!d.integrante_id || d.integrante_id === ''))?.url_archivo) },
                         { label: 'INE (Vuelta)', type: 'ine_reverso', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'ine_reverso' && (!d.integrante_id || d.integrante_id === ''))?.id), url: (selectedExpediente.documentos?.find(d => d.tipo === 'ine_reverso' && (!d.integrante_id || d.integrante_id === ''))?.url_archivo) },
                         { label: 'CURP Titular', type: 'curp', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'curp' && (!d.integrante_id || d.integrante_id === ''))?.id), url: (selectedExpediente.documentos?.find(d => d.tipo === 'curp' && (!d.integrante_id || d.integrante_id === ''))?.url_archivo) },
                         { label: 'Dom. Titular', type: 'comprobante_domicilio', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_domicilio' && (!d.integrante_id || d.integrante_id === ''))?.id), url: (selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_domicilio' && (!d.integrante_id || d.integrante_id === ''))?.url_archivo) },
-                      ]}
-                    />
-                    <DocumentStage title="Venta y Registro" color="emerald" onUpload={handleFileUpload} uploadingType={uploadingType} onDelete={handleDeleteDocument}
-                      docs={[
                         { label: 'Contrato Firmado', type: 'contrato_firmado', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'contrato_firmado' && (!d.integrante_id || d.integrante_id === '')))?.id, url: (selectedExpediente.documentos?.find(d => d.tipo === 'contrato_firmado' && (!d.integrante_id || d.integrante_id === '')))?.url_archivo },
                         { label: 'Boucher Pago', type: 'comprobante_pago', docId: (selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_pago' && (!d.integrante_id || d.integrante_id === '')))?.id, url: (selectedExpediente.documentos?.find(d => d.tipo === 'comprobante_pago' && (!d.integrante_id || d.integrante_id === '')))?.url_archivo },
                       ]}

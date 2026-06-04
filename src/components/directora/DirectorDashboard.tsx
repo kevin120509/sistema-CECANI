@@ -32,7 +32,8 @@ import {
   UserCircle,
   CheckCircle2,
   Menu,
-  Eye
+  Eye,
+  Clock
 } from 'lucide-react';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
@@ -115,6 +116,19 @@ export default function DirectorDashboard({
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
   const [quickViewUrl, setQuickViewUrl] = useState<string | null>(null);
 
+  // --- SYNC SELECTED EXPEDIENTE WITH UPDATED PROPS ---
+  // Cuando las props (porAsignar o concentrado) cambian vía Realtime, 
+  // actualizamos el objeto seleccionado para que el modal refleje los cambios en vivo.
+  useEffect(() => {
+    if (selectedExpediente) {
+      const allExps = [...porAsignar, ...concentrado];
+      const updated = allExps.find(e => e.id === selectedExpediente.id);
+      if (updated) {
+        setSelectedExpediente(updated);
+      }
+    }
+  }, [porAsignar, concentrado, selectedExpediente?.id]);
+
   // --- REALTIME INTEGRATION ---
   useEffect(() => {
     const supabase = createClient();
@@ -152,6 +166,18 @@ export default function DirectorDashboard({
         
         router.refresh();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagos' }, (payload: any) => {
+        console.log('Realtime: Cambio en pagos, refrescando...');
+        
+        if (payload.eventType === 'INSERT') {
+          toast.success('Pago Recibido', {
+            description: `Se ha registrado una nueva inversión de un cliente.`,
+            action: { label: 'Validar', onClick: () => setActiveTab('por_asignar') }
+          });
+        }
+        
+        router.refresh();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -166,8 +192,10 @@ export default function DirectorDashboard({
 
   const listosParaAsignar = useMemo(() => {
     return porAsignar.filter(exp => {
+      // Un expediente está listo para asignar si su estatus es 'en_proceso' 
+      // (ya pasó el Paso 2) y NO tiene rechazos de documentos actuales.
       const hasRejection = exp.documentos?.some(d => !!d.motivo_rechazo);
-      return exp.estatus !== 'revision_directora' && !hasRejection;
+      return exp.estatus === 'en_proceso' && !hasRejection;
     });
   }, [porAsignar]);
 
@@ -410,6 +438,16 @@ export default function DirectorDashboard({
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">
                               {(exp.estatus || 'EN_PROCESO').replace(/_/g, ' ')}
                             </span>
+                            {(() => {
+                              const pago = Array.isArray(exp.pagos) ? exp.pagos[0] : (exp.pagos as any);
+                              if (!pago) return null;
+                              return (
+                                <span className={`text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 ${pago.verificado ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                  {pago.verificado ? <CheckCircle2 size={10}/> : <Clock size={10}/>}
+                                  {pago.verificado ? 'PAGO VERIFICADO' : 'PAGO PENDIENTE'}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       </td>
@@ -740,20 +778,34 @@ export default function DirectorDashboard({
                                  <Download size={18}/> Descargar Contrato Firmado
                                </a>
                                {!contrato?.url_pdf_doble_firma && (
-                                 <button 
-                                   onClick={async () => {
-                                     const motivo = prompt('Motivo del rechazo del contrato:');
-                                     if (!motivo) return;
-                                     const { rechazarContratoClienteAction } = await import('@/actions/directora');
-                                     startTransition(async () => {
-                                       const res = await rechazarContratoClienteAction(contrato.id, selectedExpediente.id, selectedExpediente.cliente_id, motivo, contrato.url_pdf_firmado_cliente);
-                                       if (res.error) alert(res.error);
-                                     });
-                                   }}
-                                   className="block w-full bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
-                                 >
-                                   <X size={14} className="inline mr-2"/> Rechazar Contrato
-                                 </button>
+                                 <div className="flex gap-2">
+                                   <button 
+                                     onClick={async () => {
+                                       const { validarContratoAction } = await import('@/actions/directora');
+                                       startTransition(async () => {
+                                         const res = await validarContratoAction(contrato.id, selectedExpediente.id, selectedExpediente.cliente_id);
+                                         if (res.error) alert(res.error);
+                                       });
+                                     }}
+                                     className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
+                                   >
+                                     <CheckCircle2 size={14} className="inline mr-1"/> Aprobar Contrato
+                                   </button>
+                                   <button 
+                                     onClick={async () => {
+                                       const motivo = prompt('Motivo del rechazo del contrato:');
+                                       if (!motivo) return;
+                                       const { rechazarContratoClienteAction } = await import('@/actions/directora');
+                                       startTransition(async () => {
+                                         const res = await rechazarContratoClienteAction(contrato.id, selectedExpediente.id, selectedExpediente.cliente_id, motivo, contrato.url_pdf_firmado_cliente);
+                                         if (res.error) alert(res.error);
+                                       });
+                                     }}
+                                     className="flex-1 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white px-4 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all text-center"
+                                   >
+                                     <X size={14} className="inline mr-2"/> Rechazar
+                                   </button>
+                                 </div>
                                )}
                              </div>
                            );
