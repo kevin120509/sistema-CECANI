@@ -47,17 +47,16 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
 ## 6. Bitácora de Sesión
-### [3 Junio 2026] - Sincronización Global Realtime y Blindaje de Privacidad
-- **Acción**: Implementación de sistema "Zero-Refresh" y corrección de flujos críticos de validación y privacidad.
+### [3 Junio 2026] - Sincronización Global "Zero-Refresh" y Blindaje Legal (FINAL)
+- **Acción**: Implementación de un sistema de interactividad total en tiempo real y blindaje de privacidad para el equipo legal, optimizando el despliegue en Vercel.
 - **Cambios**:
-    - `RealtimeSyncProvider.tsx` & `layout.tsx`: Sistema de escucha global de cambios en Supabase (expedientes, pagos, documentos).
-    - `abogada/page.tsx`: Blindaje total de privacidad (abogadas solo ven lo asignado y validado).
-    - `Paso3Contrato.tsx` & `useExpediente.ts`: Lógica de transición automática al Paso 4 tras validación dual (Pago + Contrato).
-    - `directora/DirectorDashboard.tsx`: Integración de visor inteligente (Quick-View), notificaciones Toast y botones de validación de contrato.
-    - `directora.ts`: Nueva acción `validarContratoAction`.
-- **Pendientes**:
-    - Monitorear la carga de archivos pesados en R2 con el nuevo flujo quirúrgico.
-    - Verificar si las abogadas requieren filtros adicionales por "Hitos Pendientes".
+    - **Realtime Global:** Creación de `RealtimeSyncProvider.tsx` en la raíz. El sistema ahora es "Cero F5"; cambios en expedientes, pagos y documentos se reflejan instantáneamente en todos los paneles.
+    - **Privacidad Legal:** Blindaje en `src/app/abogada/page.tsx`. Las abogadas ahora solo ven clientes validados y específicamente asignados a su ID (bloqueo por servidor).
+    - **Validación de Directora:** Implementación de aprobación dual (Pago + Contrato) en `DirectorDashboard.tsx`. Inclusión de **Visor Inteligente (Quick-View)** para imágenes y PDFs y notificaciones **Toast** proactivas.
+    - **Transición Automática:** El portal del cliente ahora salta al Paso 4 (Éxito) automáticamente cuando la directora valida contrato y pago.
+    - **Corrección de Errores Críticos:** Solución de `ReferenceErrors` (variables mal nombradas e iconos faltantes), sincronización de tablas de base de datos desajustadas y restauración de llaves de entorno (.env.local) contaminadas.
+    - **Vercel Build:** Optimización de compilación en la nube mediante `.vercelignore` y ajustes en `tsconfig.json` para excluir archivos temporales.
+- **Estado Final**: Repositorio GitHub y Vercel Production totalmente sincronizados con la versión `0.1.2`.
 
 ### [3 Junio 2026] - Sincronización y Persistencia de Versión
 - **Acción**: Verificación de la permanencia de actualizaciones en el sistema. Se realizó un bump de versión a 0.1.1 en `package.json` para formalizar los cambios acumulados y se sincronizó el estado del repositorio.
