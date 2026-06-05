@@ -255,16 +255,16 @@ export default function Paso1CrearProyecto({
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-[1600px] mx-auto py-4">
       {/* Sidebar: Sub-pasos dinámicos */}
       <aside className="lg:w-[320px] shrink-0">
-        <div className="sticky top-28 bg-slate-900 rounded-3xl p-10 text-white shadow-2xl overflow-hidden border border-white/10 group">
+        <div className="sticky top-28 bg-[#0a0f1d] rounded-[2.5rem] p-10 text-white shadow-2xl overflow-hidden border border-white/5 group premium-border">
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-10">
-              <div className="p-2 bg-sky-500/20 rounded-lg">
-                <Sparkles className="text-sky-400" size={18} />
+            <div className="flex items-center gap-3 mb-12">
+              <div className="p-2.5 bg-blue-500/10 rounded-xl">
+                <Sparkles className="text-blue-400" size={18} />
               </div>
-              <h2 className="text-xs font-semibold tracking-wider uppercase text-sky-400">Paso 1: Perfil Legal</h2>
+              <h2 className="text-xs font-black tracking-[0.2em] uppercase text-blue-400">Configuración</h2>
             </div>
             
-            <nav className="space-y-12">
+            <nav className="space-y-14">
               {['Identidad', 'Estructura', 'Servicios'].map((label, idx) => {
                 const stepNum = idx + 1;
                 const active = subStep === stepNum;
@@ -272,19 +272,19 @@ export default function Paso1CrearProyecto({
                 return (
                   <div key={label} className="relative flex items-center gap-6 group cursor-default">
                     {idx < 2 && (
-                      <div className={`absolute left-5 top-10 w-0.5 h-12 transition-all duration-700 ${done ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                      <div className={`absolute left-5 top-10 w-0.5 h-14 transition-all duration-700 ${done ? 'bg-blue-500' : 'bg-slate-800'}`} />
                     )}
                     <div className={`
-                      w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black transition-all duration-500 z-10
-                      ${active ? 'bg-sky-500 text-white shadow-[0_0_25px_rgba(14,165,233,0.4)] scale-110 -rotate-3' : 
-                        done ? 'bg-emerald-500 text-white' : 'bg-slate-950 text-slate-600 border border-white/5'}
+                      w-11 h-11 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all duration-500 z-10
+                      ${active ? 'bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-110 -rotate-3 border border-white/20' : 
+                        done ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-600 border border-white/5'}
                     `}>
                       {done ? '✓' : stepNum}
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-[0.25em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
                       {active && (
-                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-sky-500 mt-2 w-8 rounded-full" />
+                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-blue-500 mt-2 w-8 rounded-full" />
                       )}
                     </div>
                   </div>
@@ -293,8 +293,8 @@ export default function Paso1CrearProyecto({
             </nav>
           </div>
           {/* Decorative gradients */}
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-500/10 rounded-full blur-[100px] group-hover:bg-sky-500/20 transition-all duration-1000" />
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] group-hover:bg-blue-600/20 transition-all duration-1000" />
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-indigo-600/10 rounded-full blur-[80px]" />
         </div>
       </aside>
 
@@ -304,29 +304,32 @@ export default function Paso1CrearProyecto({
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="bg-slate-900 rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] border border-slate-800/50 relative overflow-hidden"
+          className="bg-[#0a0f1d]/60 backdrop-blur-3xl rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] border border-white/5 relative overflow-hidden premium-border"
         >
           {/* Error Message */}
           <AnimatePresence>
             {localError && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-8 p-6 bg-rose-950/40 border border-rose-900/50 rounded-[2rem] flex items-center gap-4 text-rose-200 shadow-sm"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-10 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-5 text-rose-200 shadow-2xl"
               >
-                <div className="p-2 bg-rose-900/50 rounded-xl"><AlertCircle size={20} /></div>
-                <p className="text-xs font-bold uppercase tracking-tight leading-relaxed">{localError}</p>
+                <div className="p-3 bg-rose-500/20 rounded-2xl"><AlertCircle size={24} /></div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Error Detectado</p>
+                  <p className="text-xs font-bold uppercase tracking-tight leading-relaxed">{localError}</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Form Content */}
-          <div className="min-h-[500px]">
+          <div className="min-h-[550px]">
             <AnimatePresence mode="wait">
               {subStep === 1 && (
-                <StepContent key="identidad" title="Identidad del Titular" icon={<User size={30} />} variants={itemVariants}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+                <StepContent key="identidad" title="Identidad del Titular" icon={<User size={32} className="text-blue-500" />} variants={itemVariants}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                     <InputCol span={2} label="Nombre Completo (INE) *" name="nombreCompleto" value={formData.nombreCompleto} onChange={handleInputChange} icon={<User size={18} />} placeholder="Ej. Alejandra García López" />
                     <InputCol label="Teléfono (WhatsApp) *" name="telefono" value={formData.telefono} onChange={handleInputChange} icon={<Phone size={18} />} placeholder="55 1234 5678" />
                     <InputCol label="RFC *" name="rfc" value={formData.rfc} onChange={handleInputChange} icon={<FileText size={18} />} placeholder="GALA900101XXX" />
@@ -338,66 +341,68 @@ export default function Paso1CrearProyecto({
               )}
 
               {subStep === 2 && (
-                <StepContent key="organizacion" title="Estructura del Proyecto" icon={<Building2 size={30} />} variants={itemVariants}>
-                  <div className="space-y-12">
-                    <div className="space-y-6">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Tipo de Servicio Requerido</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ToggleButton active={tipoServicio === 'legal'} onClick={() => setTipoServicio('legal')}>Trámite Legal (Constitución)</ToggleButton>
-                        <ToggleButton active={tipoServicio === 'contabilidad'} onClick={() => setTipoServicio('contabilidad')}>Servicios Contables</ToggleButton>
+                <StepContent key="organizacion" title="Estructura del Proyecto" icon={<Building2 size={32} className="text-blue-500" />} variants={itemVariants}>
+                  <div className="space-y-16">
+                    <div className="space-y-8">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400/60 ml-1">Seleccione el ramo del servicio</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ToggleButton active={tipoServicio === 'legal'} onClick={() => setTipoServicio('legal')}>Servicio Legal Corporativo</ToggleButton>
+                        <ToggleButton active={tipoServicio === 'contabilidad'} onClick={() => setTipoServicio('contabilidad')}>Gestión Contable Integral</ToggleButton>
                       </div>
                     </div>
 
-                    <InputCol label="Nombre de la Asociación o Empresa *" name="nombreEmpresa" value={formData.nombreEmpresa} onChange={handleInputChange} icon={<Building2 size={18} />} placeholder="Ej. Transformando Vidas A.C." />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <SelectCol 
-                        label="Figura Jurídica *" 
-                        name="figuraId" 
-                        value={formData.figuraId} 
-                        onChange={handleInputChange} 
-                        icon={<Scale size={18} />} 
-                        options={figuras.map(f => ({ value: f.id, label: `${f.siglas} — ${f.descripcion}` }))} 
-                      />
-                      <SelectCol 
-                        label="Plan de Liquidación *" 
-                        name="planPagos" 
-                        value={formData.planPagos} 
-                        onChange={handleInputChange} 
-                        icon={<CreditCard size={18} />} 
-                        options={Object.keys(PLANES_PAGO_LABELS).map(key => ({ 
-                          value: key, 
-                          label: (PLANES_PAGO_LABELS as any)[key] 
-                        }))} 
-                      />
+                    <div className="space-y-12">
+                      <InputCol label="Nombre de la Asociación o Empresa *" name="nombreEmpresa" value={formData.nombreEmpresa} onChange={handleInputChange} icon={<Building2 size={18} />} placeholder="Ej. Transformando Vidas A.C." />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <SelectCol 
+                          label="Figura Jurídica *" 
+                          name="figuraId" 
+                          value={formData.figuraId} 
+                          onChange={handleInputChange} 
+                          icon={<Scale size={18} />} 
+                          options={figuras.map(f => ({ value: f.id, label: `${f.siglas} — ${f.descripcion}` }))} 
+                        />
+                        <SelectCol 
+                          label="Plan de Liquidación *" 
+                          name="planPagos" 
+                          value={formData.planPagos} 
+                          onChange={handleInputChange} 
+                          icon={<CreditCard size={18} />} 
+                          options={Object.keys(PLANES_PAGO_LABELS).map(key => ({ 
+                            value: key, 
+                            label: (PLANES_PAGO_LABELS as any)[key] 
+                          }))} 
+                        />
+                      </div>
                     </div>
                   </div>
                 </StepContent>
               )}
 
               {subStep === 3 && (
-                <StepContent key="resumen" title="Configuración de Servicios" icon={<Calculator size={30} />} variants={itemVariants}>
-                  <div className="space-y-10">
+                <StepContent key="resumen" title="Configuración de Servicios" icon={<Calculator size={32} className="text-blue-500" />} variants={itemVariants}>
+                  <div className="space-y-12">
                     {/* Tarjeta de Resumen Financiero */}
-                    <div className="bg-slate-950 p-10 md:p-14 rounded-[3.5rem] text-white relative overflow-hidden shadow-[0_30px_60px_-15px_rgba(15,23,42,0.5)]">
-                      <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12 border-b border-white/10 pb-12">
+                    <div className="bg-[#050811] p-10 md:p-16 rounded-[4rem] text-white relative overflow-hidden shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] border border-white/5">
+                      <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-14 border-b border-white/10 pb-14">
                         <div className="text-center md:text-left">
-                          <h4 className="text-[10px] font-black tracking-[0.4em] uppercase text-sky-400 mb-3">Total Inversión Proyectada</h4>
-                          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Conceptos de gestoría, impuestos y notaría</p>
+                          <h4 className="text-[10px] font-black tracking-[0.5em] uppercase text-blue-500 mb-4">Inversión Total Proyectada</h4>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Incluye honorarios, trámites y gestión legal</p>
                         </div>
-                        <div className="text-6xl md:text-7xl font-black text-sky-400 tracking-tighter flex items-baseline gap-2 tabular-nums">
-                          <span className="text-2xl font-light opacity-30">$</span>
+                        <div className="text-7xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-400 tracking-tighter flex items-baseline gap-2 tabular-nums">
+                          <span className="text-3xl font-light text-blue-500/30">$</span>
                           {presupuestoTotal.toLocaleString()}
-                          <span className="text-sm font-bold opacity-20 tracking-widest">MXN</span>
+                          <span className="text-sm font-bold text-blue-500/20 tracking-widest">MXN</span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div className="space-y-6">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Estado de la Organización</p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <ToggleButton active={tieneActa === true} onClick={() => setTieneActa(true)}>Acta Existente</ToggleButton>
-                            <ToggleButton active={tieneActa === false} onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}>Nueva Constitución</ToggleButton>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
+                        <div className="space-y-8">
+                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-1">Estatus de Acta Constitutiva</p>
+                          <div className="grid grid-cols-2 gap-5">
+                            <ToggleButton active={tieneActa === true} onClick={() => setTieneActa(true)}>Tengo Acta</ToggleButton>
+                            <ToggleButton active={tieneActa === false} onClick={() => { setTieneActa(false); setNecesitaRenovar(null); }}>Nueva A.C.</ToggleButton>
                           </div>
                         </div>
 

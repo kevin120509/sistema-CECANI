@@ -20,8 +20,6 @@ import {
   ShieldCheck,
   History,
   Clock,
-  Eye,
-  Trash2,
   RotateCcw
 } from 'lucide-react';
 
@@ -51,11 +49,9 @@ export default function Paso3Contrato({
 
   const pago = Array.isArray(expediente.pagos) ? expediente.pagos[0] : (expediente.pagos as any);
   
-  // Estados de los documentos en BD
   const docContratoFirmado = expediente.documentos?.find(d => d.tipo === 'contrato_firmado');
   const docPago = expediente.documentos?.find(d => d.tipo === 'comprobante_pago');
 
-  // PRIORIDAD: Revisar campo específico en tabla 'contratos' o en tabla 'documentos'
   const hasContratoEnBD = !!contrato.url_pdf_firmado_cliente || !!docContratoFirmado?.url_archivo;
   const isContratoValidado = !!docContratoFirmado?.validado;
   const isContratoRechazado = !!docContratoFirmado?.motivo_rechazo && !isContratoValidado;
@@ -64,11 +60,7 @@ export default function Paso3Contrato({
   const isPagoVerificado = !!pago?.verificado || !!docPago?.validado;
   const isPagoRechazado = (!!pago?.motivo_rechazo || !!docPago?.motivo_rechazo) && !isPagoVerificado;
 
-  // Lógica de "En Revisión": El cliente ya subió AMBOS archivos y NO hay rechazos activos.
-  // Se mantiene en esta pantalla aunque el pago ya esté validado, hasta que se asigne abogada (siguiente paso).
   const isUnderReview = hasContratoEnBD && hasPagoEnBD && !isContratoRechazado && !isPagoRechazado;
-
-  // Si la directora no ha generado el pdf oficial (para descargar)
   const isWaitingForDirector = !contrato.url_pdf_generado || expediente.estatus === 'revision_directora';
 
   const handleDescargar = () => {
@@ -84,18 +76,14 @@ export default function Paso3Contrato({
   const handleEliminarDocumento = async (tipo: 'contrato_firmado' | 'comprobante_pago') => {
     const doc = tipo === 'contrato_firmado' ? docContratoFirmado : docPago;
     if (!doc?.id || !doc?.url_archivo) return;
-
     if (!confirm('¿Deseas eliminar el archivo actual para subir uno nuevo?')) return;
 
     startTransition(async () => {
       try {
         setProgress('Eliminando archivo anterior...');
         const res = await eliminarDocumentoAction(doc.id, doc.url_archivo);
-        if (res.success) {
-          await onComplete(); // Refrescar datos
-        } else {
-          setError('Error al eliminar: ' + res.error);
-        }
+        if (res.success) await onComplete();
+        else setError('Error al eliminar: ' + res.error);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -119,10 +107,7 @@ export default function Paso3Contrato({
 
     startTransition(async () => {
       try {
-        const carpetaEmpresa = expediente.nombre_empresa
-          .replace(/[^a-zA-Z0-9]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
+        const carpetaEmpresa = expediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
 
         if (necesitaContrato && contratoFirmado.file) {
           setProgress('Resguardando contrato legal...');
@@ -155,89 +140,93 @@ export default function Paso3Contrato({
 
   if (isUnderReview && !isPending && !error) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center space-y-12">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner border animate-pulse ${isPagoVerificado ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900' : 'bg-sky-950/40 text-sky-400 border-sky-900'}`}>
-          {isPagoVerificado ? <ShieldCheck size={48} /> : <Clock size={48} />}
+      <div className="max-w-4xl mx-auto py-24 text-center space-y-12">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-28 h-28 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl border transition-all duration-1000 premium-border ${isPagoVerificado ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20 animate-pulse'}`}>
+          {isPagoVerificado ? <ShieldCheck size={56} /> : <Clock size={56} />}
         </motion.div>
         
-        <div className="space-y-4">
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
-            {isPagoVerificado ? '¡Inversión Validada!' : 'Validación de Formalización'}
+        <div className="space-y-6">
+          <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-tight">
+            {isPagoVerificado ? '¡Inversión Validada!' : 'Validación de Fondos'}
           </h2>
-          <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
             {isPagoVerificado 
-              ? 'Tu pago ha sido verificado con éxito. Estamos terminando de preparar la asignación de tu abogada titular.' 
-              : 'Hemos recibido tu documentación. Dirección está validando los fondos para asignarte una abogada titular.'}
+              ? 'Su inversión ha sido verificada exitosamente. Estamos finalizando la asignación de su abogada titular.' 
+              : 'Hemos recibido su documentación. Nuestra dirección está validando la inversión para formalizar su expediente.'}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          <ReviewCard label="Contrato Firmado" status="resguardado" icon={<FileSignature size={24}/>} color="sky" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+          <ReviewCard label="Contrato Firmado" status="resguardado" icon={<FileSignature size={28}/>} color="blue" />
           <ReviewCard 
             label="Inversión Inicial" 
             status={isPagoVerificado ? 'validado' : 'en_verificacion'} 
-            icon={<CreditCard size={24}/>} 
+            icon={<CreditCard size={28}/>} 
             subtext={`$${pago?.monto?.toLocaleString() || '---'}`} 
-            color={isPagoVerificado ? 'emerald' : 'sky'} 
+            color={isPagoVerificado ? 'emerald' : 'blue'} 
           />
         </div>
 
-        <div className="bg-slate-900 rounded-3xl p-8 text-white max-w-xl mx-auto flex items-center gap-6 relative overflow-hidden">
-          <div className="w-12 h-12 bg-sky-500/20 text-sky-400 rounded-xl flex items-center justify-center shrink-0"><ShieldCheck size={24}/></div>
+        <div className="bg-[#0a0f1d] p-10 rounded-[3rem] text-white max-w-xl mx-auto flex items-center gap-8 relative overflow-hidden border border-white/5 shadow-2xl premium-border">
+          <div className="w-14 h-14 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center shrink-0 border border-blue-500/20"><ShieldCheck size={28}/></div>
           <div className="text-left relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-1">Estatus del Portal:</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Estatus del Proceso:</p>
             <p className="text-sm font-bold opacity-80 uppercase leading-snug text-slate-300">
-              {isPagoVerificado ? 'Esperando confirmación final de dirección.' : 'Análisis financiero en curso...'}
+              {isPagoVerificado ? 'Sincronizando con el equipo legal de CECANI...' : 'Análisis financiero en curso por dirección.'}
             </p>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-sky-500/10 rounded-full blur-3xl" />
+          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-20">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
-        <div className="w-16 h-16 bg-emerald-950/40 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-900"><FileSignature size={32} /></div>
-        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Formalización de Contrato</h2>
-        <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto leading-relaxed">Descarga tu contrato personalizado, fírmalo y adjunta el comprobante de tu inversión inicial.</p>
+    <div className="max-w-5xl mx-auto space-y-16 pb-24 py-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
+        <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-emerald-500/20 premium-border"><FileSignature size={36} /></div>
+        <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Formalización Legal</h2>
+        <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto leading-relaxed">Descargue su instrumento legal, proceda con la firma autógrafa y sincronice su comprobante de inversión inicial.</p>
       </motion.div>
 
       {(isContratoRechazado || isPagoRechazado) && (
-        <div className="max-w-5xl mx-auto mb-8 bg-rose-950/40 border-4 border-rose-900 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
-          <AlertCircle className="text-rose-400 shrink-0" size={32} />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-5xl mx-auto mb-12 bg-rose-500/10 border border-rose-500/20 rounded-[3rem] p-10 flex items-start gap-8 shadow-2xl relative overflow-hidden">
+          <AlertCircle className="text-rose-500 shrink-0 mt-1" size={32} />
           <div className="space-y-2 relative z-10">
-            <h3 className="text-xl font-bold text-rose-200 uppercase tracking-tight">Atención Requerida</h3>
-            <p className="text-sm font-semibold text-rose-300 leading-relaxed uppercase">Uno o más elementos de tu formalización han sido rechazados. Por favor, realiza las correcciones indicadas abajo.</p>
+            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Atención Requerida</h3>
+            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">Se han detectado inconsistencias en su formalización. Por favor, realice las correcciones indicadas para reactivar el proceso.</p>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-5 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="lg:col-span-5 space-y-10">
           <AnimatePresence mode="wait">
             {isWaitingForDirector ? (
-              <motion.div key="waiting" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-950 rounded-3xl p-10 text-white shadow-xl border border-slate-800 relative overflow-hidden text-center md:text-left">
-                <div className="relative z-10 space-y-6">
-                  <div className="w-14 h-14 bg-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center animate-pulse mx-auto md:mx-0"><History size={28} /></div>
-                  <h3 className="text-2xl font-black uppercase tracking-tight">Análisis Documental</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">Estamos procesando tu información para emitir el contrato legal. Recibirás una notificación en cuanto esté listo.</p>
+              <motion.div key="waiting" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0a0f1d] rounded-[3rem] p-12 text-white shadow-2xl border border-white/5 relative overflow-hidden text-center md:text-left premium-border">
+                <div className="relative z-10 space-y-8">
+                  <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center animate-pulse mx-auto md:mx-0 border border-blue-500/20"><History size={32} /></div>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Emisión en Curso</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed font-bold uppercase tracking-widest text-[10px]">Nuestro equipo está redactando las cláusulas finales de su contrato legal.</p>
+                  </div>
                 </div>
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-500/10 rounded-full blur-[100px]" />
+                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px]" />
               </motion.div>
             ) : (
-              <motion.div key="ready" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-sky-600 rounded-3xl p-10 text-white shadow-xl border border-sky-500 relative overflow-hidden group">
-                <div className="relative z-10 space-y-8 text-center md:text-left">
+              <motion.div key="ready" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-gradient-to-br from-blue-600 to-sky-500 rounded-[3rem] p-12 text-white shadow-2xl border border-white/20 relative overflow-hidden group">
+                <div className="relative z-10 space-y-10 text-center md:text-left">
                   <div className="flex justify-between items-start">
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md mx-auto md:mx-0"><FileCheck size={28} /></div>
-                    <div className="hidden md:block px-4 py-1.5 bg-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest">Listo</div>
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md mx-auto md:mx-0 border border-white/30"><FileCheck size={32} /></div>
+                    <div className="hidden md:flex px-5 py-2 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg items-center gap-2">
+                      <CheckCircle2 size={12}/> Listo para Firma
+                    </div>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Descargar Contrato</h3>
-                    <p className="text-sky-100 text-sm leading-relaxed opacity-80">Su contrato ha sido emitido. Proceda a revisarlo y firmarlo.</p>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter mb-3">Descargar Instrumento</h3>
+                    <p className="text-blue-100 text-sm leading-relaxed opacity-90 font-bold uppercase tracking-widest text-[10px]">Su contrato ha sido emitido con validez legal completa.</p>
                   </div>
-                  <button onClick={handleDescargar} className="w-full bg-slate-900 text-sky-400 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-xl hover:scale-[1.02] transition-all border border-slate-800"><Download size={18} /> Descargar PDF</button>
+                  <button onClick={handleDescargar} className="w-full bg-slate-950 text-blue-400 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.03] transition-all border border-blue-500/20 active:scale-[0.97]"><Download size={20} /> Descargar PDF Oficial</button>
                 </div>
               </motion.div>
             )}
@@ -246,24 +235,30 @@ export default function Paso3Contrato({
           <div className="space-y-4">
              <StatusBadge label="Documentación Legal" active={expediente.estatus !== 'en_registro'} />
              <StatusBadge label="Emisión de Contrato" active={!!contrato.url_pdf_generado} />
-             <StatusBadge label="Firma de Cliente" active={isContratoValidado} rejected={isContratoRechazado} />
+             <StatusBadge label="Firma Autógrafa" active={isContratoValidado} rejected={isContratoRechazado} />
              <StatusBadge label="Inversión Inicial" active={isPagoVerificado} rejected={isPagoRechazado} />
           </div>
         </div>
 
         <div className="lg:col-span-7">
-          <div className="bg-slate-900 rounded-3xl p-8 md:p-14 shadow-2xl shadow-slate-950/50 border border-slate-800 relative overflow-hidden">
+          <div className="bg-[#0a0f1d]/60 backdrop-blur-3xl rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5 relative overflow-hidden premium-border">
             <AnimatePresence>
               {isPending && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
-                  <Loader2 className="text-sky-500 animate-spin mb-4" size={48} />
-                  <p className="text-sky-500 font-black text-[10px] uppercase tracking-[0.3em]">{progress}</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#030712]/95 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
+                  <div className="relative w-24 h-24 mb-8">
+                    <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <FileSignature className="text-blue-500" size={32} />
+                    </div>
+                  </div>
+                  <p className="text-blue-500 font-black text-xs uppercase tracking-[0.5em] animate-pulse">{progress}</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleSubmit} className="space-y-12">
-              <div className="grid grid-cols-1 gap-10">
+            <form onSubmit={handleSubmit} className="space-y-16">
+              <div className="grid grid-cols-1 gap-12">
                 <UploadMini 
                   label="Contrato Firmado *" 
                   archivo={contratoFirmado} 
@@ -287,32 +282,37 @@ export default function Paso3Contrato({
                 />
 
                 <div className={hasPagoEnBD && !isPagoRechazado ? 'opacity-50' : ''}>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block ml-1">Importe de Inversión ($) *</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6 block ml-1">Importe de Inversión (MXN) *</label>
                   <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 font-black text-lg">$</div>
+                    <div className="absolute left-8 top-1/2 -translate-y-1/2 text-blue-500 font-black text-2xl group-focus-within:scale-110 transition-transform">$</div>
                     <input 
                       type="number" 
                       min="1" 
                       step="0.01" 
+                      placeholder="0.00"
                       value={hasPagoEnBD && !isPagoRechazado ? pago?.monto : montoPago} 
                       onChange={(e) => setMontoPago(e.target.value)} 
                       disabled={isPending || isWaitingForDirector || (hasPagoEnBD && !isPagoRechazado)} 
-                      className="w-full bg-slate-950/50 border-2 border-slate-800 rounded-3xl py-5 pl-14 pr-8 text-sm font-bold text-white outline-none focus:border-sky-500 transition-all placeholder-slate-600" 
+                      className="w-full bg-slate-950/50 border-2 border-white/5 focus:border-blue-500 focus:bg-slate-950 focus:shadow-[0_10px_30px_rgba(59,130,246,0.1)] rounded-[2.5rem] py-7 pl-16 pr-10 text-xl font-black text-white outline-none transition-all duration-300 placeholder-slate-800" 
                     />
                   </div>
                 </div>
               </div>
 
-              {error && <p className="text-[10px] font-black uppercase text-rose-400 text-center bg-rose-950/40 p-4 rounded-2xl border border-rose-900">{error}</p>}
+              {error && (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl text-center">
+                   <p className="text-[10px] font-black uppercase text-rose-500 tracking-[0.2em]">{error}</p>
+                </motion.div>
+              )}
 
-              <footer className="pt-10 border-t border-slate-800">
+              <footer className="pt-12 border-t border-white/5">
                 <button 
                   type="submit" 
                   disabled={isPending || isWaitingForDirector || (hasContratoEnBD && hasPagoEnBD && !isContratoRechazado && !isPagoRechazado)} 
-                  className="w-full bg-sky-600 text-white py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-500 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-blue-600 to-sky-500 text-white py-8 rounded-[2.5rem] text-[12px] font-black uppercase tracking-[0.5em] hover:shadow-[0_20px_60px_rgba(37,99,235,0.4)] transition-all duration-500 flex items-center justify-center gap-6 disabled:opacity-30 group active:scale-[0.98]"
                 >
-                  {(isContratoRechazado || isPagoRechazado) ? 'Reenviar Correcciones' : (hasContratoEnBD && !hasPagoEnBD ? 'Enviar Comprobante' : 'Finalizar Formalización')} 
-                  <ArrowRight size={16} />
+                  {(isContratoRechazado || isPagoRechazado) ? 'Reenviar Formalización' : (hasContratoEnBD && !hasPagoEnBD ? 'Sincronizar Comprobante' : 'Finalizar Proceso Legal')} 
+                  <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                 </button>
               </footer>
             </form>
@@ -323,22 +323,22 @@ export default function Paso3Contrato({
   );
 }
 
-function ReviewCard({ label, status, icon, subtext, color = "sky" }: any) {
+function ReviewCard({ label, status, icon, subtext, color = "blue" }: any) {
   const colors: any = {
-    sky: 'bg-sky-950/40 text-sky-400 border-sky-900',
-    emerald: 'bg-emerald-950/40 text-emerald-400 border-emerald-900'
+    blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
   };
 
-  const statusLabel = status === 'validado' ? 'VALIDADO' : 'EN REVISIÓN';
+  const statusLabel = status === 'validado' ? 'VALIDADO' : 'RESGUARDADO';
 
   return (
-    <div className="p-6 bg-slate-900 border-2 border-slate-800 rounded-3xl flex flex-col items-center gap-3 shadow-sm transition-all">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-1 ${colors[color]}`}>{icon}</div>
-      <p className="text-[10px] font-black uppercase tracking-widest text-white">{label}</p>
-      {subtext && <p className="text-lg font-black text-slate-300">{subtext}</p>}
-      <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${colors[color]}`}>
-        {status === 'validado' ? <CheckCircle2 size={10} /> : <Loader2 size={10} className="animate-spin" />}
-        <span className="text-[8px] font-black uppercase tracking-tighter">{statusLabel}</span>
+    <div className="p-10 bg-[#0a0f1d] border border-white/5 rounded-[3rem] flex flex-col items-center gap-5 shadow-2xl transition-all hover:scale-[1.02] premium-border">
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 shadow-inner border ${colors[color]}`}>{icon}</div>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">{label}</p>
+      {subtext && <p className="text-2xl font-black text-white tracking-tighter">{subtext}</p>}
+      <div className={`flex items-center gap-3 px-5 py-2 rounded-full border shadow-lg ${colors[color]}`}>
+        {status === 'validado' ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
+        <span className="text-[9px] font-black uppercase tracking-[0.2em]">{statusLabel}</span>
       </div>
     </div>
   );
@@ -346,9 +346,11 @@ function ReviewCard({ label, status, icon, subtext, color = "sky" }: any) {
 
 function StatusBadge({ label, active, rejected }: { label: string, active: boolean, rejected?: boolean }) {
   return (
-    <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${rejected ? 'bg-rose-950/40 border-rose-900 text-rose-400' : active ? 'bg-emerald-950/40 border-emerald-900 text-emerald-400' : 'bg-slate-800/50 border-slate-700 text-slate-500'}`}>
-      <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-      {rejected ? <AlertCircle size={16}/> : active ? <CheckCircle2 size={16}/> : <Clock size={16}/>}
+    <div className={`flex items-center justify-between px-8 py-5 rounded-[2rem] border-2 transition-all duration-500 ${rejected ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : active ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/5 text-slate-600'}`}>
+      <span className="text-[10px] font-black uppercase tracking-[0.3em]">{label}</span>
+      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${rejected ? 'bg-rose-500/20' : active ? 'bg-emerald-500/20' : 'bg-white/5'}`}>
+        {rejected ? <AlertCircle size={16}/> : active ? <CheckCircle2 size={16}/> : <Clock size={16} className="opacity-40"/>}
+      </div>
     </div>
   );
 }
@@ -358,47 +360,47 @@ function UploadMini({ label, archivo, dbDoc, isValidated, isRejected, disabled, 
   
   return (
     <div className="relative group">
-      <div className="flex justify-between items-end mb-4 ml-1">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{label}</label>
+      <div className="flex justify-between items-end mb-5 ml-1">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] block">{label}</label>
         {isValidated && (
-          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-900 flex items-center gap-1">
-            <CheckCircle2 size={10} /> VALIDADO
+          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-2 shadow-lg">
+            <CheckCircle2 size={12} /> VERIFICADO
           </span>
         )}
         {isRejected && (
-          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-900 flex items-center gap-1">
-            <AlertCircle size={10} /> RECHAZADO
+          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20 flex items-center gap-2 shadow-lg">
+            <AlertCircle size={12} /> RECHAZADO
           </span>
         )}
       </div>
 
-      <div className={`relative rounded-3xl border-2 border-dashed transition-all p-6 flex items-center gap-5 
-        ${showSuccess ? 'border-emerald-500 bg-emerald-900/20' : isRejected ? 'border-rose-800 bg-rose-900/20' : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800 hover:border-sky-500'} 
-        ${disabled && !archivo.file ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+      <div className={`relative rounded-[2.5rem] border-2 border-dashed transition-all duration-500 p-8 flex items-center gap-6 
+        ${showSuccess ? 'border-emerald-500 bg-emerald-500/5 shadow-[0_15px_30px_rgba(16,185,129,0.05)]' : isRejected ? 'border-rose-500 bg-rose-500/5' : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-blue-500/40'} 
+        ${disabled && !archivo.file ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'}`}>
         
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 
-          ${showSuccess ? 'bg-emerald-500 text-white' : isRejected ? 'bg-rose-500 text-white' : 'bg-slate-900 text-slate-400 shadow-sm border border-slate-700'}`}>
-          {showSuccess ? <CheckCircle2 size={24} /> : isRejected ? <AlertCircle size={24} /> : <UploadCloud size={24} />}
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500
+          ${showSuccess ? 'bg-emerald-500 text-white shadow-emerald-500/40' : isRejected ? 'bg-rose-500 text-white shadow-rose-500/40' : 'bg-[#030712] text-slate-600 shadow-inner border border-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:scale-110'}`}>
+          {showSuccess ? <CheckCircle2 size={28} /> : isRejected ? <AlertCircle size={28} /> : <UploadCloud size={28} />}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className={`text-[10px] font-black uppercase tracking-tight truncate ${showSuccess ? 'text-emerald-400' : isRejected ? 'text-rose-400' : 'text-slate-300'}`}>
-            {archivo.file ? archivo.file.name : (isValidated ? 'DOCUMENTO VALIDADO' : (isRejected ? 'REQUIERE NUEVA CARGA' : 'SELECCIONAR ARCHIVO'))}
+          <p className={`text-[11px] font-black uppercase tracking-widest truncate mb-1 ${showSuccess ? 'text-emerald-400' : isRejected ? 'text-rose-400' : 'text-slate-400 group-hover:text-slate-200 transition-colors'}`}>
+            {archivo.file ? archivo.file.name : (isValidated ? 'DOCUMENTO VERIFICADO' : (isRejected ? 'REINTENTAR CARGA' : 'SELECCIONAR INSTRUMENTO'))}
           </p>
           {isRejected && !archivo.file && (
-            <p className="text-[9px] font-bold text-rose-400 uppercase mt-0.5 line-clamp-1">MOTIVO: {dbDoc?.motivo_rechazo || 'REVISAR DETALLES'}</p>
+            <p className="text-[9px] font-bold text-rose-400 uppercase mt-1 leading-relaxed line-clamp-1 italic">MOTIVO: {dbDoc?.motivo_rechazo || 'REVISAR OBSERVACIONES'}</p>
           )}
         </div>
 
-        <input type="file" onChange={onFileChange} disabled={disabled} accept="image/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 z-10" />
+        <input type="file" onChange={onFileChange} disabled={disabled} accept="image/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer" />
         
         {isRejected && dbDoc?.url_archivo && !archivo.file && (
           <button 
             type="button" 
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="relative z-20 p-2.5 bg-slate-900 text-rose-400 rounded-xl shadow-lg border border-rose-900 hover:bg-rose-500 hover:text-white transition-all"
+            className="relative z-20 w-12 h-12 bg-[#030712] text-rose-400 rounded-2xl shadow-2xl border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-12 flex items-center justify-center active:scale-90"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={20} />
           </button>
         )}
       </div>

@@ -14,6 +14,10 @@ import {
   ArrowRight,
   Trash2,
   RotateCcw,
+  ShieldAlert,
+  Camera,
+  FileText,
+  CloudUpload
 } from 'lucide-react';
 
 interface Props {
@@ -29,21 +33,13 @@ interface ArchivoLocal {
 
 const VACIO: ArchivoLocal = { file: null, preview: null };
 
-/**
- * Pantalla exclusiva para REENVÍO de documentos rechazados.
- * Solo muestra y permite subir los documentos que fueron rechazados
- * (url_archivo vacía o motivo_rechazo presente).
- * Los documentos ya validados o en revisión se muestran como solo lectura.
- */
-export default function PasoCorrecionDocs({ expediente, documentos, onComplete }: Props) {
-  // Usar documentos pasados como prop (frescos del hook) en lugar de expediente.documentos
+export default function PasoCorreccionDocs({ expediente, documentos, onComplete }: Props) {
   const docs = documentos.length > 0 ? documentos : (expediente.documentos || []);
 
   const docIneFrente   = docs.find((d: any) => d.tipo === 'ine_frente');
   const docIneVuelta   = docs.find((d: any) => d.tipo === 'ine_reverso');
   const docComprobante = docs.find((d: any) => d.tipo === 'comprobante_domicilio');
 
-  // Detectar rechazados: url vacía/null O motivo_rechazo presente Y no validado
   const esRechazado = (doc: any) =>
     doc && !doc.validado && (!doc.url_archivo || doc.motivo_rechazo);
 
@@ -78,11 +74,8 @@ export default function PasoCorrecionDocs({ expediente, documentos, onComplete }
     label: string,
     clave: string
   ) => {
-    setProgress(`Subiendo ${label}…`);
-    const carpeta = expediente.nombre_empresa
-      .replace(/[^a-zA-Z0-9]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/, '');
+    setProgress(`Digitalizando ${label}...`);
+    const carpeta = expediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
 
     const ext    = file.name.split('.').pop() || 'bin';
     const nombre = `${clave}_${carpeta}.${ext}`;
@@ -92,7 +85,7 @@ export default function PasoCorrecionDocs({ expediente, documentos, onComplete }
     const up = await subirArchivoR2Action(fd, `expedientes/${carpeta}/documentacion`);
     if (!up.success || !up.data) throw new Error(`Error al subir ${label}: ${up.error}`);
 
-    setProgress(`Registrando ${label}…`);
+    setProgress(`Resguardando ${label}...`);
     const reg = await registrarDocumento(expediente.id, tipo, up.data.url);
     if (!reg.success) throw new Error(`Error al registrar ${label}: ${reg.error}`);
   };
@@ -101,10 +94,9 @@ export default function PasoCorrecionDocs({ expediente, documentos, onComplete }
     e.preventDefault();
     setError(null);
 
-    // Solo validar los rechazados que no tienen nuevo archivo
-    if (rechazados.ineFrente   && !ineFrente.file)   { setError('Selecciona el archivo de INE Frente rechazado.'); return; }
-    if (rechazados.ineVuelta   && !ineVuelta.file)   { setError('Selecciona el archivo de INE Vuelta rechazado.'); return; }
-    if (rechazados.comprobante && !comprobante.file) { setError('Selecciona el Comprobante de Domicilio rechazado.'); return; }
+    if (rechazados.ineFrente   && !ineFrente.file)   { setError('Capture el archivo de INE Frente rechazado.'); return; }
+    if (rechazados.ineVuelta   && !ineVuelta.file)   { setError('Capture el archivo de INE Vuelta rechazado.'); return; }
+    if (rechazados.comprobante && !comprobante.file) { setError('Capture el Comprobante de Domicilio rechazado.'); return; }
 
     startTransition(async () => {
       try {
@@ -115,7 +107,7 @@ export default function PasoCorrecionDocs({ expediente, documentos, onComplete }
         if (rechazados.comprobante && comprobante.file)
           await subirYRegistrar(comprobante.file, 'comprobante_domicilio', 'Comprobante',  'Comprobante_Domicilio');
 
-        setProgress('Actualizando estado…');
+        setProgress('Sincronizando portal...');
         await actualizarEstatusExpediente(expediente.id, 'revision_directora');
         await onComplete();
       } catch (err: any) {
@@ -129,88 +121,99 @@ export default function PasoCorrecionDocs({ expediente, documentos, onComplete }
   const hayAlgunRechazado = rechazados.ineFrente || rechazados.ineVuelta || rechazados.comprobante;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-10">
-      {/* Título */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-3">
-        <div className="w-16 h-16 bg-rose-950/40 text-rose-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-rose-900">
-          <RotateCcw size={32} />
+    <div className="max-w-4xl mx-auto space-y-12 pb-24 py-4">
+      {/* Header Premium */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
+        <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl border border-rose-500/20 premium-border">
+          <ShieldAlert size={36} />
         </div>
-        <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Corrección de Documentos</h2>
-        <p className="text-slate-400 font-medium text-base max-w-md mx-auto">
-          Solo necesitas reenviar los documentos que fueron rechazados. Los demás ya están resguardados.
+        <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Corrección Documental</h2>
+        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          Se han detectado observaciones técnicas. Por favor, reemplace únicamente los documentos marcados para re-activar su proceso legal.
         </p>
       </motion.div>
 
       {/* Error global */}
       {error && (
-        <div className="bg-rose-950/40 border-2 border-rose-900 rounded-2xl p-6 flex items-start gap-4">
-          <AlertCircle className="text-rose-400 shrink-0" size={24} />
-          <p className="text-sm font-bold text-rose-300 uppercase">{error}</p>
-        </div>
-      )}
-
-      {!hayAlgunRechazado && (
-        <div className="bg-emerald-950/40 border-2 border-emerald-900 rounded-2xl p-6 text-center">
-          <CheckCircle2 className="text-emerald-400 mx-auto mb-2" size={32} />
-          <p className="text-sm font-bold text-emerald-300 uppercase">Todos los documentos están en orden. Esperando validación.</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Documento: INE Frente */}
-        <DocRow
-          label="INE Frente"
-          doc={docIneFrente}
-          rechazado={!!rechazados.ineFrente}
-          archivo={ineFrente}
-          isPending={isPending}
-          onFileChange={(e) => handleFileChange(e, setIneFrente)}
-          onClear={() => setIneFrente(VACIO)}
-        />
-
-        {/* Documento: INE Vuelta */}
-        <DocRow
-          label="INE Vuelta"
-          doc={docIneVuelta}
-          rechazado={!!rechazados.ineVuelta}
-          archivo={ineVuelta}
-          isPending={isPending}
-          onFileChange={(e) => handleFileChange(e, setIneVuelta)}
-          onClear={() => setIneVuelta(VACIO)}
-        />
-
-        {/* Documento: Comprobante de Domicilio */}
-        <DocRow
-          label="Comprobante de Domicilio"
-          doc={docComprobante}
-          rechazado={!!rechazados.comprobante}
-          archivo={comprobante}
-          isPending={isPending}
-          onFileChange={(e) => handleFileChange(e, setComprobante)}
-          onClear={() => setComprobante(VACIO)}
-        />
-
-        {hayAlgunRechazado && (
-          <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="bg-sky-600 text-white px-10 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-500 transition-all flex items-center gap-4 group disabled:opacity-50"
-            >
-              {isPending ? (
-                <><Loader2 className="animate-spin" size={16} /> {progress}</>
-              ) : (
-                <>Reenviar Documentos <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
-              )}
-            </button>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] p-8 flex items-start gap-6 shadow-2xl relative overflow-hidden">
+          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+          <div className="space-y-1">
+            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Inconsistencia Detectada</h3>
+            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">{error}</p>
           </div>
-        )}
-      </form>
+        </motion.div>
+      )}
+
+      <div className="bg-[#0a0f1d]/60 backdrop-blur-3xl rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5 relative overflow-hidden premium-border">
+        <AnimatePresence>
+          {isPending && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#030712]/95 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <RotateCcw className="text-blue-500" size={32} />
+                </div>
+              </div>
+              <p className="text-blue-500 font-black text-xs uppercase tracking-[0.5em] animate-pulse">{progress}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 gap-6">
+            <DocRow
+              label="Identificación Oficial (Frente)"
+              doc={docIneFrente}
+              rechazado={!!rechazados.ineFrente}
+              archivo={ineFrente}
+              isPending={isPending}
+              onFileChange={(e) => handleFileChange(e, setIneFrente)}
+              onClear={() => setIneFrente(VACIO)}
+            />
+
+            <DocRow
+              label="Identificación Oficial (Reverso)"
+              doc={docIneVuelta}
+              rechazado={!!rechazados.ineVuelta}
+              archivo={ineVuelta}
+              isPending={isPending}
+              onFileChange={(e) => handleFileChange(e, setIneVuelta)}
+              onClear={() => setIneVuelta(VACIO)}
+            />
+
+            <DocRow
+              label="Comprobante de Domicilio"
+              doc={docComprobante}
+              rechazado={!!rechazados.comprobante}
+              archivo={comprobante}
+              isPending={isPending}
+              onFileChange={(e) => handleFileChange(e, setComprobante)}
+              onClear={() => setComprobante(VACIO)}
+            />
+          </div>
+
+          {hayAlgunRechazado && (
+            <footer className="pt-12 border-t border-white/5 flex justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-sky-500 text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5 active:scale-[0.98]"
+              >
+                {isPending ? (
+                  <><Loader2 className="animate-spin" size={20} /> {progress}</>
+                ) : (
+                  <>Sincronizar Correcciones <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" /></>
+                )}
+              </button>
+            </footer>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
 
-/* ─────────────── Sub-componente por documento ─────────────── */
 function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onClear }: {
   label: string;
   doc: any;
@@ -221,69 +224,70 @@ function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onCle
   onClear: () => void;
 }) {
   if (!rechazado) {
-    // Documento OK — mostrar como solo lectura
     return (
-      <div className="flex items-center justify-between p-5 bg-slate-900 border-2 border-slate-800 rounded-2xl">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-emerald-900/40 text-emerald-400 rounded-xl flex items-center justify-center">
-            <CheckCircle2 size={20} />
+      <div className="flex items-center justify-between p-8 bg-[#030712]/40 border border-white/5 rounded-[2.5rem] premium-border group transition-all duration-500 hover:bg-[#030712]/60">
+        <div className="flex items-center gap-6">
+          <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-lg">
+            <CheckCircle2 size={28} />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-white">{label}</p>
-            <p className="text-[9px] font-semibold text-slate-500 uppercase mt-0.5">
-              {doc?.validado ? 'Validado' : 'En revisión'}
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">{label}</p>
+            <p className="text-sm font-black text-white/80 uppercase tracking-widest leading-none">
+              {doc?.validado ? 'Expediente Verificado' : 'Sincronizado'}
             </p>
           </div>
         </div>
-        <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${doc?.validado ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900' : 'bg-sky-950/40 text-sky-400 border-sky-900'}`}>
-          {doc?.validado ? '✓ Aprobado' : '⏳ En revisión'}
-        </span>
+        <div className="flex items-center gap-4">
+           <span className={`px-5 py-2 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-lg ${doc?.validado ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+            {doc?.validado ? 'Aprobado' : 'Validando'}
+          </span>
+        </div>
       </div>
     );
   }
 
-  // Documento RECHAZADO — permitir re-subir
   return (
-    <div className="rounded-2xl border-2 border-rose-900 bg-rose-950/20 overflow-hidden">
-      {/* Cabecera del rechazo */}
-      <div className="flex items-start gap-4 p-5 border-b border-rose-900/50">
-        <div className="w-10 h-10 bg-rose-900/40 text-rose-400 rounded-xl flex items-center justify-center shrink-0">
-          <AlertCircle size={20} />
+    <div className="rounded-[3rem] border border-rose-500/30 bg-rose-500/5 overflow-hidden premium-border transition-all duration-500 hover:bg-rose-500/[0.07]">
+      <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 border-b border-rose-500/10">
+        <div className="w-14 h-14 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center shrink-0 border border-rose-500/20 shadow-xl">
+          <AlertCircle size={28} />
         </div>
-        <div className="flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-white">{label}</p>
+        <div className="flex-1 space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500/60">{label}</p>
           {doc?.motivo_rechazo && (
-            <p className="text-[11px] font-bold text-rose-300 mt-1 uppercase">
-              Motivo: {doc.motivo_rechazo}
+            <p className="text-sm font-bold text-rose-200 uppercase tracking-tight leading-relaxed italic">
+              Observación: "{doc.motivo_rechazo}"
             </p>
           )}
         </div>
-        <span className="text-[8px] font-black uppercase px-3 py-1 rounded-full bg-rose-900/40 text-rose-400 border border-rose-800 shrink-0">
-          ✕ Rechazado
+        <span className="w-fit px-5 py-2 rounded-full text-[8px] font-black uppercase tracking-[0.2em] bg-rose-500/20 text-rose-500 border border-rose-500/30 shadow-lg">
+          Rechazado
         </span>
       </div>
 
-      {/* Zona de carga */}
-      <div className="p-5">
+      <div className="p-8">
         <AnimatePresence mode="wait">
           {archivo.file ? (
               <motion.div
               key="selected"
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center justify-between p-4 bg-slate-900 border-2 border-slate-800 rounded-xl"
+              className="flex items-center justify-between p-6 bg-[#030712] border border-blue-500/30 rounded-3xl shadow-2xl"
             >
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="text-sky-500" size={20} />
-                <p className="text-[10px] font-black text-sky-300 uppercase truncate max-w-[200px]">{archivo.file.name}</p>
+              <div className="flex items-center gap-5">
+                <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg"><CheckCircle2 size={20} /></div>
+                <div>
+                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">Archivo Listo</p>
+                  <p className="text-xs font-black text-white uppercase truncate max-w-[300px]">{archivo.file.name}</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={onClear}
                 disabled={isPending}
-                className="w-8 h-8 rounded-lg bg-slate-800 text-rose-400 border border-rose-900/50 flex items-center justify-center hover:bg-rose-950/40 transition-all"
+                className="w-12 h-12 rounded-xl bg-white/5 text-rose-500 border border-rose-500/20 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-12 active:scale-90"
               >
-                <Trash2 size={14} />
+                <Trash2 size={18} />
               </button>
             </motion.div>
           ) : (
@@ -291,11 +295,13 @@ function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onCle
               key="upload"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className={`relative flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-rose-800 bg-slate-900 cursor-pointer hover:border-sky-500 hover:bg-slate-800 transition-all ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`relative flex flex-col items-center justify-center h-48 rounded-[2.5rem] border-2 border-dashed border-rose-500/20 bg-[#030712]/40 cursor-pointer hover:border-blue-500/50 hover:bg-[#030712]/60 transition-all duration-500 group ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FileUp className="text-slate-500 mb-2" size={28} />
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Seleccionar archivo nuevo</p>
-              <p className="text-[9px] text-slate-500 mt-1">PDF o imagen</p>
+              <div className="w-16 h-16 rounded-2xl bg-white/5 text-slate-500 flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:bg-blue-500/20 group-hover:text-blue-400">
+                <CloudUpload size={32} />
+              </div>
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] group-hover:text-white transition-colors">Digitalizar nuevo archivo</p>
+              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-2 opacity-60">Formatos admitidos: PDF, JPG, PNG</p>
               <input
                 type="file"
                 accept="image/*,.pdf"

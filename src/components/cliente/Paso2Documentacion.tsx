@@ -17,7 +17,11 @@ import {
   Image as ImageIcon,
   ArrowRight,
   ShieldCheck,
-  Clock
+  Clock,
+  CloudUpload,
+  User,
+  MapPin,
+  Camera
 } from 'lucide-react';
 
 interface Paso2Props {
@@ -156,81 +160,94 @@ export default function Paso2Documentacion({
 
   if (isUnderReview && !error && !isPending) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-sky-950/40 text-sky-400 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-sky-900 animate-pulse">
-          <Clock size={48} />
+      <div className="max-w-4xl mx-auto py-24 text-center space-y-10">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-28 h-28 bg-blue-500/10 text-blue-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl border border-blue-500/20 animate-pulse premium-border">
+          <Clock size={56} />
         </motion.div>
-        <div className="space-y-4">
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Documentación en Revisión</h2>
-          <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
-            Estamos validando tus documentos para generar tu contrato oficial.
+        <div className="space-y-6">
+          <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-tight">Documentación en Validación</h2>
+          <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+            Nuestros expertos legales están verificando sus documentos para la generación del contrato oficial.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto pt-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-2xl mx-auto pt-10">
           {[
             { label: 'INE Frente', validado: docIneFrente?.validado },
             { label: 'INE Vuelta', validado: docIneVuelta?.validado },
             { label: 'Domicilio', validado: docComprobante?.validado },
           ].map((d, i) => (
-            <div key={i} className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 ${d.validado ? 'bg-emerald-950/40 border-emerald-900 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-              {d.validado ? <CheckCircle2 size={24} /> : <Loader2 className="animate-spin" size={24} />}
-              <span className="text-[10px] font-black uppercase tracking-widest">{d.label}</span>
+            <div key={i} className={`p-8 rounded-[2rem] border-2 flex flex-col items-center gap-4 transition-all duration-500 ${d.validado ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_15px_30px_rgba(16,185,129,0.1)]' : 'bg-[#0a0f1d] border-white/5 text-slate-600'}`}>
+              {d.validado ? <CheckCircle2 size={28} /> : <Loader2 className="animate-spin" size={28} />}
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">{d.label}</span>
             </div>
           ))}
+        </div>
+        <div className="pt-10 flex items-center justify-center gap-3 text-blue-500 font-black text-[11px] uppercase tracking-[0.4em]">
+          <Loader2 className="animate-spin" size={24} />
+          <span>Sincronizando portal...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
-        <div className="w-16 h-16 bg-sky-950/40 text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-sky-900">
-          <ShieldCheck size={32} />
+    <div className="max-w-4xl mx-auto space-y-16 py-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
+        <div className="w-20 h-20 bg-blue-500/10 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-blue-500/20 premium-border">
+          <ShieldCheck size={36} />
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
-        <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
-          {hasAnyRejection ? 'Por favor, corrige los documentos marcados en rojo para continuar.' : 'Sube copias legibles de tus documentos oficiales.'}
+        <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
+        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          {hasAnyRejection ? 'Se han detectado observaciones. Por favor, reemplace los documentos marcados para continuar.' : 'Adjunte la documentación oficial requerida para formalizar su expediente corporativo.'}
         </p>
       </motion.div>
 
       {error && (
-        <div className="bg-rose-950/40 border-4 border-rose-900 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
-          <AlertCircle className="text-rose-400 shrink-0" size={32} />
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-rose-200 uppercase tracking-tight">Ocurrió un error</h3>
-            <p className="text-sm font-semibold text-rose-300 leading-relaxed uppercase">{error}</p>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] p-8 flex items-start gap-6 shadow-2xl relative overflow-hidden">
+          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+          <div className="space-y-1">
+            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Error de Sistema</h3>
+            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">{error}</p>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {expediente.motivo_rechazo && (
-        <div className="bg-rose-950/40 border-4 border-rose-900 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
-          <AlertCircle className="text-rose-400 shrink-0" size={32} />
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-rose-200 uppercase tracking-tight">Documentación Rechazada</h3>
-            <p className="text-sm font-semibold text-rose-300 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] p-8 flex items-start gap-6 shadow-2xl relative overflow-hidden">
+          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+          <div className="space-y-1">
+            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Observación de Dirección</h3>
+            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="bg-slate-900 rounded-3xl p-8 md:p-14 shadow-2xl shadow-slate-950/50 border border-slate-800 relative overflow-hidden">
+      <div className="bg-[#0a0f1d]/80 backdrop-blur-3xl rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5 relative overflow-hidden premium-border">
         <AnimatePresence>
           {isPending && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-10 text-center">
-              <Loader2 className="text-sky-500 animate-spin mb-4" size={48} />
-              <p className="text-sky-500 font-black text-[10px] uppercase tracking-[0.3em]">{progress}</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#030712]/95 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CloudUpload className="text-blue-500" size={32} />
+                </div>
+              </div>
+              <p className="text-blue-500 font-black text-xs uppercase tracking-[0.5em] animate-pulse">{progress}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-12">
-          <section className="space-y-8">
-            <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
-              <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Identificación Oficial</h4>
+        <form onSubmit={handleSubmit} className="space-y-16">
+          <section className="space-y-10">
+            <header className="flex items-center gap-5 border-b border-white/5 pb-8">
+              <div className="w-12 h-12 bg-white/5 text-blue-400 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><User size={20} /></div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Identidad Legal</h4>
+                <p className="text-[9px] font-bold text-slate-600 uppercase">Cargue su identificación oficial vigente (Ambos lados)</p>
+              </div>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <UploadCard 
                 label="INE Frente *" 
                 archivo={ineFrente} 
@@ -250,12 +267,15 @@ export default function Paso2Documentacion({
             </div>
           </section>
 
-          <section className="space-y-8">
-            <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
-              <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Fiscal y Domicilio</h4>
+          <section className="space-y-10">
+            <header className="flex items-center gap-5 border-b border-white/5 pb-8">
+              <div className="w-12 h-12 bg-white/5 text-blue-400 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><MapPin size={20} /></div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Localización y Fiscal</h4>
+                <p className="text-[9px] font-bold text-slate-600 uppercase">Documentos que acrediten su domicilio actual</p>
+              </div>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <UploadCard 
                 label="Comprobante Domicilio *" 
                 archivo={comprobanteDomicilio} 
@@ -267,9 +287,13 @@ export default function Paso2Documentacion({
             </div>
           </section>
 
-          <footer className="pt-10 border-t border-slate-800 flex justify-end">
-            <button type="submit" disabled={isPending} className="bg-sky-600 text-white px-12 py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-500 transition-all flex items-center gap-4 group disabled:opacity-50">
-              {hasAnyRejection ? 'Enviar Correcciones' : 'Enviar a Revisión'} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          <footer className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
+             <div className="flex items-center gap-4 text-slate-600">
+               <ShieldCheck size={18} />
+               <p className="text-[9px] font-black uppercase tracking-widest leading-relaxed max-w-[280px]">Sus archivos son resguardados bajo protocolos de cifrado de grado bancario.</p>
+             </div>
+            <button type="submit" disabled={isPending} className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-sky-500 text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5">
+              {hasAnyRejection ? 'Reenviar Correcciones' : 'Sincronizar Bóveda'} <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
             </button>
           </footer>
         </form>
@@ -279,68 +303,65 @@ export default function Paso2Documentacion({
 }
 
 function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: any) {
-  // Estado del documento:
-  // - validado: aprobado por directora (bloqueado)
-  // - rechazado: tiene motivo_rechazo o url vacía con registro existente (editable con aviso)
-  // - resguardado: subido pero pendiente de revisión (bloqueado visualmente, no editable)
-  // - vacío: nunca subido (editable)
   const isRejected = dbDoc && dbDoc.motivo_rechazo && !dbDoc.validado;
   const isResguardado = dbDoc && dbDoc.url_archivo && !dbDoc.motivo_rechazo && !dbDoc.validado;
 
   return (
     <div className="group relative">
-      <div className="flex justify-between items-end mb-4 ml-1">
-        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{label}</label>
+      <div className="flex justify-between items-end mb-5 ml-1">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">{label}</label>
         {dbDoc?.validado && (
-          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-900 flex items-center gap-1">
-            <CheckCircle2 size={10} /> Validado
+          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-2">
+            <CheckCircle2 size={12} /> Validado
           </span>
         )}
         {isResguardado && (
-          <span className="text-[8px] font-black text-sky-400 uppercase tracking-tighter bg-sky-950/40 px-2 py-0.5 rounded-full border border-sky-900 flex items-center gap-1">
-            <Clock size={10} /> En revisión
+          <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20 flex items-center gap-2">
+            <Clock size={12} /> Revisión
           </span>
         )}
         {isRejected && (
-          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-900 flex items-center gap-1">
-            <AlertCircle size={10} /> Rechazado
+          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20 flex items-center gap-2">
+            <AlertCircle size={12} /> Corregir
           </span>
         )}
       </div>
 
-      <div className={`relative h-48 rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-6 
-        ${archivo.file ? 'border-sky-500 bg-sky-900/20' : 
-          dbDoc?.validado ? 'border-emerald-800 bg-emerald-900/10 opacity-60' :
-          isRejected ? 'border-rose-800 bg-rose-900/20' :
-          isResguardado ? 'border-sky-800 bg-sky-900/20 opacity-70' :
-          'border-slate-700 bg-slate-800/50 hover:bg-slate-800 hover:border-sky-500'}
-        ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+      <div className={`relative h-60 rounded-[3rem] border-2 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center p-8 
+        ${archivo.file ? 'border-blue-500 bg-blue-500/10 shadow-[0_15px_30px_rgba(59,130,246,0.1)]' : 
+          dbDoc?.validado ? 'border-emerald-500/30 bg-emerald-500/5 opacity-80' :
+          isRejected ? 'border-rose-500/30 bg-rose-500/10' :
+          isResguardado ? 'border-blue-500/30 bg-blue-500/5 opacity-90' :
+          'border-white/5 bg-white/5 hover:bg-white/10 hover:border-blue-500/40'}
+        ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer group'}`}>
         
-        {archivo.preview && <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-20" />}
+        {archivo.preview && <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm" />}
         {!archivo.preview && (dbDoc?.validado || isResguardado || (isRejected && !archivo.file)) && dbDoc?.url_archivo && (
-          <div className="absolute inset-0 w-full h-full bg-slate-900/5 flex items-center justify-center">
-            <FileText className="text-slate-200" size={64} />
+          <div className="absolute inset-0 w-full h-full bg-[#030712]/40 flex items-center justify-center">
+            <FileText className="text-blue-500/30" size={80} />
           </div>
         )}
 
-        <div className="relative z-10 text-center space-y-2">
-          {dbDoc?.validado ? (
-            <CheckCircle2 className="text-emerald-500 mx-auto" size={32} />
-          ) : archivo.file ? (
-            <CheckCircle2 className="text-sky-500 mx-auto" size={32} />
-          ) : isRejected ? (
-            <AlertCircle className="text-rose-500 mx-auto" size={32} />
-          ) : isResguardado ? (
-            <Clock className="text-sky-400 mx-auto" size={32} />
-          ) : (
-            <FileUp className="text-slate-400 mx-auto" size={32} />
-          )}
-          <p className="text-[10px] font-bold uppercase truncate max-w-[200px]">
+        <div className="relative z-10 text-center space-y-4">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto transition-all duration-500 ${archivo.file ? 'bg-blue-500 text-white scale-110' : 'bg-white/5 text-slate-500 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:scale-110'}`}>
+            {dbDoc?.validado ? (
+              <CheckCircle2 size={32} />
+            ) : archivo.file ? (
+              <CheckCircle2 size={32} />
+            ) : isRejected ? (
+              <Camera size={32} className="text-rose-500" />
+            ) : isResguardado ? (
+              <Clock size={32} className="text-blue-400" />
+            ) : (
+              <CloudUpload size={32} />
+            )}
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest truncate max-w-[220px] text-slate-400 group-hover:text-white transition-colors">
             {archivo.file ? archivo.file.name : 
-             dbDoc?.validado ? 'Documento Resguardado' :
-             isRejected ? 'Requiere Corrección' :
-             isResguardado ? 'En Revisión' :
-             'Click para subir'}
+             dbDoc?.validado ? 'Expediente Seguro' :
+             isRejected ? 'Reintentar Captura' :
+             isResguardado ? 'Validando...' :
+             'Sincronizar Archivo'}
           </p>
         </div>
 
@@ -353,22 +374,22 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
         />
         
         {archivo.file && !disabled && (
-          <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }} className="absolute top-4 right-4 z-30 w-8 h-8 rounded-lg bg-white text-red-500 shadow-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }} className="absolute top-6 right-6 z-30 w-10 h-10 rounded-xl bg-white text-rose-500 shadow-2xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-12"><Trash2 size={20} /></button>
         )}
       </div>
 
       <AnimatePresence>
         {isRejected && !archivo.file && (
           <motion.div 
-            initial={{ opacity: 0, y: -10 }} 
+            initial={{ opacity: 0, y: -15 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 p-4 bg-rose-950/40 border border-rose-900/50 rounded-2xl shadow-sm"
+            className="mt-5 p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl shadow-xl"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle size={12} className="text-rose-400" />
-              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Motivo de Rechazo:</p>
+            <div className="flex items-center gap-3 mb-2">
+              <AlertCircle size={14} className="text-rose-500" />
+              <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Observación Técnica:</p>
             </div>
-            <p className="text-[11px] font-bold text-rose-200 leading-tight uppercase pl-5">{dbDoc.motivo_rechazo}</p>
+            <p className="text-[11px] font-bold text-rose-200/80 leading-relaxed uppercase pl-6 italic">"{dbDoc.motivo_rechazo}"</p>
           </motion.div>
         )}
       </AnimatePresence>
