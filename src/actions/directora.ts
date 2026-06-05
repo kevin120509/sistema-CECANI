@@ -705,3 +705,144 @@ export async function rechazarContratoClienteAction(
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Solicitud de Alta de Cliente por Abogada.
+ * Crea un registro en solicitudes_alta pendiente de aprobación por la directora.
+ */
+export async function solicitarAltaClienteAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'No autorizado' };
+
+    const adminSupabase = createAdminClient();
+
+    const solicitud = {
+      asesora_id: user.id,
+      nombre_cliente: formData.get('nombre_cliente') as string,
+      telefono: formData.get('telefono') as string,
+      nombre_empresa: formData.get('nombre_empresa') as string,
+      rfc: formData.get('rfc') as string || null,
+      notas: formData.get('notas') as string || null,
+      estatus: 'pendiente',
+    };
+
+    const { error } = await adminSupabase
+      .from('solicitudes_alta')
+      .insert(solicitud);
+
+    if (error) throw error;
+
+    // Notificar a directoras
+    const { data: directoras } = await adminSupabase
+      .from('perfiles')
+      .select('id')
+      .eq('rol', 'directora');
+
+    if (directoras?.length) {
+      await sendPushNotification({
+        userIds: directoras.map(d => d.id),
+        title: '📋 Nueva Solicitud de Alta',
+        message: `Una asesora solicita dar de alta a: ${solicitud.nombre_cliente} (${solicitud.nombre_empresa})`,
+        url: '/directora',
+      });
+    }
+
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Aprobar solicitud de alta por la directora.
+ * Crea el expediente y lo marca como aprobado.
+ */
+export async function aprobarSolicitudAltaAction(solicitudId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+
+    // Obtener datos de la solicitud
+    const { data: sol, error: solError } = await adminSupabase
+      .from('solicitudes_alta')
+      .select('*')
+      .eq('id', solicitudId)
+      .single();
+
+    if (solError || !sol) throw new Error('Solicitud no encontrada');
+
+    // Crear el expediente usando el servicio
+    const service = getExpedienteService();
+    const result = await service.registrarClienteManual(
+      { nombre_completo: sol.nombre_cliente, telefono: sol.telefono, rfc: sol.rfc || undefined },
+      sol.nombre_empresa,
+    );
+
+    if (!result.success) throw new Error(result.error);
+
+    // Asignar la asesora solicitante al expediente
+    if (sol.asesora_id && result.data?.expediente_id) {
+      await adminSupabase
+        .from('expedientes')
+        .update({ asesora_id: sol.asesora_id })
+        .eq('id', result.data.expediente_id);
+    }
+
+    // Marcar solicitud como aprobada
+    await adminSupabase
+      .from('solicitudes_alta')
+      .update({ estatus: 'aprobada', expediente_id: result.data?.expediente_id })
+      .eq('id', solicitudId);
+
+    // Notificar a la asesora
+    await sendPushNotification({
+      userIds: [sol.asesora_id],
+      title: '✅ Alta Aprobada',
+      message: `Tu solicitud de alta para ${sol.nombre_cliente} fue aprobada. Ya puedes verlo en tu panel.`,
+      url: '/abogada',
+    });
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Rechazar solicitud de alta por la directora.
+ */
+export async function rechazarSolicitudAltaAction(solicitudId: string, motivo: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+
+    const { data: sol } = await adminSupabase
+      .from('solicitudes_alta')
+      .select('asesora_id, nombre_cliente')
+      .eq('id', solicitudId)
+      .single();
+
+    await adminSupabase
+      .from('solicitudes_alta')
+      .update({ estatus: 'rechazada', notas_rechazo: motivo })
+      .eq('id', solicitudId);
+
+    if (sol?.asesora_id) {
+      await sendPushNotification({
+        userIds: [sol.asesora_id],
+        title: '❌ Solicitud Rechazada',
+        message: `La solicitud de alta para ${sol.nombre_cliente} fue rechazada. Motivo: ${motivo}`,
+        url: '/abogada',
+      });
+    }
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

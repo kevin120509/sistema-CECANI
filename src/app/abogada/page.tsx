@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import ExpedienteManager from '@/components/abogada/ExpedienteManager';
 import AbogadaAuth from '@/components/abogada/AbogadaAuth';
+import SolicitarAltaPanel from '@/components/abogada/SolicitarAltaPanel';
 import type { CatalogoHito, ExpedienteAvanzado, SeguimientoTarea, NotaBitacora, Recordatorio } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +57,7 @@ export default async function AbogadaPage() {
       *,
       cliente:perfiles!cliente_id(nombre_completo, telefono, estado, rfc, curp, estado_civil, ocupacion, domicilio_completo),
       asesora:perfiles!asesora_id(nombre_completo),
-      figura:catalogo_figuras(descripcion),
+      figura:catalogo_figuras(*),
       contratos(*),
       documentos(*),
       seguimiento_tareas(*),
@@ -107,6 +108,14 @@ export default async function AbogadaPage() {
 
   const expedientes = expedientesConDatos as unknown as ExpedienteAbogada[];
 
+  // Fetch solicitudes de alta de este usuario
+  const { data: solicitudesData } = await supabaseAdmin
+    .from('solicitudes_alta')
+    .select('id, nombre_cliente, nombre_empresa, estatus, notas_rechazo, created_at')
+    .eq('asesora_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   // Lógica: Tareas de Hoy (Recordatorios)
   // Filtrar los expedientes cuya fecha_proximo_seguimiento en alguna bitácora sea <= HOY
   const hoyStr = new Date().toISOString().split('T')[0];
@@ -127,6 +136,9 @@ export default async function AbogadaPage() {
         expedientes={expedientes}
         hitos={hitos}
         alertasHoy={expedientesConAlerta}
+        solicitarAltaPanel={
+          <SolicitarAltaPanel key="solicitar-alta" solicitudesIniciales={(solicitudesData || []) as any} />
+        }
       />
     </main>
   );

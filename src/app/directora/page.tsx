@@ -47,7 +47,7 @@ export default async function DirectoraPage() {
       contratos(*),
       documentos(*),
       pagos(*),
-      datos_concentrado(vendedora)
+      datos_concentrado(*)
     `)
     .is('asesora_id', null)
     .order('created_at', { ascending: false });
@@ -62,11 +62,20 @@ export default async function DirectoraPage() {
       cliente:perfiles!cliente_id(*),
       asesora:perfiles!asesora_id(id, nombre_completo),
       figura:catalogo_figuras(descripcion),
-      datos_concentrado(vendedora)
+      documentos(*),
+      contratos(*),
+      pagos(*),
+      datos_concentrado(*)
     `)
     .order('created_at', { ascending: false });
 
   if (concentradoError) console.error('Error fetching concentradoData:', concentradoError);
+
+  // 5. Obtener Solicitudes de Alta pendientes de aprobación
+  const { data: solicitudesAltaData } = await supabaseAdmin
+    .from('solicitudes_alta')
+    .select('*, asesora:perfiles!asesora_id(nombre_completo)')
+    .order('created_at', { ascending: false });
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 py-8">
@@ -74,6 +83,7 @@ export default async function DirectoraPage() {
         abogadas={abogadasData || []} 
         porAsignar={asignarData || []}
         concentrado={concentradoData || []} 
+        solicitudesAlta={(solicitudesAltaData || []) as any}
       />
     </main>
   );

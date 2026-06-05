@@ -103,11 +103,26 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Cambios**: `src/lib/pdf-generator.ts`
 - **Pendientes**: Ninguno asociado a esta tarea.
 
-### [27 Mayo 2026] - Corrección de Visibilidad en Panel de Abogada
-- **Acción:** Se corrigió el problema por el cual los expedientes asignados no aparecían en el panel de la abogada.
-- **Cambios:**
-    - Modificación en `src/app/abogada/page.tsx` para incluir el rol `'abogada'` en los roles permitidos (evita redirecciones accidentales al login).
-    - Actualización de la consulta de expedientes para soportar tanto la columna legacy `asesora_id` como la nueva tabla relacional `expediente_asesoras`.
-    - Implementación de manejo de errores en la consulta relacional para mantener compatibilidad si la tabla aún no existe en el esquema.
-- **Resultado:** Las abogadas/asesoras ahora pueden ver correctamente los casos que les han sido asignados por la directora.
-- **Pendientes:** Asegurar que el usuario ejecute las actualizaciones de base de datos (`database_updates.sql`) para habilitar la tabla relacional de forma definitiva.
+### [5 Junio 2026] - Resolución de Bugs de Compilación y Sincronización Global
+- **Acción**: Corrección de errores críticos de TypeScript y sincronización total del repositorio con GitHub.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`: 
+        - Se importó `toast` desde `sonner` para habilitar notificaciones proactivas.
+        - Se corrigieron los nombres de propiedades en la lógica de recordatorios (`fecha_recordatorio` -> `fecha`, `hora_recordatorio` -> `hora`) para alinearlos con la interfaz `Recordatorio`.
+    - **Sincronización**: Preparación y subida de todos los archivos de migración (`migration_*.sql`), scripts de utilidad en `scratch/` y mejoras en Server Actions.
+- **Pendientes**:
+    - Ejecutar los nuevos archivos de migración SQL en el dashboard de Supabase si aún no se han aplicado.
+    - Continuar con la fase de Doble Firma para Contratos.
+
+### [4 Junio 2026] - Seguridad: Autorización de Borrado y Transparencia Legal
+- **Acción**: Implementación de un sistema de control de cambios para la eliminación de documentos y mejora en la visibilidad de datos legales en el panel operativo.
+- **Cambios**:
+    - **Autorización de Borrado**: Se eliminó la capacidad de borrado directo para las abogadas. Ahora, al intentar borrar, se debe proporcionar un motivo que se envía a la Directora para su aprobación.
+    - **Nuevas Server Actions**: Implementación de `solicitarBorradoAction`, `aprobarBorradoAction` y `rechazarBorradoAction` en `src/actions/documentos.ts`.
+    - **Panel Abogada**: El `ExpedienteManager.tsx` ahora muestra el estatus "Baja Solicitada" y bloquea el archivo hasta que la directora decida. Muestra el motivo proporcionado.
+    - **Panel Directora**: El `DirectorDashboard.tsx` (Sección Validación) ahora detecta solicitudes de baja, permite ver el motivo y ofrece botones para "Autorizar Baja" (borrado real en R2 y DB) o "Ignorar".
+    - **Visibilidad Legal**: Se corrigió la consulta en `src/app/abogada/page.tsx` para traer la descripción completa de la **Figura Jurídica** elegida por el cliente, mostrándola prominentemente en el encabezado del expediente.
+    - **Esquema DB**: Creado `migration_borrado_autorizado.sql` para agregar las columnas `solicitud_borrado` y `motivo_borrado` a la tabla `documentos`.
+- **Pendientes**:
+    - **IMPORTANTE**: Ejecutar `migration_borrado_autorizado.sql` en el editor SQL de Supabase para habilitar las nuevas columnas.
+    - Continuar con la revisión de seguridad de URLs firmadas en R2.

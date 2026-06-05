@@ -61,12 +61,12 @@ export default function HomePage() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="glass-card rounded-2xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="glass-card rounded-2xl p-8 max-w-md w-full text-center bg-slate-900">
+          <div className="w-16 h-16 bg-red-900/30 text-red-400 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle size={32} />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Ha ocurrido un error</h2>
-          <p className="text-slate-600 mb-8">{error}</p>
+          <h2 className="text-xl font-bold text-white mb-2">Ha ocurrido un error</h2>
+          <p className="text-slate-400 mb-8">{error}</p>
           <button onClick={refetch} className="btn-primary w-full">
             Reintentar
           </button>
@@ -85,17 +85,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col selection:bg-sky-500/30">
       {/* Header Premium - Luxury Refined */}
-      <header className="sticky top-0 z-50 bg-white/60 backdrop-blur-2xl border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
+      <header className="sticky top-0 z-50 bg-slate-950/60 backdrop-blur-2xl border-b border-slate-800/50 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
         <div className="w-full px-6 md:px-12 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4 group cursor-default">
-            <div className="w-12 h-12 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] group-hover:scale-105 transition-transform duration-500">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-950 shadow-[0_10px_20px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform duration-500">
               <span className="font-black text-2xl tracking-tighter">C</span>
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
+              <h1 className="text-2xl font-black tracking-tighter text-white leading-none">
                 CECANI
               </h1>
-              <p className="text-[9px] uppercase tracking-[0.4em] text-sky-600 font-black mt-1.5 opacity-80">
+              <p className="text-[9px] uppercase tracking-[0.4em] text-sky-400 font-black mt-1.5 opacity-80">
                 CLIENT CONSOLE
               </p>
             </div>
@@ -103,12 +103,12 @@ export default function HomePage() {
           
           {perfil && (
             <div className="flex items-center gap-6">
-              <div className="hidden sm:flex items-center gap-4 bg-white/40 border border-slate-200/60 px-5 py-2.5 rounded-2xl shadow-sm">
+              <div className="hidden sm:flex items-center gap-4 bg-slate-900/40 border border-slate-700/60 px-5 py-2.5 rounded-2xl shadow-sm">
                 <div className="relative">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                   <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest text-slate-700">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-200">
                   {perfil.nombre_completo}
                 </span>
               </div>
@@ -136,7 +136,7 @@ export default function HomePage() {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-center justify-between relative px-4 md:px-10">
             {/* Línea de fondo con gradiente */}
-            <div className="absolute top-1/2 left-0 w-full h-[3px] bg-slate-100 -translate-y-1/2 z-0 rounded-full overflow-hidden">
+            <div className="absolute top-1/2 left-0 w-full h-[3px] bg-slate-800 -translate-y-1/2 z-0 rounded-full overflow-hidden">
               <motion.div 
                 className="h-full bg-gradient-to-r from-sky-500 to-indigo-500"
                 initial={{ width: '0%' }}
@@ -155,13 +155,13 @@ export default function HomePage() {
                     initial={false}
                     animate={{ 
                       scale: isActive ? 1.15 : 1,
-                      backgroundColor: isActive ? '#0ea5e9' : isCompleted ? '#10b981' : '#ffffff'
+                      backgroundColor: isActive ? '#0ea5e9' : isCompleted ? '#10b981' : '#0f172a'
                     }}
                     className={`
                       w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4
-                      ${isActive ? 'text-white border-sky-100 shadow-[0_15px_30px_rgba(14,165,233,0.3)]' : 
-                        isCompleted ? 'text-white border-emerald-50 shadow-[0_10px_20px_rgba(16,185,129,0.2)]' : 
-                        'text-slate-300 border-slate-50 shadow-sm'}
+                      ${isActive ? 'text-white border-sky-900/50 shadow-[0_15px_30px_rgba(14,165,233,0.3)]' : 
+                        isCompleted ? 'text-white border-emerald-900/50 shadow-[0_10px_20px_rgba(16,185,129,0.2)]' : 
+                        'text-slate-500 border-slate-800 shadow-sm'}
                     `}
                   >
                     {isCompleted ? <CheckCircle2 size={26} strokeWidth={3} /> : <Icon size={26} strokeWidth={isActive ? 3 : 2} />}
@@ -196,9 +196,9 @@ export default function HomePage() {
               {currentStep > 1 && currentStep <= hookStep && (
                 <button
                   onClick={handleBack}
-                  className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all duration-300 group"
+                  className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-all duration-300 group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:-translate-x-1 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:-translate-x-1 transition-all">
                     <ChevronLeft size={18} />
                   </div>
                   Regresar
@@ -224,6 +224,7 @@ export default function HomePage() {
                   hasDocumentosRechazados ? (
                     <PasoCorreccionDocs
                       expediente={expediente}
+                      documentos={documentos}
                       onComplete={async () => {
                         setActiveStep(null);
                         await refetch();
@@ -265,7 +266,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer Sutil */}
-      <footer className="py-6 px-6 text-center text-slate-400 text-[10px] uppercase tracking-widest border-t border-slate-100">
+      <footer className="py-6 px-6 text-center text-slate-500 text-[10px] uppercase tracking-widest border-t border-slate-800/50">
         &copy; {new Date().getFullYear()} CECANI &bull; Todos los derechos reservados
       </footer>
     </div>

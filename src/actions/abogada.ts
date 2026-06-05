@@ -68,24 +68,58 @@ export async function guardarDatosConcentrado(
     return { success: false, error: 'No autorizado' };
   }
 
-  // Verificar que el expediente pertenece a esta abogada
-  const { data: exp } = await supabase
+  // Verificar que el expediente pertenece a esta abogada (Legacy o Nueva Tabla)
+  const { data: expLegacy } = await supabase
     .from('expedientes')
     .select('id')
     .eq('id', expedienteId)
     .eq('asesora_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!exp) {
+  let tienePermiso = !!expLegacy;
+
+  if (!tienePermiso) {
+    const { data: expRel } = await supabase
+      .from('expediente_asesoras')
+      .select('id')
+      .eq('expediente_id', expedienteId)
+      .eq('asesora_id', user.id)
+      .maybeSingle();
+    tienePermiso = !!expRel;
+  }
+
+  // Si es Directora o Admin, tiene permiso total
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('rol')
+    .eq('id', user.id)
+    .single();
+  
+  if (perfil?.rol === 'directora' || perfil?.rol === 'admin') {
+    tienePermiso = true;
+  }
+
+  if (!tienePermiso) {
     return { success: false, error: 'No tienes permisos sobre este expediente.' };
   }
 
   const adminClient = createAdminClient();
 
   try {
-    // 1. Separar datos de expediente si vienen incluidos
-    const { numero_control, ...datosRestantes } = datos;
+    // 1. Obtener cliente_id para actualizar perfiles si es necesario
+    const { data: expInfo } = await adminClient
+      .from('expedientes')
+      .select('cliente_id')
+      .eq('id', expedienteId)
+      .single();
 
+    const { 
+      numero_control, 
+      nombre_completo, rfc, curp, estado_civil, ocupacion, domicilio_completo, telefono_cliente,
+      ...datosRestantes 
+    } = datos;
+
+    // 2. Actualizar expediente si viene numero_control
     if (numero_control !== undefined) {
       const { error: expError } = await adminClient
         .from('expedientes')
@@ -94,12 +128,33 @@ export async function guardarDatosConcentrado(
       if (expError) throw expError;
     }
 
-    // 2. Guardar en datos_concentrado
+    // 3. Actualizar perfil del cliente si vienen datos personales
+    if (expInfo?.cliente_id) {
+      const perfilUpdate: any = {};
+      if (nombre_completo !== undefined) perfilUpdate.nombre_completo = nombre_completo;
+      if (rfc !== undefined) perfilUpdate.rfc = rfc;
+      if (curp !== undefined) perfilUpdate.curp = curp;
+      if (estado_civil !== undefined) perfilUpdate.estado_civil = estado_civil;
+      if (ocupacion !== undefined) perfilUpdate.ocupacion = ocupacion;
+      if (domicilio_completo !== undefined) perfilUpdate.domicilio_completo = domicilio_completo;
+      if (telefono_cliente !== undefined) perfilUpdate.telefono = telefono_cliente;
+
+      if (Object.keys(perfilUpdate).length > 0) {
+        const { error: perfilError } = await adminClient
+          .from('perfiles')
+          .update(perfilUpdate)
+          .eq('id', expInfo.cliente_id);
+        if (perfilError) throw perfilError;
+      }
+    }
+
+    // 4. Guardar en datos_concentrado (Snapshot para reportes)
     const { error } = await adminClient
       .from('datos_concentrado')
       .upsert(
         {
           expediente_id: expedienteId,
+          nombre_completo, rfc, curp, estado_civil, ocupacion, domicilio_completo, telefono_cliente,
           ...datosRestantes,
           updated_at: new Date().toISOString(),
         },

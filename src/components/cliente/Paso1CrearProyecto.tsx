@@ -304,7 +304,7 @@ export default function Paso1CrearProyecto({
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] border border-slate-100/50 relative overflow-hidden"
+          className="bg-slate-900 rounded-[3.5rem] p-8 md:p-14 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] border border-slate-800/50 relative overflow-hidden"
         >
           {/* Error Message */}
           <AnimatePresence>
@@ -313,9 +313,9 @@ export default function Paso1CrearProyecto({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-8 p-6 bg-red-50 border border-red-100 rounded-[2rem] flex items-center gap-4 text-red-900 shadow-sm"
+                className="mb-8 p-6 bg-rose-950/40 border border-rose-900/50 rounded-[2rem] flex items-center gap-4 text-rose-200 shadow-sm"
               >
-                <div className="p-2 bg-red-100 rounded-xl"><AlertCircle size={20} /></div>
+                <div className="p-2 bg-rose-900/50 rounded-xl"><AlertCircle size={20} /></div>
                 <p className="text-xs font-bold uppercase tracking-tight leading-relaxed">{localError}</p>
               </motion.div>
             )}
@@ -470,11 +470,11 @@ export default function Paso1CrearProyecto({
           </div>
 
           {/* Navigation Controls */}
-          <footer className="mt-16 pt-10 border-t border-slate-100 flex items-center justify-between">
+          <footer className="mt-16 pt-10 border-t border-slate-800 flex items-center justify-between">
             <button 
               onClick={() => { setSubStep(s => s - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
               disabled={subStep === 1 || isPending} 
-              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${subStep === 1 ? 'opacity-0' : 'text-slate-400 hover:text-slate-900 hover:-translate-x-1'}`}
+              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${subStep === 1 ? 'opacity-0' : 'text-slate-500 hover:text-white hover:-translate-x-1'}`}
             >
               <ChevronLeft size={16} /> Anterior
             </button>
@@ -483,7 +483,7 @@ export default function Paso1CrearProyecto({
               {subStep < 3 ? (
                 <button 
                   onClick={() => { if(validate(subStep)) { setSubStep(s => s + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }} 
-                  className="bg-slate-950 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-600 transition-all duration-500 shadow-2xl shadow-slate-200 flex items-center gap-4 group"
+                  className="bg-sky-600 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-500 transition-all duration-500 shadow-lg shadow-sky-900/50 flex items-center gap-4 group"
                 >
                   Continuar <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -511,11 +511,11 @@ function StepContent({ title, icon, children, variants }: any) {
   return (
     <motion.section variants={variants} className="space-y-12">
       <header className="flex items-center gap-8 mb-16">
-        <div className="w-20 h-20 bg-slate-50 text-sky-600 rounded-[2.5rem] flex items-center justify-center shadow-inner border border-slate-100">
+        <div className="w-20 h-20 bg-slate-950 text-sky-500 rounded-[2.5rem] flex items-center justify-center shadow-inner border border-slate-800">
           {icon}
         </div>
         <div>
-          <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">{title}</h3>
+          <h3 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{title}</h3>
           <div className="flex items-center gap-2 mt-4">
             <div className="h-1.5 w-12 bg-sky-500 rounded-full" />
             <div className="h-1.5 w-4 bg-sky-200 rounded-full" />
@@ -538,9 +538,9 @@ function InputCol({ label, icon, span = 1, isTextArea = false, ...props }: any) 
         <Component 
           {...props} 
           className={`
-            w-full bg-slate-50/50 border-2 border-slate-100/50 focus:border-sky-500 focus:bg-white focus:shadow-[0_10px_30px_rgba(14,165,233,0.05)]
-            rounded-3xl py-5 pl-16 pr-8 text-sm font-bold text-slate-800 outline-none transition-all duration-300 
-            placeholder:text-slate-300 placeholder:font-normal
+            w-full bg-slate-950/50 border-2 border-slate-800/50 focus:border-sky-500 focus:bg-slate-950 focus:shadow-[0_10px_30px_rgba(14,165,233,0.1)]
+            rounded-3xl py-5 pl-16 pr-8 text-sm font-bold text-white outline-none transition-all duration-300 
+            placeholder:text-slate-600 placeholder:font-normal
             ${isTextArea ? 'min-h-[140px] pt-5' : ''}
           `} 
         />
@@ -557,7 +557,7 @@ function SelectCol({ label, icon, options, ...props }: any) {
         <div className="absolute left-6 top-[22px] text-slate-300 group-focus-within:text-sky-500 transition-all duration-300 z-10">{icon}</div>
         <select 
           {...props} 
-          className="w-full bg-slate-50/50 border-2 border-slate-100/50 focus:border-sky-500 focus:bg-white rounded-3xl py-5 pl-16 pr-12 text-sm font-bold text-slate-800 outline-none transition-all duration-300 appearance-none relative cursor-pointer"
+          className="w-full bg-slate-950/50 border-2 border-slate-800/50 focus:border-sky-500 focus:bg-slate-950 rounded-3xl py-5 pl-16 pr-12 text-sm font-bold text-white outline-none transition-all duration-300 appearance-none relative cursor-pointer"
         >
           <option value="">Seleccionar opción...</option>
           {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -605,12 +605,12 @@ function SuccessView({ isUpdate }: { isUpdate: boolean }) {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, rotateX: 20 }} 
             animate={{ opacity: 1, scale: 1, rotateX: 0 }} 
-            className="max-w-2xl mx-auto bg-white rounded-3xl p-16 text-center shadow-2xl shadow-slate-200/50 border border-slate-100"
+            className="max-w-2xl mx-auto bg-slate-900 rounded-3xl p-16 text-center shadow-2xl shadow-slate-950/50 border border-slate-800"
           >
-            <div className="w-28 h-28 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-inner">
+            <div className="w-28 h-28 bg-emerald-900/30 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-inner">
               <CheckCircle2 size={56} />
             </div>
-      <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6 leading-tight">
+      <h2 className="text-5xl font-black text-white tracking-tighter uppercase mb-6 leading-tight">
         {isUpdate ? 'Expediente Actualizado' : 'Misión Cumplida'}
       </h2>
       <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-md mx-auto">

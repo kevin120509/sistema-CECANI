@@ -128,8 +128,11 @@ export interface Documento {
   expediente_id: string;
   integrante_id?: string | null;
   tipo: TipoDocumento;
-  url_archivo: string;
+  url_archivo:string;
   validado: boolean;
+  solicitud_borrado?: boolean;
+  motivo_borrado?: string | null;
+  estatus_borrado?: 'ninguno' | 'pendiente' | 'autorizado' | 'rechazado';
   motivo_rechazo?: string | null;
   created_at: string;
 }

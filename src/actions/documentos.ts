@@ -10,6 +10,7 @@ import { CloudflareStorageService } from '@/infrastructure/storage/CloudflareSto
 import { OneSignalNotificationService } from '@/infrastructure/external/OneSignalNotificationService';
 import { borrarArchivoR2 } from '@/lib/r2';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendPushNotification } from '@/lib/onesignal-server';
 
 function getDocumentoService() {
   return new DocumentoService(
@@ -140,6 +141,116 @@ export async function eliminarDocumentoAction(documentoId: string, urlArchivo: s
     return { success: true };
   } catch (error: any) {
     console.error('Error en eliminarDocumentoAction:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Solicita la eliminación de un documento (No lo borra, solo marca la solicitud).
+ */
+export async function solicitarBorradoAction(documentoId: string, motivo: string): Promise<ActionResult> {
+  try {
+    const supabase = createAdminClient();
+
+    const { error } = await supabase
+      .from('documentos')
+      .update({
+        solicitud_borrado: true,
+        motivo_borrado: motivo,
+        estatus_borrado: 'pendiente'
+      })
+      .eq('id', documentoId);
+
+    if (error) throw error;
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Aprueba la eliminación de un documento (Habilita a la abogada para borrar).
+ */
+export async function aprobarBorradoAction(documentoId: string): Promise<ActionResult> {
+  try {
+    const supabase = createAdminClient();
+    
+    // 1. Obtener información para la notificación
+    const { data: doc } = await supabase
+      .from('documentos')
+      .select('*, expedientes(nombre_empresa, asesora_id)')
+      .eq('id', documentoId)
+      .single();
+
+    const { error } = await supabase
+      .from('documentos')
+      .update({
+        solicitud_borrado: false,
+        estatus_borrado: 'autorizado'
+      })
+      .eq('id', documentoId);
+
+    if (error) throw error;
+    
+    if (doc && (doc as any).expedientes?.asesora_id) {
+      await sendPushNotification({
+        userIds: [(doc as any).expedientes.asesora_id],
+        title: '✅ Baja Autorizada',
+        message: `Se ha autorizado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}. Ya puedes eliminarlo y subir el nuevo.`,
+        url: '/abogada'
+      });
+    }
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Rechaza la solicitud de borrado.
+ */
+export async function rechazarBorradoAction(documentoId: string): Promise<ActionResult> {
+  try {
+    const supabase = createAdminClient();
+
+    const { data: doc } = await supabase
+      .from('documentos')
+      .select('*, expedientes(nombre_empresa, asesora_id)')
+      .eq('id', documentoId)
+      .single();
+
+    const { error } = await supabase
+      .from('documentos')
+      .update({
+        solicitud_borrado: false,
+        estatus_borrado: 'rechazado'
+      })
+      .eq('id', documentoId);
+
+    if (error) throw error;
+
+    if (doc && (doc as any).expedientes?.asesora_id) {
+      await sendPushNotification({
+        userIds: [(doc as any).expedientes.asesora_id],
+        title: '❌ Baja Rechazada',
+        message: `La directora ha declinado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}.`,
+        url: '/abogada'
+      });
+    }
+
+    revalidatePath('/directora');
+    revalidatePath('/abogada');
+    
+    return { success: true };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }

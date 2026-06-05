@@ -157,12 +157,12 @@ export default function Paso2Documentacion({
   if (isUnderReview && !error && !isPending) {
     return (
       <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-sky-50 text-sky-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-sky-100 animate-pulse">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-sky-950/40 text-sky-400 rounded-3xl flex items-center justify-center mx-auto shadow-inner border border-sky-900 animate-pulse">
           <Clock size={48} />
         </motion.div>
         <div className="space-y-4">
-          <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Documentación en Revisión</h2>
-          <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Documentación en Revisión</h2>
+          <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
             Estamos validando tus documentos para generar tu contrato oficial.
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function Paso2Documentacion({
             { label: 'INE Vuelta', validado: docIneVuelta?.validado },
             { label: 'Domicilio', validado: docComprobante?.validado },
           ].map((d, i) => (
-            <div key={i} className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 ${d.validado ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+            <div key={i} className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 ${d.validado ? 'bg-emerald-950/40 border-emerald-900 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
               {d.validado ? <CheckCircle2 size={24} /> : <Loader2 className="animate-spin" size={24} />}
               <span className="text-[10px] font-black uppercase tracking-widest">{d.label}</span>
             </div>
@@ -185,50 +185,50 @@ export default function Paso2Documentacion({
   return (
     <div className="max-w-4xl mx-auto space-y-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
-        <div className="w-16 h-16 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-sky-100">
+        <div className="w-16 h-16 bg-sky-950/40 text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-sky-900">
           <ShieldCheck size={32} />
         </div>
-        <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
-        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
+        <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
           {hasAnyRejection ? 'Por favor, corrige los documentos marcados en rojo para continuar.' : 'Sube copias legibles de tus documentos oficiales.'}
         </p>
       </motion.div>
 
       {error && (
-        <div className="bg-rose-50 border-4 border-rose-100 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
-          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+        <div className="bg-rose-950/40 border-4 border-rose-900 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
+          <AlertCircle className="text-rose-400 shrink-0" size={32} />
           <div className="space-y-2">
-            <h3 className="text-xl font-bold text-rose-900 uppercase tracking-tight">Ocurrió un error</h3>
-            <p className="text-sm font-semibold text-rose-700 leading-relaxed uppercase">{error}</p>
+            <h3 className="text-xl font-bold text-rose-200 uppercase tracking-tight">Ocurrió un error</h3>
+            <p className="text-sm font-semibold text-rose-300 leading-relaxed uppercase">{error}</p>
           </div>
         </div>
       )}
 
       {expediente.motivo_rechazo && (
-        <div className="bg-rose-50 border-4 border-rose-100 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
-          <AlertCircle className="text-rose-500 shrink-0" size={32} />
+        <div className="bg-rose-950/40 border-4 border-rose-900 rounded-3xl p-8 flex items-start gap-6 shadow-lg relative overflow-hidden">
+          <AlertCircle className="text-rose-400 shrink-0" size={32} />
           <div className="space-y-2">
-            <h3 className="text-xl font-bold text-rose-900 uppercase tracking-tight">Documentación Rechazada</h3>
-            <p className="text-sm font-semibold text-rose-700 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
+            <h3 className="text-xl font-bold text-rose-200 uppercase tracking-tight">Documentación Rechazada</h3>
+            <p className="text-sm font-semibold text-rose-300 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-8 md:p-14 shadow-2xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+      <div className="bg-slate-900 rounded-3xl p-8 md:p-14 shadow-2xl shadow-slate-950/50 border border-slate-800 relative overflow-hidden">
         <AnimatePresence>
           {isPending && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-10 text-center">
-              <Loader2 className="text-sky-600 animate-spin mb-4" size={48} />
-              <p className="text-sky-600 font-black text-[10px] uppercase tracking-[0.3em]">{progress}</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-10 text-center">
+              <Loader2 className="text-sky-500 animate-spin mb-4" size={48} />
+              <p className="text-sky-500 font-black text-[10px] uppercase tracking-[0.3em]">{progress}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
         <form onSubmit={handleSubmit} className="space-y-12">
           <section className="space-y-8">
-            <header className="flex items-center gap-4 border-b border-slate-100 pb-6">
-              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Identificación Oficial</h4>
+            <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
+              <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Identificación Oficial</h4>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <UploadCard 
@@ -251,9 +251,9 @@ export default function Paso2Documentacion({
           </section>
 
           <section className="space-y-8">
-            <header className="flex items-center gap-4 border-b border-slate-100 pb-6">
-              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Fiscal y Domicilio</h4>
+            <header className="flex items-center gap-4 border-b border-slate-800 pb-6">
+              <div className="w-10 h-10 bg-slate-950 text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={18} /></div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Fiscal y Domicilio</h4>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <UploadCard 
@@ -267,8 +267,8 @@ export default function Paso2Documentacion({
             </div>
           </section>
 
-          <footer className="pt-10 border-t border-slate-100 flex justify-end">
-            <button type="submit" disabled={isPending} className="bg-slate-900 text-white px-12 py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all flex items-center gap-4 group disabled:opacity-50">
+          <footer className="pt-10 border-t border-slate-800 flex justify-end">
+            <button type="submit" disabled={isPending} className="bg-sky-600 text-white px-12 py-6 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-500 transition-all flex items-center gap-4 group disabled:opacity-50">
               {hasAnyRejection ? 'Enviar Correcciones' : 'Enviar a Revisión'} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </footer>
@@ -292,28 +292,28 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
       <div className="flex justify-between items-end mb-4 ml-1">
         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{label}</label>
         {dbDoc?.validado && (
-          <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
+          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-900 flex items-center gap-1">
             <CheckCircle2 size={10} /> Validado
           </span>
         )}
         {isResguardado && (
-          <span className="text-[8px] font-black text-sky-500 uppercase tracking-tighter bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100 flex items-center gap-1">
+          <span className="text-[8px] font-black text-sky-400 uppercase tracking-tighter bg-sky-950/40 px-2 py-0.5 rounded-full border border-sky-900 flex items-center gap-1">
             <Clock size={10} /> En revisión
           </span>
         )}
         {isRejected && (
-          <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 flex items-center gap-1">
+          <span className="text-[8px] font-black text-rose-400 uppercase tracking-tighter bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-900 flex items-center gap-1">
             <AlertCircle size={10} /> Rechazado
           </span>
         )}
       </div>
 
       <div className={`relative h-48 rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-6 
-        ${archivo.file ? 'border-sky-500 bg-sky-50/20' : 
-          dbDoc?.validado ? 'border-emerald-200 bg-emerald-50/10 opacity-60' :
-          isRejected ? 'border-rose-300 bg-rose-50/30' :
-          isResguardado ? 'border-sky-200 bg-sky-50/20 opacity-70' :
-          'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-sky-300'}
+        ${archivo.file ? 'border-sky-500 bg-sky-900/20' : 
+          dbDoc?.validado ? 'border-emerald-800 bg-emerald-900/10 opacity-60' :
+          isRejected ? 'border-rose-800 bg-rose-900/20' :
+          isResguardado ? 'border-sky-800 bg-sky-900/20 opacity-70' :
+          'border-slate-700 bg-slate-800/50 hover:bg-slate-800 hover:border-sky-500'}
         ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
         
         {archivo.preview && <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-20" />}
@@ -362,13 +362,13 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 p-4 bg-rose-50 border border-rose-100 rounded-2xl shadow-sm"
+            className="mt-3 p-4 bg-rose-950/40 border border-rose-900/50 rounded-2xl shadow-sm"
           >
             <div className="flex items-center gap-2 mb-1">
               <AlertCircle size={12} className="text-rose-400" />
               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Motivo de Rechazo:</p>
             </div>
-            <p className="text-[11px] font-bold text-rose-700 leading-tight uppercase pl-5">{dbDoc.motivo_rechazo}</p>
+            <p className="text-[11px] font-bold text-rose-200 leading-tight uppercase pl-5">{dbDoc.motivo_rechazo}</p>
           </motion.div>
         )}
       </AnimatePresence>
