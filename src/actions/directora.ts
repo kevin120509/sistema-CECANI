@@ -782,12 +782,23 @@ export async function aprobarSolicitudAltaAction(solicitudId: string): Promise<{
 
     if (!result.success) throw new Error(result.error);
 
-    // Asignar la asesora solicitante al expediente
+    // Asignar la asesora solicitante al expediente y marcar como 'en_proceso'
     if (sol.asesora_id && result.data?.expediente_id) {
       await adminSupabase
         .from('expedientes')
-        .update({ asesora_id: sol.asesora_id })
+        .update({ 
+          asesora_id: sol.asesora_id,
+          estatus: 'en_proceso' // Importante para que aparezca en el panel de la abogada
+        })
         .eq('id', result.data.expediente_id);
+
+      // También guardar en la nueva tabla relacional para compatibilidad multi-asesora
+      await adminSupabase
+        .from('expediente_asesoras')
+        .upsert({
+          expediente_id: result.data.expediente_id,
+          asesora_id: sol.asesora_id
+        }, { onConflict: 'expediente_id, asesora_id' });
     }
 
     // Marcar solicitud como aprobada
