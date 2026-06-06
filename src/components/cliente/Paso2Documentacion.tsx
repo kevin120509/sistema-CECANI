@@ -14,14 +14,12 @@ import {
   AlertCircle, 
   Trash2, 
   FileText, 
-  Image as ImageIcon,
   ArrowRight,
   ShieldCheck,
   Clock,
   CloudUpload,
-  User,
-  MapPin,
-  Camera
+  Camera,
+  ChevronRight
 } from 'lucide-react';
 
 interface Paso2Props {
@@ -47,10 +45,6 @@ export default function Paso2Documentacion({
   const [error, setError] = useState<string | null>(null);
 
   const docs = expediente.documentos || [];
-  
-  // Lógica de revisión: Si está en estatus revisión PERO algún documento tiene motivo de rechazo, 
-  // significa que la directora ya interactuó y rechazó algo. En ese caso NO mostramos la pantalla de "En Revisión",
-  // sino que permitimos que el cliente corrija.
   const isUnderReview = expediente.estatus === 'revision_directora' && docs.every(d => !d.motivo_rechazo);
   const hasAnyRejection = docs.some(d => !!d.motivo_rechazo) || !!expediente.motivo_rechazo;
 
@@ -66,333 +60,178 @@ export default function Paso2Documentacion({
     }
   };
 
-  const subirYRegistrar = async (file: File, tipo: TipoDocumento, descripcion: string, nombreClave: string): Promise<string> => {
-    setProgress(`Digitalizando ${descripcion}...`);
+  const subirYRegistrar = async (file: File, tipo: TipoDocumento, descripcion: string, nombreClave: string) => {
+    setProgress(`Subiendo ${descripcion}...`);
+    const carpeta = expediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+    const ext = file.name.split('.').pop() || 'bin';
+    const fd = new FormData();
+    fd.append('file', new File([file], `${nombreClave}_${carpeta}.${ext}`, { type: file.type }));
     
-    const carpetaEmpresa = expediente.nombre_empresa
-      .replace(/[^a-zA-Z0-9]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '');
-
-    const extension = file.name.split('.').pop() || 'bin';
-    const nuevoNombre = `${nombreClave}_${carpetaEmpresa}.${extension}`;
-    const fileRenombrado = new File([file], nuevoNombre, { type: file.type });
+    const up = await subirArchivoR2Action(fd, `expedientes/${carpeta}/documentacion`);
+    if (!up.success || !up.data) throw new Error(up.error);
     
-    const formData = new FormData();
-    formData.append('file', fileRenombrado);
-    
-    const uploadResult = await subirArchivoR2Action(formData, `expedientes/${carpetaEmpresa}/documentacion`);
-    
-    if (!uploadResult.success || !uploadResult.data) {
-      throw new Error(`Error al subir ${descripcion}: ${uploadResult.error}`);
-    }
-
-    const urlPublicaR2 = uploadResult.data.url;
-
-    setProgress(`Resguardando ${descripcion}...`);
-    const registerResult = await registrarDocumento(expediente.id, tipo, urlPublicaR2);
-    if (!registerResult.success) {
-      throw new Error(`Error al registrar ${descripcion}: ${registerResult.error}`);
-    }
-    return urlPublicaR2;
+    const reg = await registrarDocumento(expediente.id, tipo, up.data.url);
+    if (!reg.success) throw new Error(reg.error);
   };
-
-  // Helper: un doc necesita re-subirse si no existe, si fue rechazado (motivo_rechazo), o si su url está vacía
-  const docNecesitaArchivo = (doc: any) =>
-    !doc || !doc.url_archivo || !!doc.motivo_rechazo;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validación inteligente: Solo exigir archivo si no existe ya en la DB y no está validado
-    if (docNecesitaArchivo(docIneFrente) && !ineFrente.file) { setError('Falta INE Frente o corregir el actual.'); return; }
-    if (docNecesitaArchivo(docIneVuelta) && !ineVuelta.file) { setError('Falta INE Vuelta o corregir el actual.'); return; }
-    if (docNecesitaArchivo(docComprobante) && !comprobanteDomicilio.file) { setError('Falta Comprobante Domicilio o corregir el actual.'); return; }
+    const check = (doc: any, file: any) => !doc || !doc.url_archivo || !!doc.motivo_rechazo ? !!file : true;
+    if (!check(docIneFrente, ineFrente.file) || !check(docIneVuelta, ineVuelta.file) || !check(docComprobante, comprobanteDomicilio.file)) {
+      setError('Por favor cargue todos los documentos requeridos.'); return;
+    }
 
     startTransition(async () => {
       try {
-        console.log('Iniciando proceso de subida quirúrgica...');
-        
-        // Solo subimos lo que el usuario seleccionó de nuevo
-        if (ineFrente.file) {
-          console.log('Subiendo nueva INE Frente...');
-          await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
-        }
-        
-        if (ineVuelta.file) {
-          console.log('Subiendo nueva INE Vuelta...');
-          await subirYRegistrar(ineVuelta.file, 'ine_reverso', 'INE Vuelta', 'INE_Vuelta');
-        }
-        
-        if (comprobanteDomicilio.file) {
-          console.log('Subiendo nuevo Comprobante Domicilio...');
-          await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante Domicilio', 'Comprobante_Domicilio');
-        }
+        if (ineFrente.file) await subirYRegistrar(ineFrente.file, 'ine_frente', 'INE Frente', 'INE_Frente');
+        if (ineVuelta.file) await subirYRegistrar(ineVuelta.file, 'ine_reverso', 'INE Vuelta', 'INE_Vuelta');
+        if (comprobanteDomicilio.file) await subirYRegistrar(comprobanteDomicilio.file, 'comprobante_domicilio', 'Comprobante', 'Comprobante_Domicilio');
 
-        console.log('Actualizando estatus del expediente a revisión...');
-        const resEstatus = await actualizarEstatusExpediente(expediente.id, 'revision_directora');
-        if (!resEstatus.success) throw new Error(resEstatus.error || 'Error al actualizar estatus.');
-
-        // Si es la primera vez que sube todo, intentamos generar el contrato
+        await actualizarEstatusExpediente(expediente.id, 'revision_directora');
         const contratoId = expediente.contratos?.[0]?.id;
         if (contratoId && expediente.estatus === 'en_registro') {
-          setProgress('Generando contrato inteligente...');
-          const resContrato = await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
-          if (!resContrato.success) console.warn('Error no crítico al generar contrato:', resContrato.error);
+          await generarContratoAutomatico(expediente.cliente_id, expediente.id, contratoId);
         }
-
-        console.log('Proceso completado exitosamente.');
         await onComplete();
-      } catch (err) {
-        console.error('Error en handleSubmit:', err);
-        const msg = err instanceof Error ? err.message : 'Error inesperado.';
-        if (msg.includes('foreign key constraint') || msg.includes('violates foreign key')) {
-          setError('Tu sesión de expediente ha expirado. Por favor, reinicia el registro.');
-        } else {
-          setError(msg);
-        }
-      } finally {
-        setProgress('');
-      }
+      } catch (err: any) {
+        setError(err.message || 'Error inesperado.');
+      } finally { setProgress(''); }
     });
   };
 
-  if (isUnderReview && !error && !isPending) {
-    return (
-      <div className="max-w-4xl mx-auto py-24 text-center space-y-10">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-28 h-28 bg-blue-500/10 text-blue-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl border border-blue-500/20 animate-pulse premium-border">
-          <Clock size={56} />
-        </motion.div>
-        <div className="space-y-6">
-          <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-tight">Documentación en Validación</h2>
-          <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
-            Nuestros expertos legales están verificando sus documentos para la generación del contrato oficial.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-2xl mx-auto pt-10">
-          {[
-            { label: 'INE Frente', validado: docIneFrente?.validado },
-            { label: 'INE Vuelta', validado: docIneVuelta?.validado },
-            { label: 'Domicilio', validado: docComprobante?.validado },
-          ].map((d, i) => (
-            <div key={i} className={`p-8 rounded-[2rem] border-2 flex flex-col items-center gap-4 transition-all duration-500 ${d.validado ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_15px_30px_rgba(16,185,129,0.1)]' : 'bg-[#0a0f1d] border-white/5 text-slate-600'}`}>
-              {d.validado ? <CheckCircle2 size={28} /> : <Loader2 className="animate-spin" size={28} />}
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">{d.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="pt-10 flex items-center justify-center gap-3 text-blue-500 font-black text-[11px] uppercase tracking-[0.4em]">
-          <Loader2 className="animate-spin" size={24} />
-          <span>Sincronizando portal...</span>
-        </div>
+  if (isUnderReview && !error && !isPending) return (
+    <div className="card-base p-16 text-center max-w-2xl mx-auto mt-12">
+      <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <Clock size={40} className="animate-pulse" />
       </div>
-    );
-  }
+      <h2 className="text-2xl font-bold text-slate-800 mb-2">Expediente en Validación</h2>
+      <p className="text-slate-500 mb-8">Nuestros analistas están verificando tu documentación. Recibirás una notificación cuando el contrato esté listo para firma.</p>
+      <div className="flex justify-center gap-4">
+        {[docIneFrente, docIneVuelta, docComprobante].map((d, i) => (
+          <div key={i} className={`w-3 h-3 rounded-full ${d?.validado ? 'bg-emerald-500' : 'bg-blue-200'}`} />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-16 py-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
-        <div className="w-20 h-20 bg-blue-500/10 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-blue-500/20 premium-border">
-          <ShieldCheck size={36} />
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Bóveda Documental</h2>
+          <p className="text-slate-500 text-sm">Resguarde copias legibles de su documentación oficial.</p>
         </div>
-        <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
-        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
-          {hasAnyRejection ? 'Se han detectado observaciones. Por favor, reemplace los documentos marcados para continuar.' : 'Adjunte la documentación oficial requerida para formalizar su expediente corporativo.'}
-        </p>
-      </motion.div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
+          <ShieldCheck size={18} className="text-blue-600" />
+          <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Cifrado Bancario Activo</span>
+        </div>
+      </div>
 
       {error && (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] p-8 flex items-start gap-6 shadow-2xl relative overflow-hidden">
-          <AlertCircle className="text-rose-500 shrink-0" size={32} />
-          <div className="space-y-1">
-            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Error de Sistema</h3>
-            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">{error}</p>
-          </div>
-        </motion.div>
+        <div className="bg-red-50 border border-red-100 p-4 rounded-lg flex items-center gap-3 text-red-700">
+          <AlertCircle size={20} />
+          <span className="text-sm font-bold uppercase">{error}</span>
+        </div>
       )}
 
-      {expediente.motivo_rechazo && (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] p-8 flex items-start gap-6 shadow-2xl relative overflow-hidden">
-          <AlertCircle className="text-rose-500 shrink-0" size={32} />
-          <div className="space-y-1">
-            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest">Observación de Dirección</h3>
-            <p className="text-sm font-bold text-rose-200 leading-relaxed uppercase">{expediente.motivo_rechazo}</p>
-          </div>
-        </motion.div>
-      )}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <UploadCard 
+            label="INE (Frente)" 
+            archivo={ineFrente} 
+            dbDoc={docIneFrente} 
+            onFileChange={(e: any) => handleFileChange(e, setIneFrente)} 
+            onClear={() => setIneFrente({ file: null, preview: null })} 
+            disabled={isPending || (!!docIneFrente?.url_archivo && docIneFrente?.validado)}
+          />
+          <UploadCard 
+            label="INE (Vuelta)" 
+            archivo={ineVuelta} 
+            dbDoc={docIneVuelta} 
+            onFileChange={(e: any) => handleFileChange(e, setIneVuelta)} 
+            onClear={() => setIneVuelta({ file: null, preview: null })} 
+            disabled={isPending || (!!docIneVuelta?.url_archivo && docIneVuelta?.validado)}
+          />
+          <UploadCard 
+            label="Comprobante Domicilio" 
+            archivo={comprobanteDomicilio} 
+            dbDoc={docComprobante} 
+            onFileChange={(e: any) => handleFileChange(e, setComprobanteDomicilio)} 
+            onClear={() => setComprobanteDomicilio({ file: null, preview: null })} 
+            disabled={isPending || (!!docComprobante?.url_archivo && docComprobante?.validado)}
+          />
+        </div>
 
-      <div className="bg-[#0a0f1d]/80 backdrop-blur-3xl rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5 relative overflow-hidden premium-border">
-        <AnimatePresence>
-          {isPending && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#030712]/95 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
-              <div className="relative w-24 h-24 mb-8">
-                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <CloudUpload className="text-blue-500" size={32} />
-                </div>
-              </div>
-              <p className="text-blue-500 font-black text-xs uppercase tracking-[0.5em] animate-pulse">{progress}</p>
-            </motion.div>
+        <div className="card-base p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white shadow-md">
+          <div className="flex items-center gap-4 text-slate-400">
+            <InfoIcon size={20} />
+            <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed max-w-md">Una vez sincronizados, sus documentos pasarán a revisión por el área jurídica de CECANI.</p>
+          </div>
+          <button type="submit" disabled={isPending} className="btn-primary w-full md:w-auto min-w-[200px]">
+            {isPending ? <Loader2 className="animate-spin" size={20} /> : <CloudUpload size={20} />}
+            {isPending ? progress : hasAnyRejection ? 'Reenviar Correcciones' : 'Sincronizar Bóveda'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function UploadCard({ label, archivo, dbDoc, onFileChange, onClear, disabled }: any) {
+  const isRejected = dbDoc?.motivo_rechazo && !dbDoc?.validado;
+  const isOk = dbDoc?.validado;
+
+  return (
+    <div className="card-base flex flex-col h-full bg-white transition-all hover:shadow-md">
+      <div className="card-header py-4 px-6 flex items-center justify-between bg-slate-50/50">
+        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+        {isOk && <CheckCircle2 size={16} className="text-emerald-500" />}
+        {isRejected && <AlertCircle size={16} className="text-red-500" />}
+      </div>
+      
+      <div className="card-content flex-1 flex flex-col gap-4 p-6">
+        <div className={`relative h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${archivo.file ? 'border-blue-500 bg-blue-50/30' : isRejected ? 'border-red-300 bg-red-50/30' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'}`}>
+          {archivo.preview ? (
+            <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-lg opacity-40" />
+          ) : (dbDoc?.url_archivo && !isRejected) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100/50 rounded-lg">
+              <FileText size={48} className="text-slate-300" />
+            </div>
           )}
-        </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-16">
-          <section className="space-y-10">
-            <header className="flex items-center gap-5 border-b border-white/5 pb-8">
-              <div className="w-12 h-12 bg-white/5 text-blue-400 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><User size={20} /></div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Identidad Legal</h4>
-                <p className="text-[9px] font-bold text-slate-600 uppercase">Cargue su identificación oficial vigente (Ambos lados)</p>
-              </div>
-            </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <UploadCard 
-                label="INE Frente *" 
-                archivo={ineFrente} 
-                dbDoc={docIneFrente}
-                disabled={isPending || (!!docIneFrente?.url_archivo && !docIneFrente?.motivo_rechazo && docIneFrente?.validado)} 
-                onFileChange={(e: any) => handleFileChange(e, setIneFrente)} 
-                onClear={() => setIneFrente({ file: null, preview: null })} 
-              />
-              <UploadCard 
-                label="INE Vuelta *" 
-                archivo={ineVuelta} 
-                dbDoc={docIneVuelta}
-                disabled={isPending || (!!docIneVuelta?.url_archivo && !docIneVuelta?.motivo_rechazo && docIneVuelta?.validado)} 
-                onFileChange={(e: any) => handleFileChange(e, setIneVuelta)} 
-                onClear={() => setIneVuelta({ file: null, preview: null })} 
-              />
-            </div>
-          </section>
+          <div className="relative z-10 text-center">
+            {isOk ? <CheckCircle2 size={32} className="text-emerald-500 mx-auto mb-2" /> : archivo.file ? <FileUp size={32} className="text-blue-500 mx-auto mb-2" /> : <CloudUpload size={32} className="text-slate-300 mx-auto mb-2" />}
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight truncate max-w-[120px] mx-auto">
+              {archivo.file ? archivo.file.name : isOk ? 'Verificado' : 'Click para subir'}
+            </p>
+          </div>
 
-          <section className="space-y-10">
-            <header className="flex items-center gap-5 border-b border-white/5 pb-8">
-              <div className="w-12 h-12 bg-white/5 text-blue-400 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><MapPin size={20} /></div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-1">Localización y Fiscal</h4>
-                <p className="text-[9px] font-bold text-slate-600 uppercase">Documentos que acrediten su domicilio actual</p>
-              </div>
-            </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <UploadCard 
-                label="Comprobante Domicilio *" 
-                archivo={comprobanteDomicilio} 
-                dbDoc={docComprobante}
-                disabled={isPending || (!!docComprobante?.url_archivo && !docComprobante?.motivo_rechazo && docComprobante?.validado)} 
-                onFileChange={(e: any) => handleFileChange(e, setComprobanteDomicilio)} 
-                onClear={() => setComprobanteDomicilio({ file: null, preview: null })} 
-              />
-            </div>
-          </section>
+          <input type="file" onChange={onFileChange} disabled={disabled} accept="image/*,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" />
+        </div>
 
-          <footer className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
-             <div className="flex items-center gap-4 text-slate-600">
-               <ShieldCheck size={18} />
-               <p className="text-[9px] font-black uppercase tracking-widest leading-relaxed max-w-[280px]">Sus archivos son resguardados bajo protocolos de cifrado de grado bancario.</p>
-             </div>
-            <button type="submit" disabled={isPending} className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-sky-500 text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(37,99,235,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5">
-              {hasAnyRejection ? 'Reenviar Correcciones' : 'Sincronizar Bóveda'} <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-            </button>
-          </footer>
-        </form>
+        {isRejected && !archivo.file && (
+          <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+            <p className="text-[9px] font-black text-red-600 uppercase mb-1">Rechazado:</p>
+            <p className="text-[10px] text-red-800 leading-tight italic">"{dbDoc.motivo_rechazo}"</p>
+          </div>
+        )}
+
+        {archivo.file && (
+          <button type="button" onClick={onClear} className="w-full py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100">
+            <Trash2 size={14} /> Eliminar selección
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: any) {
-  const isRejected = dbDoc && dbDoc.motivo_rechazo && !dbDoc.validado;
-  const isResguardado = dbDoc && dbDoc.url_archivo && !dbDoc.motivo_rechazo && !dbDoc.validado;
-
+function InfoIcon({ size = 20 }) {
   return (
-    <div className="group relative">
-      <div className="flex justify-between items-end mb-5 ml-1">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">{label}</label>
-        {dbDoc?.validado && (
-          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-2">
-            <CheckCircle2 size={12} /> Validado
-          </span>
-        )}
-        {isResguardado && (
-          <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20 flex items-center gap-2">
-            <Clock size={12} /> Revisión
-          </span>
-        )}
-        {isRejected && (
-          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20 flex items-center gap-2">
-            <AlertCircle size={12} /> Corregir
-          </span>
-        )}
-      </div>
-
-      <div className={`relative h-60 rounded-[3rem] border-2 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center p-8 
-        ${archivo.file ? 'border-blue-500 bg-blue-500/10 shadow-[0_15px_30px_rgba(59,130,246,0.1)]' : 
-          dbDoc?.validado ? 'border-emerald-500/30 bg-emerald-500/5 opacity-80' :
-          isRejected ? 'border-rose-500/30 bg-rose-500/10' :
-          isResguardado ? 'border-blue-500/30 bg-blue-500/5 opacity-90' :
-          'border-white/5 bg-white/5 hover:bg-white/10 hover:border-blue-500/40'}
-        ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer group'}`}>
-        
-        {archivo.preview && <img src={archivo.preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm" />}
-        {!archivo.preview && (dbDoc?.validado || isResguardado || (isRejected && !archivo.file)) && dbDoc?.url_archivo && (
-          <div className="absolute inset-0 w-full h-full bg-[#030712]/40 flex items-center justify-center">
-            <FileText className="text-blue-500/30" size={80} />
-          </div>
-        )}
-
-        <div className="relative z-10 text-center space-y-4">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto transition-all duration-500 ${archivo.file ? 'bg-blue-500 text-white scale-110' : 'bg-white/5 text-slate-500 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:scale-110'}`}>
-            {dbDoc?.validado ? (
-              <CheckCircle2 size={32} />
-            ) : archivo.file ? (
-              <CheckCircle2 size={32} />
-            ) : isRejected ? (
-              <Camera size={32} className="text-rose-500" />
-            ) : isResguardado ? (
-              <Clock size={32} className="text-blue-400" />
-            ) : (
-              <CloudUpload size={32} />
-            )}
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest truncate max-w-[220px] text-slate-400 group-hover:text-white transition-colors">
-            {archivo.file ? archivo.file.name : 
-             dbDoc?.validado ? 'Expediente Seguro' :
-             isRejected ? 'Reintentar Captura' :
-             isResguardado ? 'Validando...' :
-             'Sincronizar Archivo'}
-          </p>
-        </div>
-
-        <input 
-          type="file" 
-          onChange={onFileChange} 
-          disabled={disabled} 
-          accept="image/*,.pdf" 
-          className={`absolute inset-0 w-full h-full opacity-0 z-20 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
-        />
-        
-        {archivo.file && !disabled && (
-          <button type="button" onClick={(e) => { e.stopPropagation(); onClear(); }} className="absolute top-6 right-6 z-30 w-10 h-10 rounded-xl bg-white text-rose-500 shadow-2xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-12"><Trash2 size={20} /></button>
-        )}
-      </div>
-
-      <AnimatePresence>
-        {isRejected && !archivo.file && (
-          <motion.div 
-            initial={{ opacity: 0, y: -15 }} 
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-5 p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl shadow-xl"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <AlertCircle size={14} className="text-rose-500" />
-              <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Observación Técnica:</p>
-            </div>
-            <p className="text-[11px] font-bold text-rose-200/80 leading-relaxed uppercase pl-6 italic">"{dbDoc.motivo_rechazo}"</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
   );
 }

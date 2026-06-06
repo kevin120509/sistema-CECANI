@@ -103,6 +103,20 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Cambios**: `src/lib/pdf-generator.ts`
 - **Pendientes**: Ninguno asociado a esta tarea.
 
+### [5 Junio 2026] - Rediseño Corporativo: Migración Estándar "Admin One"
+- **Acción**: Transformación visual total de todas las interfaces (Cliente, Directora, Abogada) hacia una estética de dashboard administrativo limpio y eficiente.
+- **Cambios**:
+    - `src/components/layout/DashboardLayout.tsx`: Nuevo componente de layout unificado con Sidebar y Header.
+    - `src/app/globals.css`: Actualización de tema a paleta clara (Slate-50), tarjetas blancas (`card-base`) e inputs corporativos.
+    - `src/app/page.tsx`: Integración del nuevo layout en el portal de cliente.
+    - `src/components/cliente/`: Refactorización de todos los pasos (1-4) para eliminar estilos 'Luxury' y usar el nuevo estándar de tarjetas.
+    - `src/components/directora/DirectorDashboard.tsx`: Rediseño completo para un flujo operativo más limpio y tabular.
+    - `src/components/abogada/ExpedienteManager.tsx`: Migración a vista de dashboard con gestión de expedientes simplificada.
+    - **Correcciones**: Resolución de errores de sintaxis JSX y desajustes de tipos en `CatalogoHito`.
+- **Pendientes**:
+    - Finalizar la vista de calendario en el panel de abogada bajo el nuevo estándar visual.
+    - Optimizar el visor de documentos para dispositivos móviles.
+
 ### [5 Junio 2026] - Rediseño Premium: Interfaz de Cliente "Midnight Navy & Blue"
 - **Acción**: Transformación visual completa del portal de cliente hacia una estética profesional de alta gama.
 - **Cambios**:
