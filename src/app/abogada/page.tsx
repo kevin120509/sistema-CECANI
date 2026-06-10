@@ -130,7 +130,7 @@ export default async function AbogadaPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-[#020617]">
       {/* Client Component que manejará el estado de tabs y formularios */}
       <ExpedienteManager 
         expedientes={expedientes}

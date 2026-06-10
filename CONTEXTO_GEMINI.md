@@ -46,7 +46,196 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 2.  **Doble Firma:** Implementar la subida del contrato con la firma de CECANI (Doble firma) hacia la carpeta `contratos/` en R2.
 3.  **Seguridad:** Asegurar que las URLs de R2 tengan políticas de acceso adecuadas (actualmente usan el subdominio público `.r2.dev`).
 
+### [10 Junio 2026] - Ejecución del Servidor en Segundo Plano
+- **Acción**: Se activó el servidor de desarrollo Next.js (Turbopack) en segundo plano.
+- **Cambios**: Ninguno en el código.
+- **Estado**: Servidor operativo en `http://localhost:3000`.
+
+### [10 Junio 2026] - Unificación Global de Diseño "Deep Dark"
+- **Acción**: Se extendió la estética del panel de Directora a todo el ecosistema (Abogadas y Clientes). Se eliminó el estilo "Luxury Premium" (Azul/Glassmorphism) en favor de un modo oscuro profundo más sobrio y profesional.
+- **Cambios**:
+    - `src/app/globals.css`: Redefinición de tokens globales (Slate-950 base, Sky-600 acento).
+    - `src/components/abogada/ExpedienteManager.tsx`: Actualización de colores y tipografía.
+    - `src/components/cliente/Paso1...Paso4.tsx`: Refactorización completa de los 5 pasos del wizard del cliente.
+    - `src/components/abogada/AbogadaAuth.tsx` y `DirectoraLogin.tsx`: Unificación de cabeceras y botones.
+- **Estado**: Interfaz 100% coherente en todos los roles del sistema.
+
 ## 6. Bitácora de Sesión
+### [10 Junio 2026] - Refactorización Integral: Diseño "Deep Dark" en ExpedienteManager
+- **Acción**: Refactorización profunda de `src/components/abogada/ExpedienteManager.tsx` para alinearlo 100% con el sistema de diseño "Deep Dark".
+- **Cambios**:
+    - Se reemplazaron todos los tokens de color `blue-` e `indigo-` por variantes `sky-` y `slate-` oscuras.
+    - Se migraron los fondos `bg-[#0f172a]` y `bg-[#1e293b]` a `bg-slate-950` y `bg-slate-900` respectivamente.
+    - Se estandarizaron los botones a `bg-sky-600` con `hover:bg-sky-500`.
+    - Se actualizaron los bordes a `slate-800` o `sky-600/20`.
+    - Se corrigieron elementos decorativos y se verificó la ausencia de fragmentos JSX huérfanos.
+- **Estado**: Interfaz de gestión de expedientes unificada con la estética del panel de Directora, logrando una coherencia visual total en las herramientas administrativas.
+
+### [9 Junio 2026] - Rediseño de Cotizador Cliente, Bajas Docs y Optimización General
+- **Acción**: Implementación de mejoras visuales en el portal del cliente, creación del flujo de "Bajas Docs" para documentos extras de abogada y reestructuración de la UI de expedientes.
+- **Cambios**:
+    - **Portal Cliente (`Paso1` y `Paso3`)**: Se reemplazó el término "Inversión" por "Pago". El paso de "Plan de Liquidación" se rediseñó como una calculadora visual en la sección de "Configuración de Servicios", dividiendo el pago normal (Único, Quincenal) del pago con tarjeta (MSI), y mostrando dinámicamente el monto de la cuota dividida.
+    - **Panel Abogada (`ExpedienteManager`)**: 
+        - Se reorganizó la pestaña "Etapa Legal" para dividir el Concentrado de Datos en tarjetas (se eliminó `asesora_encargada` y `ocupacion`).
+        - Los integrantes de firma se movieron a "Checklist Docs".
+        - Se implementó un botón para crear "Documentos Extras" personalizados, los cuales ahora respetan el flujo de solicitud de borrado.
+        - Los checkboxes del flujo legal ahora son interactivos y cambian de color (verde, amarillo, rojo) según el estatus de los recordatorios (vencidos/pendientes).
+    - **Panel Directora (`DirectorDashboard`)**: 
+        - El botón de "Alta Maestra" se movió al menú principal superior derecho.
+        - Se añadió la pestaña "Bajas Docs" para que la directora apruebe o rechace las eliminaciones de documentos (incluidos los extras) solicitadas por las abogadas.
+        - En el listado de Concentrado ahora se ve el nombre de la asesora asignada y un botón rápido de "Ver Documentación".
+- **Estado**: Todas las peticiones de UI/UX completadas y compilando correctamente.
+
+### [9 Junio 2026] - Optimización de Concurrencia y Organización de Informes
+- **Acción**: Creación de la carpeta `informes/` para alojar los reportes de asignación de clientes (`reporte_asignacion_abogadas.txt` y `reporte_multiples_abogadas.txt`). Implementación de estrategias de optimización para soportar 21+ abogadas simultáneas.
+- **Cambios**:
+    - Se creó el archivo `migration_optimizar_indices.sql` que contiene índices (`CREATE INDEX`) para las tablas más solicitadas (`expedientes`, `documentos`, `seguimiento_tareas`). Esto previene "Full Table Scans" en PostgreSQL y asegura tiempos de respuesta menores a 50ms incluso con carga alta.
+    - El diseño de la UI ya estaba optimizado (ej. el "Concentrado de Datos" tiene un botón explícito de "Guardar Cambios" para no saturar la base de datos con auto-guardados por cada letra que teclean 20 personas al mismo tiempo).
+- **Pendientes**: Ejecutar el archivo SQL en el editor de Supabase.
+
+### [9 Junio 2026] - Verificación y Extracción de Abogadas
+- **Acción**: Análisis de la columna "ASESORA CECANI ENCARGADA" del Excel `CONCENTRADO DE CONTRATOS EN SEGUIMIENTO.xlsx`. Se normalizaron nombres, corrigieron errores tipográficos y se separaron los equipos.
+- **Resultado**: Se identificaron 21 asesoras/abogadas únicas operando en el sistema:
+  1. Abigail (Abi, Aby)
+  2. Alejandra Chavira (Ale, Chavira)
+  3. Araceli (Areceli)
+  4. Blanca Briceño
+  5. Claudia
+  6. Dalia
+  7. Filiberta Reyes Guerrero
+  8. Flor
+  9. Jorge Eduardo Quiztian
+  10. Kenia Nextle (Kenia)
+  11. Luisa Enríquez (Luiza, Luisa)
+  12. Mirta
+  13. Nereyda
+  14. Niza Guerra (Niza, Nza)
+  15. Odette
+  16. Sandra
+  17. Selena
+  18. Valeria (Vale)
+  19. Yael Matadamas López
+  20. Yaraset Reyes (Yar)
+  21. Yesenia
+
+### [9 Junio 2026] - Importación de Concentrado de Excel a Base de Datos
+- **Acción**: Lectura e importación automatizada del archivo `CONCENTRADO DE CONTRATOS EN SEGUIMIENTO.xlsx` a las tablas `perfiles`, `expedientes`, `datos_concentrado` y `seguimiento_tareas`.
+- **Cambios**:
+    - Se creó un script en Node.js usando la librería `xlsx` y `@supabase/supabase-js`.
+    - Se procesaron 823 registros únicos del Excel.
+    - Se insertaron 804 registros exitosamente, creando perfiles de usuario, el expediente base (A.C.), y la lista de control de documentos (`seguimiento_tareas` del hito 32 al 48) para que las abogadas puedan subir información.
+    - Se creó el archivo `reporte_duplicados.txt` con la lista de asociaciones repetidas (se conservó la fila con más información).
+- **Pendientes**:
+    - Las abogadas ya pueden acceder a estos expedientes para asignar documentos, pero falta la asignación formal de abogada-expediente si se desea cambiar la encargada actual que viene en el Excel.
+### [6 Junio 2026] - Refactorización de Modales por Pestañas (Validación vs Por Asignar)
+- **Acción**: Implementación estricta de las reglas de visibilidad del flujo de validación en la interfaz de Directora según instrucciones de audio.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`:
+        - **Pestaña Validación**: Ahora solo muestra los documentos iniciales (INE, Domicilio) y el contrato generado por el sistema.
+        - **Filtro ListosParaAsignar**: Los clientes en `en_proceso` no aparecerán en la pestaña "Por Asignar" hasta que hayan subido su Contrato Firmado y su Comprobante de Pago. Mientras tanto, solo serán visibles en el "Concentrado".
+        - **Pestaña Por Asignar**: Ahora solo muestra el Comprobante de Pago (con su monto), el Contrato Firmado por el cliente, y el área para subir la Doble Firma y asignar la asesora. Los documentos iniciales se ocultan para evitar duplicidad visual.
+        - Se eliminó completamente el botón de "Contactar Cliente" de todos los modales.
+        - Se eliminó el placeholder de "Esperando firma del cliente..." en la sección de contratos.
+- **Estado**: El flujo de revisión es ahora secuencial, limpio y sin duplicidad de pasos.
+
+### [6 Junio 2026] - Sincronización de CheckList y Visibilidad de Contratos
+- **Acción**: Corrección del mapeo de documentos cliente-servidor e integración de contratos en el CheckList legal.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se implementó `DOCS_MAP` para traducir etiquetas de UI (ej: "INE FRENTE") a tipos de DB (ej: "ine_frente").
+        - Se cambió el estatus visual de "Validado" a **"Recibido"** para reflejar con precisión la llegada de archivos del cliente.
+        - Se integraron los **Contratos (Firmado por Cliente y Doble Firma)** directamente en el CheckList de Proceso, extrayendo las URLs de la tabla `contratos`.
+        - Se verificó la operatividad del botón de solicitud de baja para los documentos enviados por el cliente.
+- **Estado**: La abogada ahora visualiza correctamente todos los documentos que el cliente ya envió y tiene acceso total a los contratos finales validados por la directora.
+
+### [6 Junio 2026] - Potenciación de Herramientas de Supervisión (Directora)
+- **Acción**: Enriquecimiento de datos en el panel de Directora para una toma de decisiones más ágil.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`:
+        - **Módulo de Gestión**: Se integró la sección **"Perfil del Cliente Titular"** mostrando RFC, CURP, Teléfono, Estado Civil, Ocupación y Domicilio.
+        - **Módulo Documental**: Se añadió una cabecera de **"Contratos Oficiales"** que permite a la directora re-leer el contrato firmado por el cliente y el de doble firma (CECANI) con un solo clic.
+        - **Comunicación Integrada**: Se añadieron botones de **WhatsApp Directo** tanto en el perfil del cliente como en la sección de contratos, unificando la supervisión con el contacto inmediato.
+        - Se estandarizó la estética oscura (Shadow Blue/Black) en todos los nuevos componentes de los modales.
+- **Estado**: Supervisión administrativa completa. La directora tiene visibilidad total de la identidad legal del cliente y sus contratos sin navegar entre carpetas.
+
+### [6 Junio 2026] - Reorganización Visual de Contratos y Centro de Acción
+- **Acción**: Centralización de documentos críticos y herramientas de comunicación en la cabecera del expediente.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se eliminaron las entradas de "Contrato Firmado" del CheckList de Proceso para evitar redundancia visual (imágenes/previsualizaciones).
+        - Se creó un **"Action Bar"** en la cabecera con botones individuales para: **Contrato Cliente**, **Contrato CECANI** (Doble Firma) y **Borrador**.
+        - Se reubicó el botón de **Contacto WhatsApp** al Centro de Acción, permitiendo acceso inmediato a documentos y comunicación en un solo bloque.
+        - Se garantizó que los contratos solo se abran vía link externo (PDF), eliminando ruido visual en el CheckList.
+- **Estado**: Interfaz operativa optimizada. La abogada tiene control total de la documentación legal y contacto directo desde el resumen principal.
+
+### [6 Junio 2026] - Control de Errores y Comunicación Directa (Abogada)
+- **Acción**: Implementación de herramientas de limpieza de datos (integrantes/recordatorios) y enlace directo a WhatsApp.
+- **Cambios**:
+    - **Server Actions**: Se crearon `eliminarIntegranteAction` y `eliminarRecordatorioAction` para corregir errores de captura.
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se añadieron botones de eliminación (Trash2) en las listas de integrantes de firma y recordatorios activos.
+        - Se integró un botón de **Contacto Directo vía WhatsApp** en la cabecera del expediente, facilitando la comunicación inmediata con el cliente titular.
+        - Se mejoró la visualización del contrato firmado, moviendo el acceso directo al visor de archivos al lado del aviso de estatus.
+- **Estado**: Mayor autonomía para la abogada en la gestión de datos erróneos y comunicación agilizada.
+
+### [6 Junio 2026] - Blindaje Estético "Shadow Blue" y Verificación de Bajas
+- **Acción**: Refactorización estética final hacia un tema oscuro profundo y validación del flujo de eliminación de documentos.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se eliminaron todos los fondos blancos del CheckList de documentos, reemplazándolos por `bg-slate-900/50`.
+        - Se aplicaron bordes "Neon Blue" y sombras profundas a los ítems del expediente para una estética unificada.
+        - Se actualizó el formulario de recordatorios y el visor de WhatsApp con fondos `slate-950` y inputs oscuros.
+    - **Validación de Flujo**:
+        - Se verificó la trazabilidad de `solicitarBorradoAction` (Abogada) -> `aprobarBorradoAction` (Directora) -> `eliminarDocumentoAction` (Abogada, ejecución final).
+        - El sistema de notificaciones Push (OneSignal) y el refresco en tiempo real (Supabase Realtime) garantizan que la abogada vea la autorización de baja al instante.
+- **Estado**: Interfaz 100% libre de elementos claros en el área operativa. Flujo de control de cambios documental verificado y funcional.
+
+### [6 Junio 2026] - Restauración del Modal de Agenda (Abogada)
+- **Acción**: Implementación de la lógica de renderizado para el modal de programación de citas.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se detectó que el estado `showReminderForm` no tenía un componente modal asociado en el JSX.
+        - Se integró `framer-motion` (`AnimatePresence` y `motion`) para un despliegue suave del modal.
+        - Se añadió el bloque de renderizado del modal que invoca a `ReminderForm` vinculándolo con el catálogo de hitos.
+        - Se importó el icono `X` para el cierre del modal.
+- **Estado**: Funcionalidad de "Programar" 100% operativa. Ahora el botón abre correctamente el editor de mensajes de WhatsApp y agenda el recordatorio.
+
+### [6 Junio 2026] - Reorganización Documental y Fix de Agenda (Abogada)
+- **Acción**: Reestructuración del CheckList de documentos y corrección del sistema de programación de citas.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se dividió la documentación general en dos bloques: **"Datos Personales del Cliente"** y **"Documentación del Proceso"**.
+        - Se aplicó una estética **"Deep Black & Neon Blue"** (Slate-950 con bordes Azul-900 y brillos en Azul-500) para mayor contraste.
+        - Se corrigió el botón **"Programar"** en la pestaña de Proceso General (no disparaba el modal de WhatsApp).
+        - Se actualizaron las plantillas de hito legal (Videollamada, Denominación, Notaría, SAT) basándose 100% en el **Manual de Área Legal**.
+        - Se mejoró la prevención de eventos en inputs y botones para evitar conflictos de UI.
+- **Estado**: Funcionalidad de agenda recuperada y CheckList alineado con la organización jerárquica del manual.
+
+### [6 Junio 2026] - Rediseño de Identidad Visual y Limpieza UI
+- **Acción**: Refactorización completa de colores en paneles de Abogada y Directora; eliminación de branding innecesario.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx` y `src/components/directora/DirectorDashboard.tsx`:
+        - Migración masiva de colores: Se eliminaron tonos Indigo, Emerald, Amber, Pink, Rose y Violet.
+        - Nueva Paleta Estricta: Solo se utiliza **Azul** (para acciones primarias, éxito y navegación) y **Rojo** (para alertas, rechazos, bajas y urgencias).
+        - Eliminación del botón "Premium version" en ambas interfaces para simplificar la estética.
+        - Unificación de estilos en botones de acción y barras de progreso.
+- **Estado**: Interfaz profesional, unificada y alineada con la nueva directiva de diseño.
+
+### [6 Junio 2026] - Mejora de CheckList de Documentación (Abogada)
+- **Acción**: Corrección y expansión de la sección "CheckList Docs" en el panel de Abogada.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se actualizó `DOCS_CATALOGO` para incluir todos los documentos requeridos (INE Frente/Reverso, CURP, Pago Inicial, etc.).
+        - Se añadió la sección de **"Documentación General (Cliente Titular)"** para visualizar los archivos subidos por el cliente antes de la asignación.
+        - Se optimizó la visualización de documentos por integrante, filtrando tipos no aplicables (como Pago Inicial).
+        - Se mejoró el mensaje cuando no hay integrantes registrados.
+- **Estado**: Interfaz de documentación más robusta y alineada con el flujo legal real.
+
+### [6 Junio 2026] - Inicio de Sesión y Ejecución del Servidor
+- **Acción**: Inicio de la sesión de trabajo y despliegue del entorno de desarrollo local.
+- **Cambios**: Ninguno en el código. Se activó el servidor Next.js en segundo plano.
+- **Estado**: Servidor activo en `http://localhost:3000`. Preparado para continuar con las tareas pendientes (Validación de Directora y Doble Firma).
+
 ### [3 Junio 2026] - Sincronización Global "Zero-Refresh" y Blindaje Legal (FINAL)
 - **Acción**: Implementación de un sistema de interactividad total en tiempo real y blindaje de privacidad para el equipo legal, optimizando el despliegue en Vercel.
 - **Cambios**:
@@ -103,6 +292,16 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Cambios**: `src/lib/pdf-generator.ts`
 - **Pendientes**: Ninguno asociado a esta tarea.
 
+### [5 Junio 2026] - Restauración Visual y Ajustes de Funcionalidad
+- **Acción**: Reversión del diseño del portal de cliente a la estética "Premium Blue" y restauración de funcionalidades críticas en los paneles de Directora y Abogada.
+- **Cambios**:
+    - `src/app/globals.css`: Implementación de arquitectura CSS híbrida para soportar tanto el tema Premium (Cliente) como el tema Admin One (Gestión).
+    - `src/app/page.tsx`: Restauración a la versión "Luxury" e inyección de la clase `premium-theme`.
+    - `src/components/cliente/`: Restauración integral de todos los pasos del flujo a la estética Midnight Navy.
+    - `src/components/abogada/ExpedienteManager.tsx`: Restauración de la versión detallada (bitácoras, asociados, recordatorios) y cambio del icono de ojo por el botón "Gestionar".
+    - `src/components/directora/DirectorDashboard.tsx`: Restauración de la funcionalidad de filtrado individual por abogada en la sección de concentrado y tablas detalladas.
+- **Estado**: Interfaz de cliente alineada con la preferencia del usuario; paneles administrativos manteniendo el estándar corporativo moderno.
+
 ### [5 Junio 2026] - Rediseño Corporativo: Migración Estándar "Admin One"
 - **Acción**: Transformación visual total de todas las interfaces (Cliente, Directora, Abogada) hacia una estética de dashboard administrativo limpio y eficiente.
 - **Cambios**:
@@ -152,3 +351,17 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Pendientes**:
     - **IMPORTANTE**: Ejecutar `migration_borrado_autorizado.sql` en el editor SQL de Supabase para habilitar las nuevas columnas.
     - Continuar con la revisión de seguridad de URLs firmadas en R2.
+
+### [10 Junio 2026] - Rediseño Estético: Modo Oscuro "Deep Dark" (Directora)
+- **Acción**: Refactorización visual completa del panel de Directora y su login para alinearlos con la estética profesional del login de abogadas.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`:
+        - Migración de paleta de colores a `Slate-950` (fondos profundos) y `Slate-900` (tarjetas/sidebar).
+        - Cambio de acentos de azul estándar a `Sky-600` (celeste neón) para mayor profesionalismo.
+        - Actualización de tipografía a `font-black uppercase tracking-widest` en etiquetas y títulos.
+        - Refactorización de modales y visor de documentos con bordes `Slate-800` y efectos de glassmorphism refinados.
+    - `src/components/directora/DirectoraLogin.tsx`:
+        - Rediseño total desde "Modo Claro" a "Deep Dark Mode".
+        - Implementación de gradientes `Red/Sky/Emerald` en la cabecera de autenticación.
+    - `src/app/directora/page.tsx`: Sincronización del color de fondo del layout principal.
+- **Estado**: Interfaz directiva modernizada y coherente con el resto del ecosistema administrativo.

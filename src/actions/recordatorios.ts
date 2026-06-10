@@ -62,3 +62,30 @@ export async function actualizarEstatusRecordatorio(
 
   return result;
 }
+
+/**
+ * Elimina un recordatorio de la base de datos.
+ */
+export async function eliminarRecordatorioAction(
+  recordatorioId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { success: false, error: 'No autorizado' };
+
+  try {
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase
+      .from('recordatorios')
+      .delete()
+      .eq('id', recordatorioId);
+
+    if (error) throw error;
+
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en eliminarRecordatorioAction:', error);
+    return { success: false, error: error.message };
+  }
+}

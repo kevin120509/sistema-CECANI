@@ -39,6 +39,22 @@ export async function crearClienteManualAction(formData: FormData): Promise<{ su
     );
 
     if (result.success && result.data) {
+      const asesoraId = formData.get('asesora_id') as string;
+      if (asesoraId) {
+        const adminSupabase = createAdminClient();
+        await adminSupabase
+          .from('expedientes')
+          .update({ asesora_id: asesoraId })
+          .eq('id', result.data.expediente_id);
+          
+        await adminSupabase
+          .from('expediente_asesoras')
+          .insert({
+            expediente_id: result.data.expediente_id,
+            asesora_id: asesoraId
+          });
+      }
+
       revalidatePath('/directora');
       return { 
         success: true, 
@@ -324,6 +340,27 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
 }
 
 /**
+ * Actualiza el url_pdf_generado de un contrato. (Cuando la directora corrige el generado por sistema)
+ */
+export async function actualizarContratoGeneradoAction(contratoId: string, nuevaUrl: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase
+      .from('contratos')
+      .update({ url_pdf_generado: nuevaUrl })
+      .eq('id', contratoId);
+
+    if (error) throw error;
+    
+    revalidatePath('/directora');
+    revalidatePath('/cliente');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Valida o rechaza un documento individual.
  */
 export async function validarDocumentoAction(documentoId: string, validado: boolean): Promise<{ success?: boolean; error?: string }> {
@@ -342,6 +379,8 @@ export async function validarDocumentoAction(documentoId: string, validado: bool
     return { success: false, error: error.message };
   }
 }
+
+
 
 /**
  * Rechaza un documento individual, notificando al cliente y borrándolo para que pueda resubirlo.
@@ -852,6 +891,27 @@ export async function rechazarSolicitudAltaAction(solicitudId: string, motivo: s
 
     revalidatePath('/directora');
     revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Eliminar solicitud de alta por la directora (ya sea aprobada, rechazada o pendiente)
+ */
+export async function eliminarSolicitudAltaAction(solicitudId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+
+    const { error } = await adminSupabase
+      .from('solicitudes_alta')
+      .delete()
+      .eq('id', solicitudId);
+
+    if (error) throw error;
+
+    revalidatePath('/directora');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

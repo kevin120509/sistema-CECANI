@@ -7,7 +7,8 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
     expedienteId: string,
     tipo: TipoDocumento,
     urlArchivo: string,
-    integranteId?: string | null
+    integranteId?: string | null,
+    nombrePersonalizado?: string
   ): Promise<string> {
     const supabase = createAdminClient();
 
@@ -19,6 +20,11 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
     } else {
       query = query.is('integrante_id', null);
     }
+    // Si tiene nombre_personalizado, borramos solo los que coinciden
+    if (nombrePersonalizado) {
+      query = query.eq('nombre_personalizado', nombrePersonalizado);
+    }
+
     await query;
 
     const { data, error } = await supabase
@@ -28,6 +34,7 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
         tipo,
         url_archivo: urlArchivo,
         integrante_id: integranteId,
+        nombre_personalizado: nombrePersonalizado
       })
       .select('id')
       .single();

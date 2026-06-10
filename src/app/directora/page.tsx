@@ -78,7 +78,7 @@ export default async function DirectoraPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900 py-8">
+    <main className="min-h-screen bg-slate-950 text-slate-300">
       <DirectorDashboard 
         abogadas={abogadasData || []} 
         porAsignar={asignarData || []}

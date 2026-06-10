@@ -128,6 +128,7 @@ export interface Documento {
   expediente_id: string;
   integrante_id?: string | null;
   tipo: TipoDocumento;
+  nombre_personalizado?: string | null;
   url_archivo:string;
   validado: boolean;
   solicitud_borrado?: boolean;

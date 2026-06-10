@@ -5,14 +5,37 @@ import { ITareaRepository } from '@/core/domain/repositories/ITareaRepository';
 export class SupabaseTareaRepository implements ITareaRepository {
   async verificarPermisoExpediente(expedienteId: string, asesoraId: string): Promise<boolean> {
     const supabase = await createClient();
+
+    // 1. Verificar si es admin o directora
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', asesoraId)
+      .single();
+      
+    if (perfil?.rol === 'admin' || perfil?.rol === 'directora') {
+      return true;
+    }
+
+    // 2. Verificar campo asesora_id legacy
     const { data: exp } = await supabase
       .from('expedientes')
       .select('id')
       .eq('id', expedienteId)
       .eq('asesora_id', asesoraId)
-      .single();
-    
-    return !!exp;
+      .maybeSingle();
+      
+    if (exp) return true;
+
+    // 3. Verificar tabla de relación
+    const { data: rel } = await supabase
+      .from('expediente_asesoras')
+      .select('id')
+      .eq('expediente_id', expedienteId)
+      .eq('asesora_id', asesoraId)
+      .maybeSingle();
+
+    return !!rel;
   }
 
   async marcarHito(expedienteId: string, hitoId: number, completado: boolean): Promise<void> {

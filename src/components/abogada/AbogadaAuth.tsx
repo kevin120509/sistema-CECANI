@@ -33,7 +33,7 @@ export default function AbogadaAuth() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-800">
         <div className="bg-slate-950 p-10 text-center text-white relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-sky-600 shadow-[0_0_20px_rgba(14,165,233,0.5)]"></div>
           <h1 className="text-3xl font-black uppercase tracking-tighter">
             {isRegister ? 'Registro Operativo' : 'Portal Operativo Legal'}
           </h1>

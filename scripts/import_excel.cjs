@@ -1,128 +1,201 @@
-const XLSX = require('xlsx');
-const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const fs = require('fs');
+const path = require('path');
+const xlsx = require('xlsx');
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Necesario para crear usuarios sin Auth real en el script
-);
+const envPath = path.resolve(process.cwd(), '.env.local');
+const env = fs.readFileSync(envPath, 'utf8').split('\n').reduce((acc, line) => {
+    const [key, ...val] = line.split('=');
+    if (key && val.length) acc[key.trim()] = val.join('=').trim().replace(/^['"]|['"]$/g, '');
+    return acc;
+}, {});
 
-async function importExcel() {
-  console.log('--- Iniciando Importación de Excel ---');
-  const filePath = path.join(process.cwd(), 'informacion', 'CONCENTRADO DE CONTRATOS EN SEGUIMIENTO.xlsx');
-  const workbook = XLSX.readFile(filePath);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(sheet, { range: 0 }); // La fila 0 tiene los encabezados que vimos
+const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. Obtener catálogo de figuras para mapear (o crear una por defecto)
-  const { data: figuras } = await supabase.from('catalogo_figuras').select('*');
-  const figuraDefault = figuras?.[0]?.id || 1;
-
-  for (const row of data) {
-    const nombreCliente = row['CLIENTE'];
-    const nombreEmpresa = row['NOMBRE DE A.C.'];
-    const asesoraName = row['ASESORA CECANI ENCARGADA'];
-    const telefono = String(row['TELÉFONO DEL CLIENTE'] || '').trim();
-    const totalContrato = parseFloat(row['TOTAL DEL CONTRATO']) || 0;
-    const planPagosStr = row['CONTRATO DESCRIBIR PERIODICIDAD DE PAGOS'] || '';
-
-    if (!nombreCliente || !nombreEmpresa) continue;
-
-    console.log(`Procesando: ${nombreEmpresa} (${nombreCliente}) - Asesora: ${asesoraName}`);
-
-    try {
-      // 2. Gestionar Asesora (Buscar o Crear)
-      let asesoraId = null;
-      if (asesoraName) {
-        // Buscamos si ya existe un perfil con ese nombre y rol asesora
-        const { data: profileAsesora } = await supabase
-          .from('perfiles')
-          .select('id')
-          .ilike('nombre_completo', `%${asesoraName}%`)
-          .eq('rol', 'asesora')
-          .maybeSingle();
-
-        if (profileAsesora) {
-          asesoraId = profileAsesora.id;
-        } else {
-          // Si no existe, creamos un usuario de "relleno" para la asesora
-          // Nota: En producción esto debería estar ya cargado, pero para la migración creamos el registro
-          const tempEmail = `${asesoraName.toLowerCase().replace(/[^a-z]/g, '')}_temp@cecani.temp`;
-          const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
-            email: tempEmail,
-            email_confirm: true,
-            user_metadata: { nombre_completo: asesoraName, rol: 'asesora' }
-          });
-
-          if (!authErr && authUser.user) {
-            asesoraId = authUser.user.id;
-            // El trigger de la DB debería crear el perfil, si no, lo forzamos:
-            await supabase.from('perfiles').update({ rol: 'asesora', nombre_completo: asesoraName }).eq('id', asesoraId);
-          }
-        }
-      }
-
-      // 3. Crear Usuario Cliente
-      const clientEmail = `${nombreCliente.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)}_${Date.now()}@cecani.temp`;
-      const { data: authClient, error: clientErr } = await supabase.auth.admin.createUser({
-        email: clientEmail,
-        email_confirm: true,
-        user_metadata: { nombre_completo: nombreCliente, rol: 'cliente' }
-      });
-
-      if (clientErr) {
-        console.error(`Error creando auth cliente ${nombreCliente}:`, clientErr.message);
-        continue;
-      }
-
-      const clienteId = authClient.user.id;
-
-      // 4. Actualizar Perfil Cliente
-      await supabase.from('perfiles').update({
-        nombre_completo: nombreCliente,
-        telefono: telefono,
-        rol: 'cliente'
-      }).eq('id', clienteId);
-
-      // 5. Crear Expediente
-      const { data: expData, error: expErr } = await supabase.from('expedientes').insert({
-        cliente_id: clienteId,
-        asesora_id: asesoraId,
-        nombre_empresa: nombreEmpresa,
-        figura_id: figuraDefault,
-        estatus: 'en_proceso', // Marcamos en proceso por ser histórico
-      }).select().single();
-
-      if (expErr) throw expErr;
-
-      // 6. Crear Contrato
-      const planPagos = planPagosStr.toLowerCase().includes('unico') ? 'unico' : '4_meses';
-      await supabase.from('contratos').insert({
-        expediente_id: expData.id,
-        monto_total: totalContrato,
-        plan_pagos: planPagos,
-        estatus: 'vigente'
-      });
-
-      // 7. Guardar metadatos extendidos en una tabla de 'concentrado' si existe
-      // Según ARCHITECTURE.md, hay una tabla de concentrado para la abogada
-      await supabase.from('datos_concentrado').insert({
-        expediente_id: expData.id,
-        asesora_encargada: asesoraName,
-        actividad: row['ACTIVIDAD'],
-        cluni: row['CLUNI'],
-        estatus_rpp: row['ESTATUS DE RPP '],
-        total_contrato: String(totalContrato),
-        quien_cobra: row['QUIEN COBRA O NEGOCIA'],
-        vendedora: row['VENDEDORA']
-      });
-
-      console.log(`✅ Importado con éxito: ${nombreEmpresa}`);
-    } catch (e) {
-      console.error(`❌ Error importando ${nombreEmpresa}:`, e.message);
-    }
-  }
+function cleanString(str) {
+    if (!str) return null;
+    return str.toString().trim().replace(/\r?\n|\r/g, ' ');
 }
 
-importExcel();
+async function runImport() {
+    console.log('--- Starting Import ---');
+    
+    // Read to_import.json
+    const toImportPath = path.resolve(process.cwd(), 'scratch', 'to_import.json');
+    if (!fs.existsSync(toImportPath)) {
+        console.log('to_import.json not found. Run compare script first.');
+        return;
+    }
+    const toImport = JSON.parse(fs.readFileSync(toImportPath, 'utf8'));
+
+    // Cache hitos 32 to 48 for seguimiento_tareas
+    const { data: hitos } = await supabase.from('catalogo_hitos').select('id').gte('id', 32).lte('id', 48);
+    const hitoIds = hitos.map(h => h.id);
+
+    console.log(`Processing ${toImport.length} records...`);
+
+    let importedCount = 0;
+    let updatedCount = 0;
+    let errorCount = 0;
+
+    for (const record of toImport) {
+        try {
+            const { type, row, dbPerfil, dbExpediente } = record;
+            
+            // Excel Columns Mapping
+            const nombre_completo = cleanString(row[2]) || 'Cliente Desconocido';
+            const asesora_encargada = cleanString(row[3]);
+            const nombre_empresa = cleanString(row[4]) || 'A.C. Sin Nombre';
+            const estado = cleanString(row[5]);
+            const actividad = cleanString(row[6]);
+            const cluni = cleanString(row[7]);
+            const estatus_rpp = cleanString(row[8]);
+            const notaria = cleanString(row[9]);
+            const pago_notario = cleanString(row[10]);
+            const total_contrato = cleanString(row[11]);
+            const periodicidad_pagos = cleanString(row[12]);
+            const pago_entrega_donataria = cleanString(row[13]);
+            const cantidad_cobrar_proximo = cleanString(row[14]);
+            const estatus_detalle = cleanString(row[15]);
+            const accion_realizar = cleanString(row[16]);
+            const num_pagos_realizados = cleanString(row[17]);
+            const cantidad_pagada_acumulada = cleanString(row[18]);
+            const saldo_cliente = cleanString(row[19]);
+            const fecha_ultimo_pago = cleanString(row[20]);
+            const quien_cobra = cleanString(row[21]);
+            const vendedora = cleanString(row[22]);
+            const telefono_cliente = cleanString(row[23]);
+            const fecha_contrato = cleanString(row[25]);
+            const link_reunion = cleanString(row[26]);
+            const fecha_reunion_acuerdos = cleanString(row[27]);
+
+            let clienteId = dbPerfil ? dbPerfil.id : null;
+
+            // 1. Handle Perfil
+            if (!clienteId) {
+                const fakeEmail = `${nombre_completo.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 15)}_${Date.now()}@cecani.temp`;
+                
+                const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+                    email: fakeEmail,
+                    email_confirm: true,
+                    user_metadata: {
+                        nombre_completo: nombre_completo,
+                        rol: 'cliente',
+                        telefono: telefono_cliente
+                    }
+                });
+
+                if (authError || !authUser.user) {
+                    console.log(`Error creating auth user for ${nombre_completo}: ${authError?.message}`);
+                    errorCount++;
+                    continue;
+                }
+                clienteId = authUser.user.id;
+
+                // Update perfil with phone
+                await supabase.from('perfiles').update({
+                    telefono: telefono_cliente
+                }).eq('id', clienteId);
+            }
+
+            // 2. Handle Expediente
+            let expedienteId = dbExpediente ? dbExpediente.id : null;
+            if (!expedienteId) {
+                const { data: expData, error: expError } = await supabase.from('expedientes').insert({
+                    cliente_id: clienteId,
+                    figura_id: 2, // Assuming A.C. which is typically 2 or 1, let's use 2.
+                    nombre_empresa: nombre_empresa,
+                    estatus: 'en_proceso' // Assuming these are in tracking
+                }).select('id').single();
+
+                if (expError || !expData) {
+                    console.log(`Error creating expediente for ${nombre_empresa}: ${expError?.message}`);
+                    errorCount++;
+                    continue;
+                }
+                expedienteId = expData.id;
+
+                // 2.1 Create Seguimiento Tareas (Checklist)
+                if (hitoIds.length > 0) {
+                    const tareas = hitoIds.map(hId => ({
+                        expediente_id: expedienteId,
+                        hito_id: hId,
+                        estatus: 'pendiente'
+                    }));
+                    await supabase.from('seguimiento_tareas').insert(tareas);
+                }
+
+                // 2.2 Create basic Contrato to avoid UI errors
+                await supabase.from('contratos').insert({
+                    expediente_id: expedienteId,
+                    plan_pagos: 'unico',
+                    monto_total: 0,
+                    estatus: 'generado',
+                    servicio_base: 'constitucion_donataria'
+                });
+            }
+
+            // 3. Handle Datos Concentrado
+            const concentradoPayload = {
+                expediente_id: expedienteId,
+                asesora_encargada,
+                estado,
+                actividad,
+                cluni,
+                estatus_rpp,
+                notaria,
+                pago_notario,
+                total_contrato,
+                periodicidad_pagos,
+                pago_entrega_donataria,
+                cantidad_cobrar_proximo,
+                estatus_detalle,
+                accion_realizar,
+                num_pagos_realizados,
+                cantidad_pagada_acumulada,
+                saldo_cliente,
+                fecha_ultimo_pago,
+                quien_cobra,
+                vendedora,
+                telefono_cliente,
+                fecha_contrato,
+                link_reunion,
+                fecha_reunion_acuerdos,
+                nombre_completo // Duplicated for easier search
+            };
+
+            if (type === 'Missing Concentrado') {
+                const { error: concError } = await supabase.from('datos_concentrado').insert(concentradoPayload);
+                if (concError) {
+                    console.log(`Error inserting concentrado for ${nombre_empresa}: ${concError.message}`);
+                    errorCount++;
+                } else {
+                    importedCount++;
+                }
+            } else {
+                // New Record
+                const { error: concError } = await supabase.from('datos_concentrado').insert(concentradoPayload);
+                if (concError) {
+                    console.log(`Error inserting concentrado for ${nombre_empresa}: ${concError.message}`);
+                    errorCount++;
+                } else {
+                    importedCount++;
+                }
+            }
+
+            // Simple progress log
+            if (importedCount % 50 === 0) {
+                console.log(`Processed ${importedCount} records...`);
+            }
+        } catch (e) {
+            console.error(`Unexpected error on record ${record.idx}: ${e.message}`);
+            errorCount++;
+        }
+    }
+
+    console.log(`\n--- Import Complete ---`);
+    console.log(`Imported/Created: ${importedCount}`);
+    console.log(`Errors: ${errorCount}`);
+}
+
+runImport();

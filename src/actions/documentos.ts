@@ -26,24 +26,26 @@ function getDocumentoService() {
  */
 export async function registrarDocumento(
   expedienteId: string,
-  tipo: TipoDocumento,
+  tipo: TipoDocumento | string,
   urlArchivo: string,
   integranteId?: string | null
 ): Promise<ActionResult<{ documento_id: string }>> {
   // Mapeo preventivo para evitar errores de enum en base de datos legacy
   const enumsValidos = [
-    'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'contrato_firmado', 
-    'comprobante_pago', 'curp', 'csf', 'efirma_representante', 
-    'propuestas_nombre', 'autorizacion_nombre', 'acta_asamblea', 
-    'proyecto_word', 'testimonio_notarial', 'acuse_cita_sat', 
-    'rfc_moral', 'constancia_acreditacion', 'oficio_donataria', 
+    'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'contrato_firmado',
+    'comprobante_pago', 'curp', 'csf', 'efirma_representante',
+    'propuestas_nombre', 'autorizacion_nombre', 'acta_asamblea',
+    'proyecto_word', 'testimonio_notarial', 'acuse_cita_sat',
+    'rfc_moral', 'constancia_acreditacion', 'oficio_donataria',
     'inscripcion_rpp', 'otro'
   ];
 
-  const tipoFinal = enumsValidos.includes(tipo) ? tipo : 'otro' as TipoDocumento;
+  const esEnum = enumsValidos.includes(tipo as string);
+  const tipoFinal = esEnum ? (tipo as TipoDocumento) : 'otro';
+  const nombrePersonalizado = !esEnum ? (tipo as string) : undefined;
 
   const service = getDocumentoService();
-  const result = await service.registrarDocumentoYNotificar(expedienteId, tipoFinal, urlArchivo, integranteId);
+  const result = await service.registrarDocumentoYNotificar(expedienteId, tipoFinal, urlArchivo, integranteId, nombrePersonalizado);
 
   if (result.success) {
     revalidatePath('/directora');

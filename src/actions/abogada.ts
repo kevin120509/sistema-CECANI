@@ -197,3 +197,27 @@ export async function agregarIntegrante(
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Elimina un integrante (asociado) del expediente.
+ */
+export async function eliminarIntegranteAction(
+  integranteId: string
+): Promise<ActionResult> {
+  const adminClient = createAdminClient();
+
+  try {
+    const { error } = await adminClient
+      .from('expediente_integrantes')
+      .delete()
+      .eq('id', integranteId);
+
+    if (error) throw error;
+
+    revalidatePath('/abogada');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en eliminarIntegranteAction:', error);
+    return { success: false, error: error.message };
+  }
+}

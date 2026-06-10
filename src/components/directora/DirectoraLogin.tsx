@@ -42,89 +42,94 @@ export default function DirectoraLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2rem] shadow-2xl border border-gray-100">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-black text-blue-900 uppercase tracking-tighter">
-            {isRegistering ? 'Crear Cuenta' : 'Acceso Directivo'}
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-800">
+        <div className="bg-slate-950 p-10 text-center text-white relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-sky-600 shadow-[0_0_20px_rgba(14,165,233,0.5)]"></div>
+          <h2 className="text-3xl font-black uppercase tracking-tighter">
+            {isRegistering ? 'Alta Directiva' : 'Portal Directivo'}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-500 font-bold uppercase tracking-widest">
-            {isRegistering ? 'Registro de Directora CECANI' : 'Portal Corporativo CECANI'}
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+            {isRegistering ? 'Registro de acceso total' : 'Supervisión Legal CECANI'}
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {isRegistering && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Nombre Completo</label>
+        <div className="p-8 md:p-10">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-5">
+              {isRegistering && (
+                <div className="group animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Nombre Completo</label>
+                  <input
+                    name="nombre"
+                    type="text"
+                    required
+                    className="w-full bg-slate-950/50 border-2 border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-sky-500 outline-none transition-all placeholder:text-slate-800"
+                    placeholder="Lic. Nombre Apellido"
+                  />
+                </div>
+              )}
+              
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Correo Institucional</label>
                 <input
-                  name="nombre"
-                  type="text"
+                  name="email"
+                  type="email"
                   required
-                  className="appearance-none rounded-xl relative block w-full px-4 py-4 border-2 border-gray-100 placeholder-gray-300 text-gray-900 focus:outline-none focus:border-blue-500 font-bold"
-                  placeholder="Escribe tu nombre..."
+                  className="w-full bg-slate-950/50 border-2 border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-sky-500 outline-none transition-all placeholder:text-slate-800"
+                  placeholder="directora@cecani.com"
                 />
               </div>
+
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Contraseña de Acceso</label>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full bg-slate-950/50 border-2 border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-sky-500 outline-none transition-all placeholder:text-slate-800"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-950/30 text-red-400 p-4 rounded-2xl border-2 border-red-900/50 text-[10px] font-black text-center uppercase tracking-widest">
+                {error}
+              </div>
             )}
-            
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Correo Electrónico</label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-xl relative block w-full px-4 py-4 border-2 border-gray-100 placeholder-gray-300 text-gray-900 focus:outline-none focus:border-blue-500 font-bold"
-                placeholder="ejemplo@cecani.com"
-              />
+
+            {success && (
+              <div className="bg-emerald-950/30 text-emerald-400 p-4 rounded-2xl border-2 border-emerald-900/50 text-[10px] font-black text-center uppercase tracking-widest">
+                {success}
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-sky-600 text-white font-black uppercase tracking-[0.2em] text-xs py-5 px-4 rounded-2xl hover:bg-sky-500 hover:-translate-y-1 transition-all shadow-xl shadow-sky-600/20 disabled:opacity-50"
+              >
+                {isLoading ? 'Autenticando...' : (isRegistering ? 'Crear Acceso Directivo' : 'Entrar al Sistema')}
+              </button>
             </div>
 
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Contraseña</label>
-              <input
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-xl relative block w-full px-4 py-4 border-2 border-gray-100 placeholder-gray-300 text-gray-900 focus:outline-none focus:border-blue-500 font-bold"
-                placeholder="••••••••"
-              />
+            <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setError(null);
+                  setSuccess(null);
+                }}
+                className="text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:text-sky-500 transition-colors"
+              >
+                {isRegistering ? '¿Ya tienes una cuenta? Inicia Sesión' : '¿Necesitas una cuenta? Solicita Registro'}
+              </button>
             </div>
-          </div>
-
-          {error && (
-            <div className="text-xs font-black text-center text-red-600 bg-red-50 p-4 rounded-xl border-2 border-red-100 uppercase tracking-tight">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="text-xs font-black text-center text-emerald-600 bg-emerald-50 p-4 rounded-xl border-2 border-emerald-100 uppercase tracking-tight">
-              {success}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-5 px-4 border-b-8 border-blue-800 text-sm font-black rounded-2xl text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest disabled:opacity-50"
-            >
-              {isLoading ? 'Procesando...' : (isRegistering ? 'Registrarme ahora' : 'Entrar al Panel')}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegistering(!isRegistering);
-                setError(null);
-                setSuccess(null);
-              }}
-              className="w-full text-center text-[10px] font-black uppercase text-slate-400 hover:text-blue-600 tracking-[0.2em] transition-colors"
-            >
-              {isRegistering ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate aquí'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

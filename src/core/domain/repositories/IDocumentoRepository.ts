@@ -5,7 +5,8 @@ export interface IDocumentoRepository {
     expedienteId: string,
     tipo: TipoDocumento,
     urlArchivo: string,
-    integranteId?: string | null
+    integranteId?: string | null,
+    nombrePersonalizado?: string
   ): Promise<string>;
 }
 
