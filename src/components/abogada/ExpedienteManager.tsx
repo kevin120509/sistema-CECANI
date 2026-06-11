@@ -138,7 +138,7 @@ function DocumentItem({ label, url, type, onUpload, isUploading, integranteId, d
   return (
     <div className={`flex items-center justify-between p-4 bg-slate-900 border rounded-2xl transition-all group shadow-2xl ${isPending ? 'border-sky-500/50 bg-sky-900/20' : isAuthorized ? 'border-sky-500/50 bg-sky-900/20' : isRejected ? 'border-red-500/50 bg-red-900/20' : 'border-slate-800 hover:border-sky-600/50'}`}>
       <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-        <div className={`shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${url ? (isPending ? 'bg-sky-600/20 text-sky-400' : isAuthorized ? 'bg-sky-600/20 text-sky-400' : isRejected ? 'bg-red-600/20 text-red-400' : 'bg-sky-600/20 text-sky-400') : 'bg-slate-800 text-slate-500'}`}>
+        <div className={`shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${url ? (isPending ? 'bg-[#0197D2]/20 text-sky-400' : isAuthorized ? 'bg-[#0197D2]/20 text-sky-400' : isRejected ? 'bg-red-600/20 text-red-400' : 'bg-[#0197D2]/20 text-sky-400') : 'bg-slate-800 text-slate-500'}`}>
           {isUploading ? <Loader2 size={18} className="animate-spin" /> : url ? (isPending ? <Clock size={22} /> : isAuthorized ? <CheckCircle2 size={22} /> : isRejected ? <AlertCircle size={22} /> : <CheckCircle2 size={22} />) : <FileText size={20} />}
         </div>
         <div className="min-w-0">
@@ -151,7 +151,7 @@ function DocumentItem({ label, url, type, onUpload, isUploading, integranteId, d
       <div className="flex items-center gap-2 shrink-0">
         {url ? (
           <div className="flex gap-1.5 md:gap-2">
-            <a href={`/api/r2/download?url=${encodeURIComponent(url)}`} target="_blank" className="p-2 md:p-2.5 bg-slate-800 text-sky-400 hover:bg-sky-600 hover:text-white rounded-xl transition-all shadow-lg border border-slate-700">
+            <a href={`/api/r2/download?url=${encodeURIComponent(url)}`} target="_blank" className="p-2 md:p-2.5 bg-slate-800 text-sky-400 hover:bg-[#0197D2] hover:text-white rounded-xl transition-all shadow-lg border border-slate-700">
               <ExternalLink size={16} />
             </a>
             
@@ -195,7 +195,7 @@ function DocumentItem({ label, url, type, onUpload, isUploading, integranteId, d
             )}
           </div>
         ) : (
-          <label className="p-2 md:p-2.5 cursor-pointer bg-slate-800 text-slate-500 hover:bg-sky-600 hover:text-white rounded-xl transition-all shadow-lg border border-slate-700">
+          <label className="p-2 md:p-2.5 cursor-pointer bg-slate-800 text-slate-500 hover:bg-[#0197D2] hover:text-white rounded-xl transition-all shadow-lg border border-slate-700">
             <FileUp size={16} />
             <input type="file" className="hidden" accept=".pdf" disabled={isUploading} onChange={(e) => { const f = e.target.files?.[0]; if(f) onUpload(f, type, integranteId); }} />
           </label>
@@ -213,7 +213,7 @@ function DocumentStage({ title, docs, color, onUpload, uploadingType, integrante
           <div className="w-3 h-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]"></div>
           {title}
         </h3>
-        <div className="bg-sky-600/20 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-tighter text-sky-300 border border-sky-600/20">
+        <div className="bg-[#0197D2]/20 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-tighter text-sky-300 border border-sky-600/20">
           {docs.filter(d => d.url).length} / {docs.length}
         </div>
       </div>
@@ -540,7 +540,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
           </div>
           <div className="p-6 border-t border-slate-800 space-y-4">
             <NotificationStatusIndicator />
-            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-sky-600 text-white font-bold text-sm shadow-lg shadow-sky-600/25 hover:bg-sky-500 transition-all">
+            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-[#0197D2] text-white font-bold text-sm shadow-lg shadow-sky-600/25 hover:bg-sky-500 transition-all">
               <LogOut size={18}/> Salir
             </button>
           </div>
@@ -567,7 +567,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
           {dashTab !== 'clientes' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
              <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
-               <div className="flex justify-between items-start mb-4"><span className="px-2.5 py-1 rounded bg-sky-600/20 text-sky-400 text-xs font-bold flex items-center gap-1">↑ Activos</span></div>
+               <div className="flex justify-between items-start mb-4"><span className="px-2.5 py-1 rounded bg-[#0197D2]/20 text-sky-400 text-xs font-bold flex items-center gap-1">↑ Activos</span></div>
                <p className="text-slate-400 text-sm font-medium">Total Clientes</p>
                <div className="flex items-end justify-between mt-1"><h3 className="text-3xl font-bold text-white">{expedientes.length}</h3><Users size={32} className="text-sky-600/80" /></div>
              </div>
@@ -610,8 +610,8 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all bg-sky-500`} style={{ width: `${(completadosExp / totalExp) * 100}%` }}/></div>
                           </div>
                           <div className="flex items-center gap-4 shrink-0 justify-between md:justify-end">
-                            <span className={`px-2.5 py-1 rounded text-[10px] font-bold ${exp.documentos?.length ? 'bg-sky-600/20 text-sky-400 border border-sky-600/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>{exp.documentos?.length || 0} Docs</span>
-                            <button onClick={() => setSelectedExpedienteId(exp.id)} className="bg-sky-600/10 text-sky-400 border border-sky-600/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 hover:text-white transition-all shadow-lg">Gestionar</button>
+                            <span className={`px-2.5 py-1 rounded text-[10px] font-bold ${exp.documentos?.length ? 'bg-[#0197D2]/20 text-sky-400 border border-sky-600/20' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>{exp.documentos?.length || 0} Docs</span>
+                            <button onClick={() => setSelectedExpedienteId(exp.id)} className="bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#0197D2] hover:text-white transition-all shadow-lg">Gestionar</button>
                           </div>
                         </div>
                       );
@@ -637,7 +637,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
               )}
               {agendaView === 'calendario' && (
                 <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                  <div className="bg-slate-800 text-white px-6 py-4 flex items-center justify-between"><h2 className="text-sm font-bold uppercase">{new Date(calendarDays.year, calendarDays.month).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}</h2><span className="bg-sky-600/20 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-bold">{recordatoriosPendientes.length} pendientes</span></div>
+                  <div className="bg-slate-800 text-white px-6 py-4 flex items-center justify-between"><h2 className="text-sm font-bold uppercase">{new Date(calendarDays.year, calendarDays.month).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}</h2><span className="bg-[#0197D2]/20 text-sky-400 px-3 py-1.5 rounded-lg text-xs font-bold">{recordatoriosPendientes.length} pendientes</span></div>
                   <div className="grid grid-cols-7 bg-slate-950/50 border-b border-slate-800">{['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (<div key={d} className="py-2 text-center text-[10px] font-bold text-slate-500 uppercase">{d}</div>))}</div>
                   <div className="grid grid-cols-7">
                     {Array.from({ length: calendarDays.firstDay }).map((_, i) => (<div key={`empty-${i}`} className="h-24 border-b border-r border-slate-800/30"/>))}
@@ -645,9 +645,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                       const isHoy = date === hoy;
                       const hasRecs = recs.length > 0;
                       return (
-                        <div key={date} className={`h-24 border-b border-r border-slate-800/30 p-2 relative transition-colors ${hasRecs ? 'bg-sky-600/5 hover:bg-sky-600/10 cursor-pointer' : 'hover:bg-slate-800/30'} ${isHoy ? 'bg-sky-600/10' : ''}`}>
-                          <span className={`text-xs font-bold ${isHoy ? 'text-sky-400 bg-sky-600/20 rounded w-6 h-6 flex items-center justify-center' : 'text-slate-500'}`}>{day}</span>
-                          {hasRecs && (<div className="mt-1.5 space-y-1">{recs.slice(0, 2).map(r => (<div key={r.id} onClick={() => setSelectedExpedienteId(r.expId)} className="text-[9px] font-bold text-sky-300 bg-sky-600/20 rounded px-1.5 py-0.5 truncate cursor-pointer hover:bg-sky-600/30 transition-colors">{r.empresa}</div>))}{recs.length > 2 && <div className="text-[9px] font-bold text-slate-500 px-1">+{recs.length - 2} más</div>}</div>)}
+                        <div key={date} className={`h-24 border-b border-r border-slate-800/30 p-2 relative transition-colors ${hasRecs ? 'bg-[#0197D2]/5 hover:bg-[#0197D2]/10 cursor-pointer' : 'hover:bg-slate-800/30'} ${isHoy ? 'bg-[#0197D2]/10' : ''}`}>
+                          <span className={`text-xs font-bold ${isHoy ? 'text-sky-400 bg-[#0197D2]/20 rounded w-6 h-6 flex items-center justify-center' : 'text-slate-500'}`}>{day}</span>
+                          {hasRecs && (<div className="mt-1.5 space-y-1">{recs.slice(0, 2).map(r => (<div key={r.id} onClick={() => setSelectedExpedienteId(r.expId)} className="text-[9px] font-bold text-sky-300 bg-[#0197D2]/20 rounded px-1.5 py-0.5 truncate cursor-pointer hover:bg-[#0197D2]/30 transition-colors">{r.empresa}</div>))}{recs.length > 2 && <div className="text-[9px] font-bold text-slate-500 px-1">+{recs.length - 2} más</div>}</div>)}
                         </div>
                       );
                     })}
@@ -705,7 +705,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
           
           <div className="relative z-10 flex flex-wrap items-center justify-center lg:justify-end gap-4">
             {(urlContratoDoble || urlContratoGenerado || urlContratoCliente) ? (
-              <a href={`/api/r2/download?url=${encodeURIComponent(urlContratoDoble || urlContratoGenerado || urlContratoCliente)}`} target="_blank" className="flex items-center gap-3 px-6 py-3 bg-sky-600/10 text-sky-400 border border-sky-600/20 rounded-xl font-bold hover:bg-sky-600 hover:text-white transition-all shadow-lg">
+              <a href={`/api/r2/download?url=${encodeURIComponent(urlContratoDoble || urlContratoGenerado || urlContratoCliente)}`} target="_blank" className="flex items-center gap-3 px-6 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 rounded-xl font-bold hover:bg-[#0197D2] hover:text-white transition-all shadow-lg">
                 <FileSignature size={20}/> {urlContratoDoble ? 'Contrato Final' : (urlContratoGenerado ? 'Contrato Generado' : 'Contrato Cliente')}
               </a>
             ) : (
@@ -719,7 +719,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
             <a 
                href={`https://wa.me/52${(selectedExpediente as any).cliente?.telefono?.replace(/\D/g, '')}`} 
                target="_blank" 
-               className="flex items-center gap-3 px-6 py-3 bg-sky-600 text-white rounded-xl font-bold hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20"
+               className="flex items-center gap-3 px-6 py-3 bg-[#0197D2] text-white rounded-xl font-bold hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20"
                title="Enviar WhatsApp al Cliente"
             >
                <MessageCircle size={20}/> Contacto
@@ -735,7 +735,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
               { id: 'seguimiento_proceso', label: '3. Proceso General', icon: <CheckCircle2 size={16}/> },
               { id: 'entregables', label: '4. Entregables', icon: <CheckSquare size={16}/> },
             ].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>{tab.icon} {tab.label}</button>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-[#0197D2] text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>{tab.icon} {tab.label}</button>
             ))}
           </div>
         </div>
@@ -786,7 +786,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                    <button onClick={() => {
                      const nombre = prompt('Ingresa el nombre del documento que deseas subir:');
                      if(nombre && nombre.trim()) { setDocumentosExtrasDisponibles(prev => [...prev, nombre.trim()]); }
-                   }} className="bg-sky-600 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg hover:bg-sky-500 transition-all"><FileUp size={16}/> Subir Documento Extra</button>
+                   }} className="bg-[#0197D2] text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg hover:bg-sky-500 transition-all"><FileUp size={16}/> Subir Documento Extra</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {integrantes.map((int: any) => (
@@ -798,7 +798,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                 </div>
                 <div className="flex gap-2 pt-2 max-w-xl">
                   <input type="text" value={nuevoIntegrante} onChange={e => setNuevoIntegrante(e.target.value)} placeholder="Nombre del socio o integrante..." className="flex-1 px-4 py-2.5 bg-slate-950/50 border border-slate-800 rounded-xl text-sm outline-none focus:border-sky-600 text-slate-200 placeholder-slate-500" />
-                  <button onClick={handleAddIntegrante} disabled={!nuevoIntegrante.trim() || isAgregandoIntegrante} className="px-5 py-2.5 bg-sky-600 text-white font-bold text-sm rounded-xl hover:bg-sky-500 transition-all disabled:opacity-50 flex items-center gap-2">{isAgregandoIntegrante ? <Loader2 size={16} className="animate-spin"/> : <UserPlus size={16}/>} Agregar</button>
+                  <button onClick={handleAddIntegrante} disabled={!nuevoIntegrante.trim() || isAgregandoIntegrante} className="px-5 py-2.5 bg-[#0197D2] text-white font-bold text-sm rounded-xl hover:bg-sky-500 transition-all disabled:opacity-50 flex items-center gap-2">{isAgregandoIntegrante ? <Loader2 size={16} className="animate-spin"/> : <UserPlus size={16}/>} Agregar</button>
                 </div>
               </div>
 
@@ -875,7 +875,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                            }
                          </div>
                          <div className="flex-1"><p className={`text-sm font-bold ${textColor}`}>{idx + 1}. {hito.nombre}</p></div>
-                         {!isCompleted && (<button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReminderForm(hito.nombre); }} className="text-xs font-bold text-sky-400 hover:text-white bg-sky-600/10 hover:bg-sky-600 px-3 py-1.5 rounded-lg transition-all border border-sky-600/20 z-20">Programar</button>)}
+                         {!isCompleted && (<button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReminderForm(hito.nombre); }} className="text-xs font-bold text-sky-400 hover:text-white bg-[#0197D2]/10 hover:bg-[#0197D2] px-3 py-1.5 rounded-lg transition-all border border-sky-600/20 z-20">Programar</button>)}
                        </div>
                      );
                    })}
@@ -908,7 +908,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
 
           {activeTab === 'entregables' && (
             <div className="space-y-8">
-              <div className="relative overflow-hidden bg-sky-600 rounded-[3rem] p-12 text-white shadow-2xl">
+              <div className="relative overflow-hidden bg-[#0197D2] rounded-[3rem] p-12 text-white shadow-2xl">
                 <div className="relative z-10 flex flex-col items-end"><div className="text-8xl font-black flex items-baseline">{hitosCapacitacion.filter(h => (h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : (selectedExpediente as any)?.seguimiento_tareas?.find((st: any) => st.hito_id === h.id)?.estatus === 'completado')).length}<span className="text-3xl opacity-30 ml-2"> / {hitosCapacitacion.length}</span></div></div>
                 <div className="absolute top-0 right-0 w-96 h-96 bg-sky-400/10 rounded-full blur-[100px] -mr-48 -mt-48" />
               </div>
@@ -917,10 +917,10 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                   const done = h.id.toString() in hitosLocales ? hitosLocales[h.id.toString()] : selectedExpediente.seguimiento_tareas?.find(st => st.hito_id === h.id)?.estatus === 'completado';
                   const isUpdating = updatingHitoId === h.id.toString();
                   return (
-                    <div key={h.id} className={`flex items-center gap-10 px-12 py-10 rounded-[3rem] border transition-all ${done ? 'bg-sky-600/10 border-sky-600/30' : 'bg-slate-900 border-slate-800 hover:border-sky-600/50 shadow-lg shadow-black/20'}`}>
-                      <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-xl font-black shrink-0 ${done ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{done ? <CheckCircle2 size={32} /> : i + 1}</div>
+                    <div key={h.id} className={`flex items-center gap-10 px-12 py-10 rounded-[3rem] border transition-all ${done ? 'bg-[#0197D2]/10 border-sky-600/30' : 'bg-slate-900 border-slate-800 hover:border-sky-600/50 shadow-lg shadow-black/20'}`}>
+                      <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-xl font-black shrink-0 ${done ? 'bg-[#0197D2] text-white' : 'bg-slate-800 text-slate-400'}`}>{done ? <CheckCircle2 size={32} /> : i + 1}</div>
                       <div className="flex-1 space-y-2"><p className={`text-2xl font-black uppercase tracking-tight ${done ? 'text-sky-400 line-through opacity-50' : 'text-slate-200'}`}>{h.nombre}</p>{h.descripcion && <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{h.descripcion}</p>}</div>
-                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} disabled={isUpdating} className={`px-12 py-6 rounded-[2rem] text-xs font-black uppercase tracking-widest shadow-2xl transition-all ${done ? 'bg-sky-600/20 text-sky-400 border border-sky-600/30' : 'bg-sky-600 text-white hover:bg-sky-500 hover:-translate-y-1'}`}>{isUpdating ? <Loader2 size={20} className="animate-spin" /> : done ? 'Entregado' : 'Marcar'}</button>
+                      <button onClick={() => handleToggleHito(h.id.toString(), !done)} disabled={isUpdating} className={`px-12 py-6 rounded-[2rem] text-xs font-black uppercase tracking-widest shadow-2xl transition-all ${done ? 'bg-[#0197D2]/20 text-sky-400 border border-sky-600/30' : 'bg-[#0197D2] text-white hover:bg-sky-500 hover:-translate-y-1'}`}>{isUpdating ? <Loader2 size={20} className="animate-spin" /> : done ? 'Entregado' : 'Marcar'}</button>
                     </div>
                   );
                 })}
@@ -986,12 +986,12 @@ function ReminderForm({ hito, expediente, onSuccess }: { hito: CatalogoHito, exp
         </div>
         <div className="space-y-6">
           <label className="text-[12px] font-black uppercase tracking-widest text-slate-500">Documentación Requerida (Sugerencias del Paso)</label>
-          <div className="grid grid-cols-2 gap-3">{(template.sugerencias.length > 0 ? template.sugerencias : DOCS_CATALOGO).map((doc) => (<button key={doc} type="button" onClick={() => setSelectedDocs(p => p.includes(doc) ? p.filter(d => d !== doc) : [...p, doc])} className={`text-left px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border-4 transition-all shadow-lg ${selectedDocs.includes(doc) ? 'bg-sky-600 border-sky-400 text-white scale-105 shadow-sky-900/20' : 'bg-slate-950/50 border-slate-800 text-slate-500 hover:border-slate-700'}`}>{doc}</button>))}</div>
+          <div className="grid grid-cols-2 gap-3">{(template.sugerencias.length > 0 ? template.sugerencias : DOCS_CATALOGO).map((doc) => (<button key={doc} type="button" onClick={() => setSelectedDocs(p => p.includes(doc) ? p.filter(d => d !== doc) : [...p, doc])} className={`text-left px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border-4 transition-all shadow-lg ${selectedDocs.includes(doc) ? 'bg-[#0197D2] border-sky-400 text-white scale-105 shadow-sky-900/20' : 'bg-slate-950/50 border-slate-800 text-slate-500 hover:border-slate-700'}`}>{doc}</button>))}</div>
         </div>
       </div>
       <div className="bg-slate-950 rounded-[4rem] p-12 border-4 border-sky-900/20 flex flex-col justify-between shadow-inner">
         <div className="space-y-8"><div className="flex items-center justify-between"><p className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-500">Vista Previa WhatsApp (Manual CECANI)</p><MessageCircle size={24} className="text-sky-600" /></div><div className="bg-slate-800 border-l-8 border-sky-600 p-10 rounded-[2.5rem] text-sm font-bold leading-relaxed uppercase whitespace-pre-wrap shadow-2xl h-[350px] overflow-y-auto custom-scrollbar">{generatedMessage}</div><div className="bg-red-900/30 border-2 border-red-600/30 p-6 rounded-3xl flex gap-4 items-center"><AlertCircle className="text-red-600 shrink-0" size={24} /><p className="text-[10px] font-bold text-red-200 uppercase leading-relaxed">Al habilitar, el mensaje se enviará de inmediato por WhatsApp con los datos seleccionados.</p></div></div>
-        <button type="submit" disabled={isSubmitting} className="w-full py-8 bg-sky-600 hover:bg-sky-500 rounded-[2.5rem] text-sm font-black uppercase tracking-[0.35em] shadow-3xl transition-all disabled:opacity-50 hover:-translate-y-1 active:scale-95">{isSubmitting ? 'Procesando...' : 'Habilitar Compromiso y Abrir WhatsApp'}</button>
+        <button type="submit" disabled={isSubmitting} className="w-full py-8 bg-[#0197D2] hover:bg-sky-500 rounded-[2.5rem] text-sm font-black uppercase tracking-[0.35em] shadow-3xl transition-all disabled:opacity-50 hover:-translate-y-1 active:scale-95">{isSubmitting ? 'Procesando...' : 'Habilitar Compromiso y Abrir WhatsApp'}</button>
       </div>
     </form>
   );
@@ -1015,8 +1015,8 @@ function ConcentradoField({ l, c, value, onChange }: any) {
 }
 
 function SidebarLink({ icon, label, badge, badgeColor = 'sky', active, onClick }: { icon: React.ReactNode; label: string; badge?: number; badgeColor?: 'sky' | 'red'; active: boolean; onClick: () => void; }) {
-  const badgeStyles = { sky: 'bg-sky-600 text-white', red: 'bg-red-600 text-white' };
-  return (<button onClick={onClick} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all text-left ${active ? 'bg-sky-600 text-white shadow-xl shadow-sky-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'}`}><div className="flex items-center gap-3"><span className={active ? 'text-white' : 'text-slate-500'}>{icon}</span><span className="text-[11px] font-black uppercase tracking-widest">{label}</span></div>{badge !== undefined && badge > 0 && (<span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${badgeStyles[badgeColor]}`}>{badge}</span>)}</button>);
+  const badgeStyles = { sky: 'bg-[#0197D2] text-white', red: 'bg-red-600 text-white' };
+  return (<button onClick={onClick} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all text-left ${active ? 'bg-[#0197D2] text-white shadow-xl shadow-sky-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'}`}><div className="flex items-center gap-3"><span className={active ? 'text-white' : 'text-slate-500'}>{icon}</span><span className="text-[11px] font-black uppercase tracking-widest">{label}</span></div>{badge !== undefined && badge > 0 && (<span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${badgeStyles[badgeColor]}`}>{badge}</span>)}</button>);
 }
 
 function RecordatorioCard({ r, color, onClick }: { r: any; color: 'red' | 'sky'; onClick: () => void; }) {

@@ -96,7 +96,7 @@ export default function Paso4SoloLectura({
             </p>
           </div>
         </div>
-        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-600/5 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-[#0197D2]/5 rounded-full blur-[100px]" />
       </motion.div>
 
       {/* Alerta de Asignación Pendiente */}
@@ -104,9 +104,9 @@ export default function Paso4SoloLectura({
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-sky-600/10 rounded-3xl p-8 text-white flex items-center gap-8 shadow-2xl border border-sky-600/20 overflow-hidden relative"
+          className="bg-[#0197D2]/10 rounded-3xl p-8 text-white flex items-center gap-8 shadow-2xl border border-sky-600/20 overflow-hidden relative"
         >
-          <div className="w-16 h-16 bg-sky-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(14,165,233,0.4)] shrink-0 animate-pulse relative z-10">
+          <div className="w-16 h-16 bg-[#0197D2] rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(14,165,233,0.4)] shrink-0 animate-pulse relative z-10">
             <UserPlus size={28} className="text-white" />
           </div>
           <div className="relative z-10">
@@ -147,7 +147,7 @@ export default function Paso4SoloLectura({
           {contrato?.url_pdf_generado && (
             <section className="bg-slate-950 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden group border border-slate-800">
               <header className="flex items-center gap-4 mb-10 relative z-10">
-                <div className="w-10 h-10 bg-sky-600 text-white rounded-xl flex items-center justify-center shadow-lg"><Download size={20} /></div>
+                <div className="w-10 h-10 bg-[#0197D2] text-white rounded-xl flex items-center justify-center shadow-lg"><Download size={20} /></div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-400">Downloads</h3>
               </header>
               
@@ -157,7 +157,7 @@ export default function Paso4SoloLectura({
                   <QuickLink label="Copia Firmada" href={contrato.url_pdf_firmado_cliente || documentos.find(d => d.tipo === 'contrato_firmado')!.url_archivo!} isSuccess />
                 )}
               </div>
-              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-600/10 rounded-full blur-[100px] group-hover:bg-sky-600/20 transition-all duration-1000" />
+              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0197D2]/10 rounded-full blur-[100px] group-hover:bg-[#0197D2]/20 transition-all duration-1000" />
             </section>
           )}
         </div>
@@ -188,7 +188,7 @@ export default function Paso4SoloLectura({
                     className="flex items-center justify-between p-8 rounded-3xl bg-slate-950/40 border border-slate-800 hover:border-sky-500/30 hover:shadow-2xl transition-all duration-500 group"
                   >
                     <div className="flex items-center gap-6">
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg border ${doc.validado ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-sky-600/10 text-sky-400 border-sky-600/20'}`}>
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg border ${doc.validado ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#0197D2]/10 text-sky-400 border-sky-600/20'}`}>
                         {doc.validado ? <CheckCircle2 size={32} /> : <FileText size={32} />}
                       </div>
                       <div>
@@ -198,7 +198,7 @@ export default function Paso4SoloLectura({
                     </div>
                     
                     <div className="flex items-center gap-6">
-                      <div className={`hidden sm:flex items-center gap-2 px-5 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-lg ${doc.validado ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-sky-400 bg-sky-600/10 border-sky-600/20'}`}>
+                      <div className={`hidden sm:flex items-center gap-2 px-5 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-lg ${doc.validado ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-sky-400 bg-[#0197D2]/10 border-sky-600/20'}`}>
                         {doc.validado ? 'Validado' : 'Revisión'}
                       </div>
                       
@@ -206,7 +206,7 @@ export default function Paso4SoloLectura({
                         href={doc.url_archivo}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 text-slate-400 flex items-center justify-center hover:bg-sky-600 hover:text-white hover:border-sky-500 shadow-2xl transition-all duration-500 active:scale-90 group-hover:shadow-sky-600/20"
+                        className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 text-slate-400 flex items-center justify-center hover:bg-[#0197D2] hover:text-white hover:border-sky-500 shadow-2xl transition-all duration-500 active:scale-90 group-hover:shadow-sky-600/20"
                       >
                         <ExternalLink size={20} />
                       </a>

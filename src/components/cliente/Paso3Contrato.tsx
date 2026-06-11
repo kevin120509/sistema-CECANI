@@ -141,7 +141,7 @@ export default function Paso3Contrato({
   if (isUnderReview && !isPending && !error) {
     return (
       <div className="max-w-4xl mx-auto py-24 text-center space-y-12">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border transition-all duration-1000 ${isPagoVerificado ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-sky-600/10 text-sky-600 border-sky-600/20 animate-pulse'}`}>
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border transition-all duration-1000 ${isPagoVerificado ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#0197D2]/10 text-sky-600 border-sky-600/20 animate-pulse'}`}>
           {isPagoVerificado ? <ShieldCheck size={56} /> : <Clock size={56} />}
         </motion.div>
         
@@ -168,14 +168,14 @@ export default function Paso3Contrato({
         </div>
 
         <div className="bg-slate-900 p-10 rounded-3xl text-white max-w-xl mx-auto flex items-center gap-8 relative overflow-hidden border border-slate-800 shadow-2xl">
-          <div className="w-14 h-14 bg-sky-600/10 text-sky-400 rounded-2xl flex items-center justify-center shrink-0 border border-sky-600/20"><ShieldCheck size={28}/></div>
+          <div className="w-14 h-14 bg-[#0197D2]/10 text-sky-400 rounded-2xl flex items-center justify-center shrink-0 border border-sky-600/20"><ShieldCheck size={28}/></div>
           <div className="text-left relative z-10">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500 mb-2">Estatus del Proceso:</p>
             <p className="text-sm font-bold opacity-80 uppercase leading-snug text-slate-300">
               {isPagoVerificado ? 'Sincronizando con el equipo legal de CECANI...' : 'Análisis financiero en curso por dirección.'}
             </p>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-sky-600/10 rounded-full blur-3xl" />
+          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-[#0197D2]/10 rounded-full blur-3xl" />
         </div>
       </div>
     );
@@ -205,16 +205,16 @@ export default function Paso3Contrato({
             {isWaitingForDirector ? (
               <motion.div key="waiting" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 rounded-3xl p-12 text-white shadow-2xl border border-slate-800 relative overflow-hidden text-center md:text-left">
                 <div className="relative z-10 space-y-8">
-                  <div className="w-16 h-16 bg-sky-600/10 text-sky-400 rounded-2xl flex items-center justify-center animate-pulse mx-auto md:mx-0 border border-sky-600/20"><History size={32} /></div>
+                  <div className="w-16 h-16 bg-[#0197D2]/10 text-sky-400 rounded-2xl flex items-center justify-center animate-pulse mx-auto md:mx-0 border border-sky-600/20"><History size={32} /></div>
                   <div>
                     <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Emisión en Curso</h3>
                     <p className="text-slate-500 text-sm leading-relaxed font-bold uppercase tracking-widest text-[10px]">Nuestro equipo está redactando las cláusulas finales de su contrato legal.</p>
                   </div>
                 </div>
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-600/10 rounded-full blur-[100px]" />
+                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0197D2]/10 rounded-full blur-[100px]" />
               </motion.div>
             ) : (
-              <motion.div key="ready" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-sky-600 rounded-3xl p-12 text-white shadow-2xl border border-sky-400/20 relative overflow-hidden group">
+              <motion.div key="ready" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#0197D2] rounded-3xl p-12 text-white shadow-2xl border border-sky-400/20 relative overflow-hidden group">
                 <div className="relative z-10 space-y-10 text-center md:text-left">
                   <div className="flex justify-between items-start">
                     <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md mx-auto md:mx-0 border border-white/30"><FileCheck size={32} /></div>
@@ -309,7 +309,7 @@ export default function Paso3Contrato({
                 <button 
                   type="submit" 
                   disabled={isPending || isWaitingForDirector || (hasContratoEnBD && hasPagoEnBD && !isContratoRechazado && !isPagoRechazado)} 
-                  className="w-full bg-sky-600 text-white py-8 rounded-3xl text-[12px] font-black uppercase tracking-[0.5em] hover:shadow-[0_20px_60px_rgba(14,165,233,0.4)] transition-all duration-500 flex items-center justify-center gap-6 disabled:opacity-30 group active:scale-[0.98]"
+                  className="w-full bg-[#0197D2] text-white py-8 rounded-3xl text-[12px] font-black uppercase tracking-[0.5em] hover:shadow-[0_20px_60px_rgba(14,165,233,0.4)] transition-all duration-500 flex items-center justify-center gap-6 disabled:opacity-30 group active:scale-[0.98]"
                 >
                   {(isContratoRechazado || isPagoRechazado) ? 'Reenviar Formalización' : (hasContratoEnBD && !hasPagoEnBD ? 'Sincronizar Comprobante' : 'Finalizar Proceso Legal')} 
                   <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
@@ -325,7 +325,7 @@ export default function Paso3Contrato({
 
 function ReviewCard({ label, status, icon, subtext, color = "sky" }: any) {
   const colors: any = {
-    sky: 'bg-sky-600/10 text-sky-400 border-sky-600/20',
+    sky: 'bg-[#0197D2]/10 text-sky-400 border-sky-600/20',
     emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
   };
 
@@ -379,7 +379,7 @@ function UploadMini({ label, archivo, dbDoc, isValidated, isRejected, disabled, 
         ${disabled && !archivo.file ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'}`}>
         
         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500
-          ${showSuccess ? 'bg-emerald-500 text-white shadow-emerald-500/40' : isRejected ? 'bg-rose-500 text-white shadow-rose-500/40' : 'bg-slate-950 text-slate-600 shadow-inner border border-slate-800 group-hover:bg-sky-600/20 group-hover:text-sky-400 group-hover:scale-110'}`}>
+          ${showSuccess ? 'bg-emerald-500 text-white shadow-emerald-500/40' : isRejected ? 'bg-rose-500 text-white shadow-rose-500/40' : 'bg-slate-950 text-slate-600 shadow-inner border border-slate-800 group-hover:bg-[#0197D2]/20 group-hover:text-sky-400 group-hover:scale-110'}`}>
           {showSuccess ? <CheckCircle2 size={28} /> : isRejected ? <AlertCircle size={28} /> : <UploadCloud size={28} />}
         </div>
 

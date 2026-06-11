@@ -258,7 +258,7 @@ export default function Paso1CrearProyecto({
         <div className="sticky top-28 bg-slate-900 rounded-3xl p-8 text-white shadow-2xl overflow-hidden border border-slate-800 group">
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-12">
-              <div className="p-2.5 bg-sky-500/10 rounded-xl">
+              <div className="p-2.5 bg-[#0197D2]/10 rounded-xl">
                 <Sparkles className="text-blue-400" size={18} />
               </div>
               <h2 className="text-xs font-black tracking-[0.2em] uppercase text-blue-400">Configuración</h2>
@@ -272,11 +272,11 @@ export default function Paso1CrearProyecto({
                 return (
                   <div key={label} className="relative flex items-center gap-6 group cursor-default">
                     {idx < 2 && (
-                      <div className={`absolute left-5 top-10 w-0.5 h-14 transition-all duration-700 ${done ? 'bg-sky-500' : 'bg-slate-800'}`} />
+                      <div className={`absolute left-5 top-10 w-0.5 h-14 transition-all duration-700 ${done ? 'bg-[#0197D2]' : 'bg-slate-800'}`} />
                     )}
                     <div className={`
                       w-11 h-11 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all duration-500 z-10
-                      ${active ? 'bg-sky-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-110 -rotate-3 border border-white/20' : 
+                      ${active ? 'bg-[#0197D2] text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-110 -rotate-3 border border-white/20' : 
                         done ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-600 border border-white/5'}
                     `}>
                       {done ? '✓' : stepNum}
@@ -284,7 +284,7 @@ export default function Paso1CrearProyecto({
                     <div className="flex flex-col">
                       <span className={`text-[9px] font-black uppercase tracking-[0.25em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
                       {active && (
-                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-sky-500 mt-2 w-8 rounded-full" />
+                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-[#0197D2] mt-2 w-8 rounded-full" />
                       )}
                     </div>
                   </div>
@@ -293,7 +293,7 @@ export default function Paso1CrearProyecto({
             </nav>
           </div>
           {/* Decorative gradients */}
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-sky-600/10 rounded-full blur-[100px] group-hover:bg-sky-600/20 transition-all duration-1000" />
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0197D2]/10 rounded-full blur-[100px] group-hover:bg-[#0197D2]/20 transition-all duration-1000" />
           <div className="absolute -top-20 -left-20 w-40 h-40 bg-indigo-600/10 rounded-full blur-[80px]" />
         </div>
       </aside>
@@ -415,7 +415,7 @@ export default function Paso1CrearProyecto({
                       {/* PLAN DE LIQUIDACIÓN Y METODO DE PAGO */}
                       <div className="mt-12 space-y-8 border-t border-white/10 pt-12">
                         <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
+                          <div className="w-1.5 h-1.5 bg-[#0197D2] rounded-full" />
                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Plan de Liquidación</p>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -474,7 +474,7 @@ export default function Paso1CrearProyecto({
 
                         {/* Calculadora Visual */}
                         {formData.planPagos && formData.planPagos !== 'unico' && (
-                          <div className="mt-8 bg-sky-500/10 border border-sky-500/20 p-6 rounded-3xl flex items-center justify-between text-blue-100">
+                          <div className="mt-8 bg-[#0197D2]/10 border border-sky-500/20 p-6 rounded-3xl flex items-center justify-between text-blue-100">
                              <div>
                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">Detalle del Plan</p>
                                <p className="text-sm font-medium mt-1">
@@ -498,7 +498,7 @@ export default function Paso1CrearProyecto({
                       {/* SERVICIOS EXTRAS (Restaurados) */}
                       <div className="mt-12 space-y-8">
                         <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
+                          <div className="w-1.5 h-1.5 bg-[#0197D2] rounded-full" />
                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Módulos Especializados (Opcionales)</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -517,7 +517,7 @@ export default function Paso1CrearProyecto({
                               className={`
                                 p-6 rounded-[2rem] border-2 text-left transition-all duration-300 flex flex-col justify-between min-h-[140px]
                                 ${formData.extrasSeleccionados.includes(extra.id) 
-                                  ? 'bg-sky-500 border-sky-400 text-white shadow-xl shadow-sky-500/20' 
+                                  ? 'bg-[#0197D2] border-sky-400 text-white shadow-xl shadow-sky-500/20' 
                                   : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-white/10'}
                               `}
                             >
@@ -560,7 +560,7 @@ export default function Paso1CrearProyecto({
               {subStep < 3 ? (
                 <button 
                   onClick={() => { if(validate(subStep)) { setSubStep(s => s + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }} 
-                  className="bg-sky-600 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-500 transition-all duration-500 shadow-lg shadow-sky-900/50 flex items-center gap-4 group"
+                  className="bg-[#0197D2] text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#0197D2] transition-all duration-500 shadow-lg shadow-sky-900/50 flex items-center gap-4 group"
                 >
                   Continuar <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -568,7 +568,7 @@ export default function Paso1CrearProyecto({
                 <button 
                   onClick={handleSubmit} 
                   disabled={isPending} 
-                  className="bg-sky-600 text-white px-14 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-700 transition-all duration-500 shadow-2xl shadow-sky-200 flex items-center gap-4 disabled:opacity-50 group"
+                  className="bg-[#0197D2] text-white px-14 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-sky-700 transition-all duration-500 shadow-2xl shadow-sky-200 flex items-center gap-4 disabled:opacity-50 group"
                 >
                   {isPending ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} className="group-hover:scale-110 transition-transform" />}
                   {isPending ? 'Procesando Datos' : 'Finalizar Registro'}
@@ -594,7 +594,7 @@ function StepContent({ title, icon, children, variants }: any) {
         <div>
           <h3 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{title}</h3>
           <div className="flex items-center gap-2 mt-4">
-            <div className="h-1.5 w-12 bg-sky-500 rounded-full" />
+            <div className="h-1.5 w-12 bg-[#0197D2] rounded-full" />
             <div className="h-1.5 w-4 bg-sky-200 rounded-full" />
             <div className="h-1.5 w-4 bg-sky-100 rounded-full" />
           </div>
@@ -654,7 +654,7 @@ function ToggleButton({ active, children, onClick }: any) {
       onClick={onClick} 
       className={`
         py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500
-        ${active ? 'bg-sky-500 text-white shadow-xl shadow-sky-500/40 scale-105' : 'bg-white/5 text-slate-500 border border-white/5 hover:bg-white/10 hover:text-slate-300'}
+        ${active ? 'bg-[#0197D2] text-white shadow-xl shadow-sky-500/40 scale-105' : 'bg-white/5 text-slate-500 border border-white/5 hover:bg-white/10 hover:text-slate-300'}
       `}
     >
       {children}
@@ -669,7 +669,7 @@ function OptionButton({ active, children, onClick }: any) {
       onClick={onClick} 
       className={`
         w-full py-5 px-8 rounded-2xl text-[10px] text-left font-black uppercase tracking-[0.1em] transition-all duration-300 border
-        ${active ? 'bg-sky-500 border-sky-400 text-white shadow-lg' : 'bg-slate-900 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-400'}
+        ${active ? 'bg-[#0197D2] border-sky-400 text-white shadow-lg' : 'bg-slate-900 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-400'}
       `}
     >
       {children}

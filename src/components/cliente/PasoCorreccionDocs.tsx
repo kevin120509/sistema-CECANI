@@ -198,7 +198,7 @@ export default function PasoCorreccionDocs({ expediente, documentos, onComplete 
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full md:w-auto bg-sky-600 text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(14,165,233,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5 active:scale-[0.98]"
+                className="w-full md:w-auto bg-[#0197D2] text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(14,165,233,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5 active:scale-[0.98]"
               >
                 {isPending ? (
                   <><Loader2 className="animate-spin" size={20} /> {progress}</>
@@ -238,7 +238,7 @@ function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onCle
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <span className={`px-5 py-2 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-lg ${doc?.validado ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-sky-600/10 text-sky-400 border-sky-600/20'}`}>
+           <span className={`px-5 py-2 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-lg ${doc?.validado ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#0197D2]/10 text-sky-400 border-sky-600/20'}`}>
             {doc?.validado ? 'Aprobado' : 'Validando'}
           </span>
         </div>
@@ -275,7 +275,7 @@ function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onCle
               className="flex items-center justify-between p-6 bg-slate-950 border border-sky-600/30 rounded-3xl shadow-2xl"
             >
               <div className="flex items-center gap-5">
-                <div className="w-10 h-10 bg-sky-600 text-white rounded-xl flex items-center justify-center shadow-lg"><CheckCircle2 size={20} /></div>
+                <div className="w-10 h-10 bg-[#0197D2] text-white rounded-xl flex items-center justify-center shadow-lg"><CheckCircle2 size={20} /></div>
                 <div>
                   <p className="text-[10px] font-black text-sky-600 uppercase tracking-[0.2em] mb-1">Archivo Listo</p>
                   <p className="text-xs font-black text-white uppercase truncate max-w-[300px]">{archivo.file.name}</p>
@@ -297,7 +297,7 @@ function DocRow({ label, doc, rechazado, archivo, isPending, onFileChange, onCle
               animate={{ opacity: 1 }}
               className={`relative flex flex-col items-center justify-center h-48 rounded-3xl border-2 border-dashed border-rose-500/20 bg-slate-950/40 cursor-pointer hover:border-sky-600/50 hover:bg-slate-950/60 transition-all duration-500 group ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <div className="w-16 h-16 rounded-2xl bg-white/5 text-slate-500 flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:bg-sky-600/20 group-hover:text-sky-400">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 text-slate-500 flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:bg-[#0197D2]/20 group-hover:text-sky-400">
                 <CloudUpload size={32} />
               </div>
               <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] group-hover:text-white transition-colors">Digitalizar nuevo archivo</p>

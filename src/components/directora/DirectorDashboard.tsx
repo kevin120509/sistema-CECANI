@@ -260,7 +260,7 @@ export default function DirectorDashboard({
            )}
         </div>
         <div className="px-6 py-6 mt-auto border-t border-slate-800">
-           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-sky-600 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 transition-all">
+           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-[#0197D2] text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 transition-all">
              <LogOut size={18}/> Salir
            </button>
         </div>
@@ -298,7 +298,7 @@ export default function DirectorDashboard({
              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Por Asignar</p>
              <div className="flex items-end justify-between mt-1">
                 <h3 className="text-3xl font-black text-white">{listosParaAsignar.length}</h3>
-                <Users size={32} className="text-sky-500/20" />
+                <Users size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
            
@@ -309,7 +309,7 @@ export default function DirectorDashboard({
              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Validación Pendiente</p>
              <div className="flex items-end justify-between mt-1">
                 <h3 className="text-3xl font-black text-white">{validacion.length}</h3>
-                <ShieldCheck size={32} className="text-sky-500/20" />
+                <ShieldCheck size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
 
@@ -320,7 +320,7 @@ export default function DirectorDashboard({
              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Concentrado Activo</p>
              <div className="flex items-end justify-between mt-1">
                 <h3 className="text-3xl font-black text-white">{concentrado.length}</h3>
-                <ClipboardList size={32} className="text-sky-500/20" />
+                <ClipboardList size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
         </div>
@@ -376,7 +376,7 @@ export default function DirectorDashboard({
                             if (res.success) toast.success('¡Alta aprobada! El expediente fue creado.');
                             else toast.error(res.error || 'Error');
                           }}
-                          className="py-3 bg-sky-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10"
+                          className="py-3 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10"
                         >
                           Aprobar
                         </button>
@@ -430,7 +430,7 @@ export default function DirectorDashboard({
                            if (res.success) toast.success('Autorizado', { id: 'aprobar-doc' });
                            else toast.error(res.error || 'Error', { id: 'aprobar-doc' });
                          }}
-                         className="flex-1 py-3 bg-sky-600/10 text-sky-400 border border-sky-500/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-600 hover:text-white transition-all shadow-lg"
+                         className="flex-1 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-500/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[#0197D2] hover:text-white transition-all shadow-lg"
                        >Aprobar Eliminación</button>
                        <button
                          onClick={async () => {
@@ -457,19 +457,19 @@ export default function DirectorDashboard({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {filteredData.map(exp => (
                     <div key={exp.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-sky-500/30 transition-colors shadow-xl group">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
                         <div className="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-300 font-black uppercase shrink-0 border border-slate-800 group-hover:border-sky-500/50 transition-colors">
                            {exp.nombre_empresa.charAt(0)}
                         </div>
-                        <div>
-                          <h4 className="text-white font-black uppercase tracking-tight text-sm">{exp.nombre_empresa}</h4>
-                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5">{exp.cliente?.nombre_completo || 'Sin titular'}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-white font-black uppercase tracking-tight text-sm truncate">{exp.nombre_empresa}</h4>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5 truncate">{exp.cliente?.nombre_completo || 'Sin titular'}</p>
                           {activeTab === 'concentrado' && (
-                             <p className="text-sky-400 text-[9px] mt-1.5 font-black uppercase tracking-widest">Asesora: {exp.asesora?.nombre_completo || 'No asignada'}</p>
+                             <p className="text-sky-400 text-[9px] mt-1.5 font-black uppercase tracking-widest truncate">Asesora: {exp.asesora?.nombre_completo || 'No asignada'}</p>
                           )}
-                          <div className="flex gap-2 mt-2">
-                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-slate-800">{exp.estatus.replace('_', ' ').toUpperCase()}</span>
-                            {exp.documentos?.some(d => d.solicitud_borrado) && <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/50 animate-pulse">BAJA PENDIENTE</span>}
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-slate-800 whitespace-nowrap">{exp.estatus.replace('_', ' ').toUpperCase()}</span>
+                            {exp.documentos?.some(d => d.solicitud_borrado) && <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/50 animate-pulse whitespace-nowrap">BAJA PENDIENTE</span>}
                           </div>
                         </div>
                       </div>
@@ -480,7 +480,7 @@ export default function DirectorDashboard({
                              <FileText size={14}/> Ver Documentación
                            </button>
                          )}
-                         <button onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} className={`px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 shadow-lg ${exp.documentos?.some(d => d.solicitud_borrado) ? 'bg-red-600 text-white shadow-red-600/20' : 'bg-sky-600 text-white border border-sky-500 hover:bg-sky-500 shadow-sky-600/10'}`}>
+                         <button onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} className={`px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 shadow-lg ${exp.documentos?.some(d => d.solicitud_borrado) ? 'bg-red-600 text-white shadow-red-600/20' : 'bg-[#0197D2] text-white border border-sky-500 hover:bg-sky-500 shadow-sky-600/10'}`}>
                            {exp.documentos?.some(d => d.solicitud_borrado) ? <AlertTriangle size={14}/> : <ExternalLink size={14}/>} {activeTab === 'por_asignar' ? 'Validar Expediente' : 'Abrir Expediente'}
                          </button>
                       </div>
@@ -499,13 +499,13 @@ export default function DirectorDashboard({
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
                <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
-                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-sky-600/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><FileText size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Expediente Documental</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">{selectedExpediente.nombre_empresa}</p></div></div>
+                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><FileText size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Expediente Documental</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">{selectedExpediente.nombre_empresa}</p></div></div>
                  <button onClick={() => setIsValidationModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2"><X size={24}/></button>
                </div>
                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-900/50">
                  {/* SECCIÓN DE CONTRATOS */}
                  <div className="bg-slate-950 p-8 rounded-3xl border border-slate-800 shadow-inner space-y-8">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500 border-b border-slate-800 pb-4 flex items-center gap-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] border-b border-slate-800 pb-4 flex items-center gap-3">
                        <FileSignature size={18}/> Contratos Oficiales
                     </h3>
                     <div className="flex flex-col gap-5">
@@ -586,7 +586,7 @@ export default function DirectorDashboard({
                         {/* 2. Contrato Firmado Cliente */}
                         {(activeTab === 'por_asignar' || activeTab === 'concentrado') && selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
                           <div className="flex items-center gap-4 bg-slate-900/50 p-5 rounded-2xl border border-slate-800">
-                            <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_firmado_cliente!)}`)} className="flex items-center gap-3 px-6 py-3 bg-sky-600/10 text-sky-400 border border-sky-600/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-600 hover:text-white transition-all shadow-lg">
+                            <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_firmado_cliente!)}`)} className="flex items-center gap-3 px-6 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[#0197D2] hover:text-white transition-all shadow-lg">
                               <FileSignature size={16}/> Ver Firma Cliente
                             </button>
                           </div>
@@ -709,7 +709,7 @@ export default function DirectorDashboard({
                                <span className="bg-red-600/20 border border-red-600/30 text-red-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✕ Rechazado</span>
                              )}
                              {!doc.validado && !isRejected && (
-                               <span className="bg-sky-600/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
+                               <span className="bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
                              )}
                            </div>
                          </div>
@@ -739,7 +739,7 @@ export default function DirectorDashboard({
                                      if(res.success) { toast.success('Documento aprobado'); router.refresh(); }
                                      else throw new Error(res.error);
                                    } catch(err: any) { toast.error(err.message); }
-                                 }} className="bg-sky-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Aprobar</button>
+                                 }} className="bg-[#0197D2] text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Aprobar</button>
                                  
                                  <button onClick={async () => {
                                    const motivo = prompt('Motivo de rechazo:');
@@ -833,7 +833,7 @@ export default function DirectorDashboard({
                                <span className="bg-red-600/20 border border-red-600/30 text-red-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✕ Rechazado</span>
                              )}
                              {!pago.verificado && !isRejected && (
-                               <span className="bg-sky-600/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
+                               <span className="bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
                              )}
                            </div>
                          </div>
@@ -868,7 +868,7 @@ export default function DirectorDashboard({
                                      if(res.success) { toast.success('Pago verificado'); router.refresh(); }
                                      else throw new Error(res.error);
                                    } catch(err: any) { toast.error(err.message); }
-                                 }} className="bg-sky-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Confirmar Recepción de Pago</button>
+                                 }} className="bg-[#0197D2] text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Confirmar Recepción de Pago</button>
                                </div>
                              )}
 
@@ -915,7 +915,7 @@ export default function DirectorDashboard({
 
                        return (
                          <div className="bg-sky-950/10 p-10 rounded-[2.5rem] border-4 border-sky-900/20 shadow-2xl">
-                           <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-sky-500 mb-8 flex items-center gap-3">
+                           <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[#0197D2] mb-8 flex items-center gap-3">
                              <UserPlus size={20}/> Designar Equipo Operativo (Abogada)
                            </h3>
                            <form action={async (formData) => {
@@ -939,7 +939,7 @@ export default function DirectorDashboard({
                                  {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
                                </select>
                              </div>
-                             <button type="submit" className="w-full md:w-auto py-4 px-10 bg-sky-600 text-white rounded-2xl font-black uppercase tracking-[0.25em] text-xs shadow-2xl shadow-sky-600/30 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                             <button type="submit" className="w-full md:w-auto py-4 px-10 bg-[#0197D2] text-white rounded-2xl font-black uppercase tracking-[0.25em] text-xs shadow-2xl shadow-sky-600/30 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
                                Confirmar Asignación <ArrowRight size={18}/>
                              </button>
                            </form>
@@ -961,14 +961,14 @@ export default function DirectorDashboard({
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
                <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
-                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-sky-600/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Gestión y Concentrado</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Datos Operativos Escritos</p></div></div>
+                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Gestión y Concentrado</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Datos Operativos Escritos</p></div></div>
                  <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2"><X size={24}/></button>
                </div>
                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-900/50">
                   {/* PERFIL DEL CLIENTE TITULAR */}
                   <div className="bg-slate-950 p-10 rounded-[2.5rem] border border-slate-800 shadow-inner">
                     <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500 flex items-center gap-3">
+                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] flex items-center gap-3">
                           <UserCircle size={20}/> Perfil del Cliente Titular
                        </h3>
                        <a 
@@ -1016,8 +1016,8 @@ export default function DirectorDashboard({
                       );
                     })()}
                     <div className="mt-12 pt-10 border-t border-slate-800">
-                      <div className="bg-sky-600/5 p-10 rounded-[2.5rem] border-2 border-sky-900/10 flex flex-col justify-center text-center shadow-inner">
-                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500 mb-4">Inversión del Contrato</h3>
+                      <div className="bg-[#0197D2]/5 p-10 rounded-[2.5rem] border-2 border-sky-900/10 flex flex-col justify-center text-center shadow-inner">
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] mb-4">Inversión del Contrato</h3>
                          <p className="text-4xl font-black text-white tracking-tighter">${selectedExpediente.contratos?.[0]?.monto_total?.toLocaleString() || '0.00'}</p>
                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 mt-4">Pesos Mexicanos (M.N.)</p>
                       </div>
@@ -1080,7 +1080,7 @@ export default function DirectorDashboard({
                 {/* PASO 2 */}
                 {createStep === 2 && newClientInfo && (
                   <div className="space-y-8">
-                    <div className="bg-sky-600/10 p-6 rounded-2xl border-2 border-sky-600/20 flex items-center gap-4 shadow-inner">
+                    <div className="bg-[#0197D2]/10 p-6 rounded-2xl border-2 border-sky-600/20 flex items-center gap-4 shadow-inner">
                       <CheckCircle2 className="text-sky-400" size={24}/>
                       <div><p className="text-[10px] font-black uppercase tracking-widest text-sky-400">Expediente Maestro Creado</p><p className="text-sm font-black text-white uppercase mt-1">{newClientInfo.nombre_empresa}</p></div>
                     </div>
@@ -1091,7 +1091,7 @@ export default function DirectorDashboard({
                       <FileUploader label="Comprobante Domicilio" icon={<MapPin size={32}/>} file={files.domicilio} onChange={f => setFiles(p => ({...p, domicilio: f}))}/>
                     </div>
                     {uploadProgress && <div className="text-center text-[10px] font-black uppercase tracking-widest text-sky-400 animate-pulse bg-sky-950 p-4 rounded-xl border border-sky-900/30">{uploadProgress}</div>}
-                    <button onClick={onUploadMasterDocs} disabled={isPending} className="w-full py-5 bg-sky-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                    <button onClick={onUploadMasterDocs} disabled={isPending} className="w-full py-5 bg-[#0197D2] text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
                       {isPending ? <><Loader2 className="animate-spin" size={18}/>Subiendo Archivos...</> : <>Confirmar Carga de Documentos <ArrowRight size={18}/></>}
                     </button>
                   </div>
@@ -1100,7 +1100,7 @@ export default function DirectorDashboard({
                 {/* PASO 3 */}
                 {createStep === 3 && (
                   <div className="text-center py-12 space-y-8">
-                    <div className="w-20 h-20 bg-sky-600/10 rounded-full flex items-center justify-center mx-auto border-4 border-sky-600/20 shadow-2xl shadow-sky-600/10"><CheckCircle2 className="text-sky-400" size={40}/></div>
+                    <div className="w-20 h-20 bg-[#0197D2]/10 rounded-full flex items-center justify-center mx-auto border-4 border-sky-600/20 shadow-2xl shadow-sky-600/10"><CheckCircle2 className="text-sky-400" size={40}/></div>
                     <div className="space-y-2">
                       <h3 className="text-2xl font-black uppercase tracking-tight text-white">¡Alta Exitosa!</h3>
                       <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">El expediente maestro está listo para ser asignado.</p>
@@ -1118,7 +1118,7 @@ export default function DirectorDashboard({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-10">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuickViewUrl(null)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-800">
-             <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 border-b border-slate-800"><h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500">Visor de Expediente Digital</h2><button onClick={() => setQuickViewUrl(null)} className="text-slate-500 hover:text-white transition-colors"><X size={28}/></button></div>
+             <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 border-b border-slate-800"><h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2]">Visor de Expediente Digital</h2><button onClick={() => setQuickViewUrl(null)} className="text-slate-500 hover:text-white transition-colors"><X size={28}/></button></div>
              <div className="flex-1 bg-slate-950 p-4 md:p-10"><iframe src={quickViewUrl} className="w-full h-full rounded-[2rem] bg-white shadow-2xl overflow-hidden" /></div>
           </motion.div>
         </div>
@@ -1130,10 +1130,10 @@ export default function DirectorDashboard({
 function SidebarLink({ icon, label, active, onClick, badge }: any) {
   return (
     <div className="relative group">
-      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-sky-600 rounded-r-full shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>}
+      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-[#0197D2] rounded-r-full shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>}
       <button onClick={onClick} className={"w-full flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all " + (active ? "bg-slate-800 text-white shadow-inner" : "text-slate-500 hover:text-slate-200 hover:bg-slate-800/40")}>
         <div className="flex items-center gap-4"><div className={active ? "text-sky-400" : "text-slate-600 group-hover:text-slate-400"}>{icon}</div><span className="text-[11px] font-black uppercase tracking-[0.15em]">{label}</span></div>
-        {badge !== undefined && <span className={"text-[9px] font-black px-2 py-1 rounded-lg " + (active ? "bg-sky-600 text-white shadow-lg shadow-sky-600/20" : "bg-slate-950 text-slate-700 border border-slate-800")}>{badge}</span>}
+        {badge !== undefined && <span className={"text-[9px] font-black px-2 py-1 rounded-lg " + (active ? "bg-[#0197D2] text-white shadow-lg shadow-sky-600/20" : "bg-slate-950 text-slate-700 border border-slate-800")}>{badge}</span>}
       </button>
     </div>
   );

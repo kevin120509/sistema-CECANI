@@ -105,8 +105,8 @@ export default function HomePage() {
             <div className="flex items-center gap-6">
               <div className="hidden sm:flex items-center gap-4 bg-slate-900/40 border border-slate-700/60 px-5 py-2.5 rounded-2xl shadow-sm">
                 <div className="relative">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                  <div className="w-2.5 h-2.5 bg-[#9DC701] rounded-full animate-pulse shadow-[0_0_10px_rgba(157,199,1,0.5)]"></div>
+                  <div className="absolute inset-0 bg-[#9DC701] rounded-full animate-ping opacity-20"></div>
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest text-slate-200">
                   {perfil.nombre_completo}
@@ -155,23 +155,23 @@ export default function HomePage() {
                     initial={false}
                     animate={{ 
                       scale: isActive ? 1.15 : 1,
-                      backgroundColor: isActive ? '#0ea5e9' : (isCompleted ? '#10b981' : '#030712')
+                      backgroundColor: isActive ? '#0197D2' : (isCompleted ? '#9DC701' : '#030712')
                     }}
                     className={`
                       w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4
-                      ${isActive ? 'text-white border-sky-900/50 shadow-[0_15px_30px_rgba(14,165,233,0.3)]' : 
-                        isCompleted ? 'text-white border-emerald-900/50 shadow-[0_10px_20px_rgba(16,185,129,0.2)]' : 
+                      ${isActive ? 'text-white border-sky-900/50 shadow-[0_15px_30px_rgba(1,151,210,0.3)]' : 
+                        isCompleted ? 'text-white border-emerald-900/50 shadow-[0_10px_20px_rgba(157,199,1,0.2)]' : 
                         'text-slate-500 border-slate-800 shadow-sm'}
                     `}
                   >
                     {isCompleted ? <CheckCircle2 size={26} strokeWidth={3} /> : <Icon size={26} strokeWidth={isActive ? 3 : 2} />}
                   </motion.div>
                   <div className="absolute -bottom-10 whitespace-nowrap text-center">
-                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-sky-600 scale-105' : isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-[#0197D2] scale-105' : isCompleted ? 'text-[#9DC701]' : 'text-slate-400'}`}>
                       {label}
                     </span>
                     {isActive && (
-                      <motion.div layoutId="active-dot" className="w-1.5 h-1.5 bg-sky-500 rounded-full mx-auto mt-2 shadow-[0_0_10px_rgba(14,165,233,0.8)]" />
+                      <motion.div layoutId="active-dot" className="w-1.5 h-1.5 bg-[#0197D2] rounded-full mx-auto mt-2 shadow-[0_0_10px_rgba(1,151,210,0.8)]" />
                     )}
                   </div>
                 </div>

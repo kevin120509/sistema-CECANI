@@ -139,7 +139,7 @@ export default function Paso2Documentacion({
   if (isUnderReview && !error && !isPending) {
     return (
       <div className="max-w-4xl mx-auto py-24 text-center space-y-10">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-28 h-28 bg-sky-600/10 text-sky-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border border-sky-600/20 animate-pulse">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-28 h-28 bg-[#0197D2]/10 text-sky-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border border-sky-600/20 animate-pulse">
           <Clock size={56} />
         </motion.div>
         <div className="space-y-6">
@@ -171,7 +171,7 @@ export default function Paso2Documentacion({
   return (
     <div className="max-w-4xl mx-auto space-y-16 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
-        <div className="w-20 h-20 bg-sky-600/10 text-sky-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-sky-600/20">
+        <div className="w-20 h-20 bg-[#0197D2]/10 text-sky-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-sky-600/20">
           <ShieldCheck size={36} />
         </div>
         <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Bóveda de Documentos</h2>
@@ -270,7 +270,7 @@ export default function Paso2Documentacion({
                <ShieldCheck size={18} />
                <p className="text-[9px] font-black uppercase tracking-widest leading-relaxed max-w-[280px]">Sus archivos son resguardados bajo protocolos de cifrado de grado bancario.</p>
              </div>
-            <button type="submit" disabled={isPending} className="w-full md:w-auto bg-sky-600 text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(14,165,233,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5">
+            <button type="submit" disabled={isPending} className="w-full md:w-auto bg-[#0197D2] text-white px-16 py-7 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] hover:shadow-[0_20px_50px_rgba(14,165,233,0.4)] transition-all duration-500 group disabled:opacity-50 flex items-center justify-center gap-5">
               {hasAnyRejection ? 'Reenviar Correcciones' : 'Sincronizar Bóveda'} <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
             </button>
           </footer>
@@ -294,7 +294,7 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
           </span>
         )}
         {isResguardado && (
-          <span className="text-[9px] font-black text-sky-600 uppercase tracking-widest bg-sky-600/10 px-4 py-1.5 rounded-full border border-sky-600/20 flex items-center gap-2">
+          <span className="text-[9px] font-black text-sky-600 uppercase tracking-widest bg-[#0197D2]/10 px-4 py-1.5 rounded-full border border-sky-600/20 flex items-center gap-2">
             <Clock size={12} /> Revisión
           </span>
         )}
@@ -306,10 +306,10 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
       </div>
 
       <div className={`relative h-60 rounded-3xl border-2 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center p-8 
-        ${archivo.file ? 'border-sky-600 bg-sky-600/10 shadow-xl' : 
+        ${archivo.file ? 'border-sky-600 bg-[#0197D2]/10 shadow-xl' : 
           dbDoc?.validado ? 'border-emerald-500/30 bg-emerald-500/5 opacity-80' :
           isRejected ? 'border-rose-500/30 bg-rose-500/10' :
-          isResguardado ? 'border-sky-600/30 bg-sky-600/5 opacity-90' :
+          isResguardado ? 'border-sky-600/30 bg-[#0197D2]/5 opacity-90' :
           'border-slate-800 bg-slate-950 hover:bg-slate-900 hover:border-sky-600/40'}
         ${disabled && !archivo.file ? 'cursor-not-allowed' : 'cursor-pointer group'}`}>
         
@@ -321,7 +321,7 @@ function UploadCard({ label, archivo, dbDoc, disabled, onFileChange, onClear }: 
         )}
 
         <div className="relative z-10 text-center space-y-4">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto transition-all duration-500 ${archivo.file ? 'bg-sky-600 text-white scale-110' : 'bg-slate-900 text-slate-500 group-hover:bg-sky-600/20 group-hover:text-sky-400 group-hover:scale-110'}`}>
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto transition-all duration-500 ${archivo.file ? 'bg-[#0197D2] text-white scale-110' : 'bg-slate-900 text-slate-500 group-hover:bg-[#0197D2]/20 group-hover:text-sky-400 group-hover:scale-110'}`}>
             {dbDoc?.validado ? (
               <CheckCircle2 size={32} />
             ) : archivo.file ? (
