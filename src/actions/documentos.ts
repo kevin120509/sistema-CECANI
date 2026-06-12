@@ -28,7 +28,8 @@ export async function registrarDocumento(
   expedienteId: string,
   tipo: TipoDocumento | string,
   urlArchivo: string,
-  integranteId?: string | null
+  integranteId?: string | null,
+  validado: boolean = false
 ): Promise<ActionResult<{ documento_id: string }>> {
   // Mapeo preventivo para evitar errores de enum en base de datos legacy
   const enumsValidos = [
@@ -45,7 +46,7 @@ export async function registrarDocumento(
   const nombrePersonalizado = !esEnum ? (tipo as string) : undefined;
 
   const service = getDocumentoService();
-  const result = await service.registrarDocumentoYNotificar(expedienteId, tipoFinal, urlArchivo, integranteId, nombrePersonalizado);
+  const result = await service.registrarDocumentoYNotificar(expedienteId, tipoFinal, urlArchivo, integranteId, nombrePersonalizado, validado);
 
   if (result.success) {
     revalidatePath('/directora');

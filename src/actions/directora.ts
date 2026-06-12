@@ -44,7 +44,10 @@ export async function crearClienteManualAction(formData: FormData): Promise<{ su
         const adminSupabase = createAdminClient();
         await adminSupabase
           .from('expedientes')
-          .update({ asesora_id: asesoraId })
+          .update({ 
+            asesora_id: asesoraId,
+            estatus: 'en_proceso' // Importante para que aparezca en el panel legal de la abogada
+          })
           .eq('id', result.data.expediente_id);
           
         await adminSupabase
@@ -56,6 +59,7 @@ export async function crearClienteManualAction(formData: FormData): Promise<{ su
       }
 
       revalidatePath('/directora');
+      revalidatePath('/abogada');
       return { 
         success: true, 
         data: {
@@ -763,6 +767,17 @@ export async function solicitarAltaClienteAction(formData: FormData): Promise<{ 
       telefono: formData.get('telefono') as string,
       nombre_empresa: formData.get('nombre_empresa') as string,
       rfc: formData.get('rfc') as string || null,
+      curp: formData.get('curp') as string || null,
+      ocupacion: formData.get('ocupacion') as string || null,
+      estado_civil: formData.get('estado_civil') as string || null,
+      domicilio_completo: formData.get('domicilio_completo') as string || null,
+      url_ine_frente: formData.get('url_ine_frente') as string || null,
+      url_ine_reverso: formData.get('url_ine_reverso') as string || null,
+      url_curp: formData.get('url_curp') as string || null,
+      url_comprobante_domicilio: formData.get('url_comprobante_domicilio') as string || null,
+      url_contrato: formData.get('url_contrato') as string || null,
+      monto_total: formData.get('monto_total') ? Number(formData.get('monto_total')) : null,
+      plan_pagos: formData.get('plan_pagos') as string || null,
       notas: formData.get('notas') as string || null,
       estatus: 'pendiente',
     };
@@ -812,30 +827,65 @@ export async function aprobarSolicitudAltaAction(solicitudId: string): Promise<{
 
     if (solError || !sol) throw new Error('Solicitud no encontrada');
 
-    // Crear el expediente usando el servicio
+    // Crear el expediente usando el servicio con TODOS los datos capturados
     const service = getExpedienteService();
     const result = await service.registrarClienteManual(
-      { nombre_completo: sol.nombre_cliente, telefono: sol.telefono, rfc: sol.rfc || undefined },
+      { 
+        nombre_completo: sol.nombre_cliente, 
+        telefono: sol.telefono, 
+        rfc: sol.rfc || undefined,
+        curp: sol.curp || undefined,
+        ocupacion: sol.ocupacion || undefined,
+        estado_civil: sol.estado_civil || undefined,
+        domicilio_completo: sol.domicilio_completo || undefined
+      },
       sol.nombre_empresa,
     );
 
-    if (!result.success) throw new Error(result.error);
+    if (!result.success || !result.data) throw new Error(result.error);
+
+    const { expediente_id, contrato_id, user_id } = result.data;
+
+    // Registrar Documentos Automáticamente si existen en la solicitud
+    const { registrarDocumento } = await import('@/actions/documentos');
+    const { guardarContratoFirmado } = await import('@/actions/contrato');
+
+    if (sol.url_ine_frente) await registrarDocumento(expediente_id, 'ine_frente', sol.url_ine_frente, null, true);
+    if (sol.url_ine_reverso) await registrarDocumento(expediente_id, 'ine_reverso', sol.url_ine_reverso, null, true);
+    if (sol.url_curp) await registrarDocumento(expediente_id, 'curp', sol.url_curp, null, true);
+    if (sol.url_comprobante_domicilio) await registrarDocumento(expediente_id, 'comprobante_domicilio', sol.url_comprobante_domicilio, null, true);
+    
+    if (sol.url_contrato) {
+      await guardarContratoFirmado(contrato_id, sol.url_contrato);
+      await registrarDocumento(expediente_id, 'contrato_firmado', sol.url_contrato, null, true);
+    }
+
+    // Actualizar contrato con monto y plan si vienen en la solicitud
+    if (sol.monto_total || sol.plan_pagos) {
+      await adminSupabase
+        .from('contratos')
+        .update({
+          monto_total: sol.monto_total,
+          plan_pagos: sol.plan_pagos
+        })
+        .eq('id', contrato_id);
+    }
 
     // Asignar la asesora solicitante al expediente y marcar como 'en_proceso'
-    if (sol.asesora_id && result.data?.expediente_id) {
+    if (sol.asesora_id) {
       await adminSupabase
         .from('expedientes')
         .update({ 
           asesora_id: sol.asesora_id,
-          estatus: 'en_proceso' // Importante para que aparezca en el panel de la abogada
+          estatus: 'en_proceso' 
         })
-        .eq('id', result.data.expediente_id);
+        .eq('id', expediente_id);
 
-      // También guardar en la nueva tabla relacional para compatibilidad multi-asesora
+      // También guardar en la nueva tabla relacional
       await adminSupabase
         .from('expediente_asesoras')
         .upsert({
-          expediente_id: result.data.expediente_id,
+          expediente_id: expediente_id,
           asesora_id: sol.asesora_id
         }, { onConflict: 'expediente_id, asesora_id' });
     }
@@ -843,7 +893,7 @@ export async function aprobarSolicitudAltaAction(solicitudId: string): Promise<{
     // Marcar solicitud como aprobada
     await adminSupabase
       .from('solicitudes_alta')
-      .update({ estatus: 'aprobada', expediente_id: result.data?.expediente_id })
+      .update({ estatus: 'aprobada', expediente_id: expediente_id })
       .eq('id', solicitudId);
 
     // Notificar a la asesora

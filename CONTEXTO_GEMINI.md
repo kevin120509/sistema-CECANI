@@ -352,6 +352,14 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - **IMPORTANTE**: Ejecutar `migration_borrado_autorizado.sql` en el editor SQL de Supabase para habilitar las nuevas columnas.
     - Continuar con la revisión de seguridad de URLs firmadas en R2.
 
+### [11 Junio 2026] - Fix: Alta Maestra y Visibilidad en Panel Legal
+- **Acción**: Corrección de la visibilidad de expedientes creados manualmente y automatización de validación documental.
+- **Cambios**:
+    - `src/actions/directora.ts`: La acción `crearClienteManualAction` ahora establece automáticamente el estatus del expediente como `en_proceso` si se asigna una abogada en el momento de la creación. Se añadió `revalidatePath('/abogada')` para asegurar el refresco instantáneo en el panel legal.
+    - `src/infrastructure/persistence/SupabaseDocumentosRepository.ts` & `src/actions/documentos.ts`: Se extendió la lógica de registro de documentos para soportar un parámetro opcional `validado`.
+    - `src/components/directora/DirectorDashboard.tsx`: Al realizar un "Alta Maestra", los documentos subidos por la directora se registran ahora con el estado `validado: true`, eliminando la necesidad de que la propia directora apruebe sus subidas.
+- **Estado**: Flujo de Alta Maestra corregido; los expedientes ahora aparecen inmediatamente para la abogada asignada y con documentos pre-aprobados.
+
 ### [11 Junio 2026] - Estabilización de Flujos y Corrección de Duplicados
 - **Acción**: Resolución de problemas de redundancia en UI y optimización de la experiencia del cliente tras la subida de archivos.
 - **Cambios**:
@@ -395,3 +403,21 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - Se agregaron campos faltantes a `CAMPOS_CONCENTRADO`: `cluni`, `pago_notario`, `pago_entrega_donataria`, `cantidad_cobrar_proximo`, `estatus_detalle`, `accion_realizar`, `cantidad_pagada_acumulada`, `fecha_ultimo_pago`, `quien_cobra`, `vendedora`, `fecha_contrato`, `link_reunion`, `fecha_reunion_acuerdos`.
     - Se rediseñó la UI de la pestaña "Etapa Legal" para dividir la información en 4 secciones lógicas: "Datos del Cliente Titular", "Datos de la Asociación y Legal", "Datos de Pagos y Contrato", y "Seguimiento y Estatus".
 - **Estado**: La abogada ahora puede visualizar y modificar toda la información de contexto del cliente desde su panel sin necesidad de recurrir a documentos externos de Excel, con carga automática desde la base de datos `datos_concentrado`.
+
+### [11 Junio 2026] - Corrección de Flujo: Validación de Documentación de Clientes
+- **Acción**: Restricción en el avance de la interfaz del cliente para evitar que vean prematuramente la sección de "Formalización Legal" (Contrato) antes de que la directora haya aprobado su expediente, y eliminación de notificaciones push engañosas.
+- **Cambios**:
+    - `src/hooks/useExpediente.ts`: Se modificó la regla del "Paso 2" para que el cliente se mantenga en la vista de carga ("Documentación en Validación") mientras el estatus sea `revision_directora`, bloqueando el avance al Paso 3 incluso si los documentos individuales han sido marcados con palomita verde.
+    - `src/core/services/ContratoService.ts`: Se eliminó el bloque que enviaba la notificación push prematura de "¡Tu contrato está listo!" en la función `generarContratoAutomatico`, ya que este solo debe notificarse cuando la directora oprima "Aprobar Expediente" o envíe el contrato.
+    - `src/components/cliente/Paso3Contrato.tsx`: Se cambió el texto de "Instrumento" a "Contrato" para mayor claridad hacia el usuario final.
+- **Estado**: El flujo del cliente es ahora más lógico; verán una pantalla de "En Validación" continua hasta recibir aprobación formal de la directora.
+
+### [11 Junio 2026] - Reestructuración de la Agenda de Abogada
+- **Acción**: Agrupación por cliente de los recordatorios en la vista de Agenda del panel de la abogada para evitar saturación visual y mejorar la organización.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se creó la función `groupRecordatoriosByExpId` para agrupar dinámicamente un arreglo de recordatorios por `expId`.
+        - Se implementó el componente `GroupedRecordatorioCard` que encapsula la información del cliente (Empresa y Representante) en una cabecera, y renderiza una lista de recordatorios en su interior.
+        - Se modificó la vista de lista (`agendaView === 'lista'`) para mapear utilizando la función de agrupación.
+        - Se optimizó la celda de la vista de calendario (`agendaView === 'calendario'`) para que, cuando haya varios recordatorios de un mismo cliente en un día, solo muestre 1 fila indicando la cantidad: `Empresa (5)`.
+- **Estado**: La agenda es mucho más legible, agrupando la carga de trabajo diaria, vencida y futura por cliente en lugar de por tarjeta individual.

@@ -134,6 +134,9 @@ export default function DirectorDashboard({
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
   const [quickViewUrl, setQuickViewUrl] = useState<string | null>(null);
 
+  const [isRequestDetailModalOpen, setIsRequestDetailModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+
   // --- SYNC SELECTED EXPEDIENTE WITH UPDATED PROPS ---
   useEffect(() => {
     if (selectedExpediente) {
@@ -235,10 +238,10 @@ export default function DirectorDashboard({
           if (!res.success || !res.data) throw new Error(res.error);
           return res.data.url;
         };
-        if (files.contrato) { const url = await upload(files.contrato, `expedientes/${empresaKey}/contratos`, 'Contrato'); await (await import('@/actions/contrato')).guardarContratoFirmado(newClientInfo.contrato_id, url); await registrarDocumento(newClientInfo.expediente_id, 'contrato_firmado', url); }
-        if (files.ine_frente) await registrarDocumento(newClientInfo.expediente_id, 'ine_frente', await upload(files.ine_frente, `expedientes/${empresaKey}/documentacion`, 'INE'));
-        if (files.curp) await registrarDocumento(newClientInfo.expediente_id, 'curp', await upload(files.curp, `expedientes/${empresaKey}/documentacion`, 'CURP'));
-        if (files.domicilio) await registrarDocumento(newClientInfo.expediente_id, 'comprobante_domicilio', await upload(files.domicilio, `expedientes/${empresaKey}/documentacion`, 'Domicilio'));
+        if (files.contrato) { const url = await upload(files.contrato, `expedientes/${empresaKey}/contratos`, 'Contrato'); await (await import('@/actions/contrato')).guardarContratoFirmado(newClientInfo.contrato_id, url); await registrarDocumento(newClientInfo.expediente_id, 'contrato_firmado', url, null, true); }
+        if (files.ine_frente) await registrarDocumento(newClientInfo.expediente_id, 'ine_frente', await upload(files.ine_frente, `expedientes/${empresaKey}/documentacion`, 'INE'), null, true);
+        if (files.curp) await registrarDocumento(newClientInfo.expediente_id, 'curp', await upload(files.curp, `expedientes/${empresaKey}/documentacion`, 'CURP'), null, true);
+        if (files.domicilio) await registrarDocumento(newClientInfo.expediente_id, 'comprobante_domicilio', await upload(files.domicilio, `expedientes/${empresaKey}/documentacion`, 'Domicilio'), null, true);
         setCreateStep(3);
       } catch (err: any) { alert(err.message); } finally { setUploadProgress(''); }
     });
@@ -375,6 +378,14 @@ export default function DirectorDashboard({
                          </div>
                       </div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-4">Asesora: {sol.asesora?.nombre_completo || '---'}</p>
+                      
+                      <button 
+                        onClick={() => { setSelectedRequest(sol); setIsRequestDetailModalOpen(true); }}
+                        className="w-full py-3 mb-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 font-black uppercase tracking-widest text-[9px] hover:text-white hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Eye size={14}/> Ver Solicitud Completa
+                      </button>
+
                       {sol.notas && <p className="text-[11px] text-slate-400 italic bg-slate-950 p-4 rounded-xl border border-slate-800">"{sol.notas}"</p>}
                     </div>
                     {sol.estatus === 'pendiente' && (
@@ -1184,7 +1195,109 @@ export default function DirectorDashboard({
           </motion.div>
         </div>
       )}</AnimatePresence>
+
+      {/* --- MODAL 4: DETALLE DE SOLICITUD DE ALTA --- */}
+      <AnimatePresence>
+        {isRequestDetailModalOpen && selectedRequest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRequestDetailModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
+               <div className="bg-slate-950 p-8 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
+                 <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center shadow-lg"><Info size={28}/></div>
+                   <div>
+                     <h2 className="text-xl font-black uppercase tracking-tight">Detalles de la Solicitud</h2>
+                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Enviada por {selectedRequest.asesora?.nombre_completo}</p>
+                   </div>
+                 </div>
+                 <button onClick={() => setIsRequestDetailModalOpen(false)} className="bg-slate-900 p-3 rounded-2xl text-slate-500 hover:text-white transition-all"><X size={24}/></button>
+               </div>
+
+               <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-10 bg-slate-900/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                     <div className="space-y-8">
+                        <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-6">
+                           <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-400 border-b border-slate-800 pb-3">Información del Perfil</h3>
+                           <TextData label="Nombre del Cliente" value={selectedRequest.nombre_cliente} />
+                           <TextData label="Asociación / Empresa" value={selectedRequest.nombre_empresa} />
+                           <div className="grid grid-cols-2 gap-4">
+                             <TextData label="RFC" value={selectedRequest.rfc} />
+                             <TextData label="CURP" value={selectedRequest.curp} />
+                           </div>
+                           <TextData label="Teléfono" value={selectedRequest.telefono} />
+                           <TextData label="Domicilio" value={selectedRequest.domicilio_completo} />
+                        </div>
+
+                        <div className="bg-sky-950/20 p-6 rounded-3xl border border-sky-900/30">
+                           <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-500 mb-2">Inversión Propuesta</h3>
+                           <p className="text-3xl font-black text-white">${selectedRequest.monto_total?.toLocaleString() || '0.00'}</p>
+                        </div>
+                     </div>
+
+                     <div className="space-y-6">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-2">Documentos Adjuntos</h3>
+                        <div className="grid grid-cols-1 gap-4">
+                           {selectedRequest.url_ine_frente && <DocLink label="INE FRENTE" url={selectedRequest.url_ine_frente} onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedRequest.url_ine_frente)}`)} />}
+                           {selectedRequest.url_ine_reverso && <DocLink label="INE REVERSO" url={selectedRequest.url_ine_reverso} onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedRequest.url_ine_reverso)}`)} />}
+                           {selectedRequest.url_curp && <DocLink label="CURP" url={selectedRequest.url_curp} onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedRequest.url_curp)}`)} />}
+                           {selectedRequest.url_comprobante_domicilio && <DocLink label="COMPROBANTE DOMICILIO" url={selectedRequest.url_comprobante_domicilio} onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedRequest.url_comprobante_domicilio)}`)} />}
+                           {selectedRequest.url_contrato && <DocLink label="CONTRATO (BORRADOR)" url={selectedRequest.url_contrato} onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedRequest.url_contrato)}`)} highlight />}
+                        </div>
+                        
+                        {selectedRequest.notas && (
+                          <div className="mt-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 ml-2">Notas de la Asesora:</p>
+                            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-slate-400 text-xs italic leading-relaxed">"{selectedRequest.notas}"</div>
+                          </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-slate-950 p-8 flex gap-4 border-t border-slate-800 shrink-0">
+                  <button
+                    onClick={async () => {
+                      setIsRequestDetailModalOpen(false);
+                      toast.loading('Aprobando alta maestra...', { id: 'approve-req' });
+                      const res = await (await import('@/actions/directora')).aprobarSolicitudAltaAction(selectedRequest.id);
+                      if (res.success) toast.success('¡Alta aprobada! Expediente creado y documentos vinculados.', { id: 'approve-req' });
+                      else toast.error(res.error || 'Error', { id: 'approve-req' });
+                    }}
+                    className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3"
+                  >
+                    <CheckCircle2 size={18}/> Aprobar Todo e Iniciar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const motivo = prompt('Motivo del rechazo:');
+                      if (!motivo) return;
+                      setIsRequestDetailModalOpen(false);
+                      const res = await (await import('@/actions/directora')).rechazarSolicitudAltaAction(selectedRequest.id, motivo);
+                      if (res.success) toast.error('Solicitud rechazada');
+                      else toast.error(res.error || 'Error');
+                    }}
+                    className="px-10 py-4 bg-slate-800 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-600 hover:text-white transition-all border border-slate-700"
+                  >
+                    Rechazar
+                  </button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function DocLink({ label, onClick, highlight }: { label: string, url: string, onClick: () => void, highlight?: boolean }) {
+  return (
+    <button onClick={onClick} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${highlight ? 'bg-sky-600/10 border-sky-600/30 hover:bg-sky-600/20' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}>
+       <div className="flex items-center gap-3">
+         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${highlight ? 'bg-sky-500/20 text-sky-400' : 'bg-slate-900 text-slate-500'}`}><FileText size={20}/></div>
+         <span className={`text-[10px] font-black uppercase tracking-widest ${highlight ? 'text-sky-400' : 'text-slate-400'}`}>{label}</span>
+       </div>
+       <ExternalLink size={14} className={highlight ? 'text-sky-400' : 'text-slate-600'} />
+    </button>
   );
 }
 

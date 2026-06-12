@@ -230,7 +230,7 @@ export default function Paso3Contrato({
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black uppercase tracking-tighter mb-3">Descargar Instrumento</h3>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter mb-3">Descargar Contrato</h3>
                     <p className="text-sky-100 text-sm leading-relaxed opacity-90 font-bold uppercase tracking-widest text-[10px]">Su contrato ha sido emitido con validez legal completa.</p>
                   </div>
                   <button onClick={handleDescargar} className="w-full bg-slate-950 text-sky-400 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.03] transition-all border border-sky-500/20 active:scale-[0.97]"><Download size={20} /> Descargar PDF Oficial</button>
@@ -392,7 +392,7 @@ function UploadMini({ label, archivo, dbDoc, isValidated, isRejected, disabled, 
 
         <div className="flex-1 min-w-0">
           <p className={`text-[11px] font-black uppercase tracking-widest truncate mb-1 ${showSuccess ? 'text-emerald-400' : isRejected ? 'text-rose-400' : 'text-slate-400 group-hover:text-slate-200 transition-colors'}`}>
-            {archivo.file ? archivo.file.name : (isValidated ? 'DOCUMENTO VERIFICADO' : (isRejected ? 'REINTENTAR CARGA' : 'SELECCIONAR INSTRUMENTO'))}
+            {archivo.file ? archivo.file.name : (isValidated ? 'DOCUMENTO VERIFICADO' : (isRejected ? 'REINTENTAR CARGA' : 'SELECCIONAR CONTRATO'))}
           </p>
           {isRejected && !archivo.file && (
             <p className="text-[9px] font-bold text-rose-400 uppercase mt-1 leading-relaxed line-clamp-1 italic">MOTIVO: {dbDoc?.motivo_rechazo || 'REVISAR OBSERVACIONES'}</p>

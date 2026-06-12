@@ -234,11 +234,10 @@ function calcularPaso(
   // --- REGLA PASO 2 ---
   // Se queda en Paso 2 si:
   // - Aún está en registro inicial (falta algún doc)
-  // - O si ya está en revisión pero la directora RECHAZÓ algún documento específico
-  // - O si está en revisión de la directora pero AÚN NO han sido todos validados (Muestra pantalla de espera)
+  // - O si está en revisión de la directora (se queda en pantalla de validación hasta que la directora apruebe todo)
   if (
     (expediente.estatus === 'en_registro' && (!tieneIne || !tieneComprobante)) ||
-    (expediente.estatus === 'revision_directora' && (!allValidatedPaso2 || hasDocumentosRechazados))
+    (expediente.estatus === 'revision_directora')
   ) {
     return 2;
   }

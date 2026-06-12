@@ -19,10 +19,11 @@ export class DocumentoService {
     tipo: TipoDocumento,
     urlArchivo: string,
     integranteId?: string | null,
-    nombrePersonalizado?: string
+    nombrePersonalizado?: string,
+    validado: boolean = false
   ): Promise<ActionResult<{ documento_id: string }>> {
     try {
-      const documentoId = await this.documentoRepo.registrarDocumento(expedienteId, tipo, urlArchivo, integranteId, nombrePersonalizado);
+      const documentoId = await this.documentoRepo.registrarDocumento(expedienteId, tipo, urlArchivo, integranteId, nombrePersonalizado, validado);
 
       // Notificar a directoras
       const directoras = await this.notificationService.obtenerIdsPorRol('directora');

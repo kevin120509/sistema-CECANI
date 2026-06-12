@@ -70,13 +70,6 @@ export class ContratoService {
         );
       }
 
-      // 6. NOTIFICAR AL CLIENTE
-      await this.notificationService.enviarNotificacionPush(
-        [clienteId],
-        '¡Tu contrato está listo!',
-        'Ya puedes revisar y firmar tu contrato desde el panel de documentación.',
-        '/documentacion'
-      );
 
       return { success: true };
     } catch (error: any) {

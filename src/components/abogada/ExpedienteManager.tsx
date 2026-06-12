@@ -632,9 +632,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
               </div>
               {agendaView === 'lista' && (
                 <div className="space-y-6">
-                  {recordatoriosVencidos.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-red-400 uppercase flex items-center gap-2"><AlertTriangle size={14}/> Vencidos</p>{recordatoriosVencidos.map(r => (<RecordatorioCard key={r.id} r={r} color="red" onClick={() => setSelectedExpedienteId(r.expId)}/>))}</div>)}
-                  {recordatoriosHoy.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-sky-400 uppercase flex items-center gap-2"><Clock size={14}/> Para Hoy</p>{recordatoriosHoy.map(r => (<RecordatorioCard key={r.id} r={r} color="sky" onClick={() => setSelectedExpedienteId(r.expId)}/>))}</div>)}
-                  {recordatoriosFuturos.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-sky-400 uppercase flex items-center gap-2"><Calendar size={14}/> Próximos</p>{recordatoriosFuturos.map(r => (<RecordatorioCard key={r.id} r={r} color="sky" onClick={() => setSelectedExpedienteId(r.expId)}/>))}</div>)}
+                  {recordatoriosVencidos.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-red-400 uppercase flex items-center gap-2"><AlertTriangle size={14}/> Vencidos</p>{groupRecordatoriosByExpId(recordatoriosVencidos).map(g => (<GroupedRecordatorioCard key={g.expId} group={g} color="red" onClick={() => setSelectedExpedienteId(g.expId)}/>))}</div>)}
+                  {recordatoriosHoy.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-sky-400 uppercase flex items-center gap-2"><Clock size={14}/> Para Hoy</p>{groupRecordatoriosByExpId(recordatoriosHoy).map(g => (<GroupedRecordatorioCard key={g.expId} group={g} color="sky" onClick={() => setSelectedExpedienteId(g.expId)}/>))}</div>)}
+                  {recordatoriosFuturos.length > 0 && (<div className="space-y-3"><p className="text-xs font-bold text-sky-400 uppercase flex items-center gap-2"><Calendar size={14}/> Próximos</p>{groupRecordatoriosByExpId(recordatoriosFuturos).map(g => (<GroupedRecordatorioCard key={g.expId} group={g} color="sky" onClick={() => setSelectedExpedienteId(g.expId)}/>))}</div>)}
                   {recordatoriosPendientes.length === 0 && (<div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-sm"><CheckSquare size={48} className="mx-auto text-slate-600 mb-4"/><p className="text-slate-400 font-medium text-sm">Sin recordatorios pendientes</p></div>)}
                 </div>
               )}
@@ -650,7 +650,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                       return (
                         <div key={date} className={`h-24 border-b border-r border-slate-800/30 p-2 relative transition-colors ${hasRecs ? 'bg-[#0197D2]/5 hover:bg-[#0197D2]/10 cursor-pointer' : 'hover:bg-slate-800/30'} ${isHoy ? 'bg-[#0197D2]/10' : ''}`}>
                           <span className={`text-xs font-bold ${isHoy ? 'text-sky-400 bg-[#0197D2]/20 rounded w-6 h-6 flex items-center justify-center' : 'text-slate-500'}`}>{day}</span>
-                          {hasRecs && (<div className="mt-1.5 space-y-1">{recs.slice(0, 2).map(r => (<div key={r.id} onClick={() => setSelectedExpedienteId(r.expId)} className="text-[9px] font-bold text-sky-300 bg-[#0197D2]/20 rounded px-1.5 py-0.5 truncate cursor-pointer hover:bg-[#0197D2]/30 transition-colors">{r.empresa}</div>))}{recs.length > 2 && <div className="text-[9px] font-bold text-slate-500 px-1">+{recs.length - 2} más</div>}</div>)}
+                          {hasRecs && (<div className="mt-1.5 space-y-1">{groupRecordatoriosByExpId(recs).slice(0, 2).map(g => (<div key={g.expId} onClick={() => setSelectedExpedienteId(g.expId)} className="text-[9px] font-bold text-sky-300 bg-[#0197D2]/20 rounded px-1.5 py-0.5 truncate cursor-pointer hover:bg-[#0197D2]/30 transition-colors" title={g.clienteNombre}>{g.empresa} {g.recordatorios.length > 1 ? `(${g.recordatorios.length})` : ''}</div>))}{groupRecordatoriosByExpId(recs).length > 2 && <div className="text-[9px] font-bold text-slate-500 px-1">+{groupRecordatoriosByExpId(recs).length - 2} más</div>}</div>)}
                         </div>
                       );
                     })}
@@ -1052,5 +1052,67 @@ function RecordatorioCard({ r, color, onClick }: { r: any; color: 'red' | 'sky';
 }
 
 
+function groupRecordatoriosByExpId(recs: any[]) {
+  const groups: Record<string, { expId: string; empresa: string; clienteNombre: string; recordatorios: any[] }> = {};
+  recs.forEach(r => {
+    if (!groups[r.expId]) {
+      groups[r.expId] = {
+        expId: r.expId,
+        empresa: r.empresa,
+        clienteNombre: r.clienteNombre,
+        recordatorios: []
+      };
+    }
+    groups[r.expId].recordatorios.push(r);
+  });
+  return Object.values(groups);
+}
 
+function GroupedRecordatorioCard({ group, color, onClick }: { group: any; color: 'red' | 'sky'; onClick: (expId: string) => void; }) {
+  const colors = { 
+    red: { bg: 'bg-rose-950/20', border: 'border-rose-900/50', text: 'text-rose-400', headerBg: 'bg-rose-900/10' }, 
+    sky: { bg: 'bg-sky-950/20', border: 'border-sky-900/50', text: 'text-sky-400', headerBg: 'bg-sky-900/10' } 
+  };
+  const c = colors[color] || colors.sky;
+
+  return (
+    <div className={`${c.bg} border ${c.border} rounded-2xl overflow-hidden shadow-sm`}>
+      <div className={`${c.headerBg} border-b ${c.border} px-5 py-3 flex items-center justify-between`}>
+        <div className="min-w-0 pr-4">
+          <h4 className="text-sm font-black text-slate-200 uppercase tracking-wide truncate">{group.empresa}</h4>
+          <p className="text-[10px] font-bold text-slate-500 uppercase truncate">{group.clienteNombre}</p>
+        </div>
+        <button onClick={() => onClick(group.expId)} className={`shrink-0 text-[10px] font-bold ${c.text} bg-slate-900 border ${c.border} px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-all`}>
+          Ver Expediente
+        </button>
+      </div>
+      <div className="p-3 space-y-2">
+        {group.recordatorios.map((r: any) => (
+          <div key={r.id} className="flex items-center justify-between bg-slate-950/50 p-3 rounded-xl border border-slate-800/50 hover:border-slate-700 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-1.5 h-8 rounded-full shrink-0 ${color === 'red' ? 'bg-rose-500' : 'bg-sky-500'}`} />
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-300 uppercase leading-tight truncate">{r.titulo}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5 truncate">{r.tipo || 'General'}</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0 pl-2">
+              {r.fecha && color === 'sky' && (
+                <p className={`text-[9px] font-black uppercase ${c.text} mb-0.5`}>
+                  {new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                </p>
+              )}
+              {r.fecha && color === 'red' && (
+                <p className={`text-[9px] font-black uppercase ${c.text} mb-0.5`}>
+                  Venció: {new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                </p>
+              )}
+              <p className="text-[10px] font-black text-slate-400 uppercase">{r.hora || 'Todo el día'}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 

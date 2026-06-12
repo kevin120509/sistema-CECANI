@@ -6,7 +6,8 @@ export interface IDocumentoRepository {
     tipo: TipoDocumento,
     urlArchivo: string,
     integranteId?: string | null,
-    nombrePersonalizado?: string
+    nombrePersonalizado?: string,
+    validado?: boolean
   ): Promise<string>;
 }
 

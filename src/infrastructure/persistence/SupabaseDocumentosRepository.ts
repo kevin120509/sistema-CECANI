@@ -8,7 +8,8 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
     tipo: TipoDocumento,
     urlArchivo: string,
     integranteId?: string | null,
-    nombrePersonalizado?: string
+    nombrePersonalizado?: string,
+    validado: boolean = false
   ): Promise<string> {
     const supabase = createAdminClient();
 
@@ -34,7 +35,8 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
         tipo,
         url_archivo: urlArchivo,
         integrante_id: integranteId,
-        nombre_personalizado: nombrePersonalizado
+        nombre_personalizado: nombrePersonalizado,
+        validado: validado
       })
       .select('id')
       .single();
