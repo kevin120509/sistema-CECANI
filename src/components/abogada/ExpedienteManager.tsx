@@ -17,8 +17,8 @@ import {
   Search, Building2, User, FileText, ClipboardList, BookOpen, 
   ExternalLink, CheckCircle2, Clock, FileUp, FileSignature,
   AlertCircle, Users, Loader2, Bell, MessageCircle, 
-  Calendar, Trash2, CheckSquare, ChevronRight, X,
-  AlertTriangle, Info, Mail, MapPin, UserPlus, HelpCircle, LayoutDashboard, LogOut
+  AlertTriangle, Info, Mail, MapPin, UserPlus, HelpCircle, LayoutDashboard, LogOut,
+  ListTodo, Activity
 } from 'lucide-react';
 import { PLANES_PAGO_LABELS } from '@/lib/constants';
 
@@ -481,7 +481,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
   const hitosLegales = hitos.filter(h => h.orden < 100);
   const hitosCapacitacion = hitos.filter(h => h.orden >= 101);
 
-  const [dashTab, setDashTab] = useState<'clientes' | 'agenda'>('clientes');
+  const [dashTab, setDashTab] = useState<'clientes' | 'agenda' | 'tareas' | 'bitacora'>('clientes');
   const [agendaView, setAgendaView] = useState<'lista' | 'calendario'>('lista');
 
   const todosRecordatorios = useMemo(() => {
@@ -535,8 +535,9 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Panel Legal</p>
              <nav className="space-y-1">
                <SidebarLink icon={<Users size={18}/>} label="Mis Clientes" badge={expedientes.length} active={dashTab === 'clientes'} onClick={() => setDashTab('clientes')} />
+               <SidebarLink icon={<ListTodo size={18}/>} label="Mis Tareas" badge={tareasPendientes.length || undefined} active={dashTab === 'tareas'} onClick={() => setDashTab('tareas')} />
+               <SidebarLink icon={<Activity size={18}/>} label="Actividad Reciente" active={dashTab === 'bitacora'} onClick={() => setDashTab('bitacora')} />
                <SidebarLink icon={<Calendar size={18}/>} label="Agenda" badge={recordatoriosHoy.length + recordatoriosVencidos.length || undefined} active={dashTab === 'agenda'} onClick={() => setDashTab('agenda')} />
-
              </nav>
           </div>
           <div className="p-6 border-t border-slate-800 space-y-4">
@@ -655,6 +656,123 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {dashTab === 'tareas' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                  <ListTodo size={24}/>
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-tight">Mis Tareas Pendientes</h2>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Próximo paso de cada expediente</p>
+                </div>
+              </div>
+
+              {tareasPendientes.length === 0 ? (
+                <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-sm">
+                  <CheckCircle2 size={48} className="mx-auto text-emerald-500 mb-4"/>
+                  <p className="text-slate-300 font-black uppercase text-sm">¡Al día!</p>
+                  <p className="text-slate-500 text-xs font-bold uppercase mt-1">No hay tareas pendientes en tus expedientes.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {tareasPendientes.map((t) => (
+                    <div key={t.exp.id} className="bg-slate-900 rounded-3xl border border-slate-800 p-6 flex flex-col justify-between hover:border-indigo-500/30 transition-all shadow-xl group">
+                      <div>
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <p className="text-sm font-black text-white uppercase leading-tight line-clamp-2">
+                              {t.exp.datos_concentrado?.[0]?.nombre_asociacion_autorizado || t.exp.datos_concentrado?.[0]?.nombre_asociacion_1 || t.exp.nombre_empresa}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mt-1 truncate">{t.exp.cliente?.nombre_completo}</p>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors shrink-0">
+                            <ChevronRight size={16}/>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <CheckSquare size={10}/> Próximo Hito
+                          </p>
+                          <p className="text-xs font-bold text-slate-300 uppercase leading-snug">{t.hitoActual?.nombre}</p>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setSelectedExpedienteId(t.exp.id)}
+                        className="mt-5 w-full py-3 bg-slate-950 text-white border border-slate-800 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:border-indigo-500 transition-all"
+                      >
+                        Atender Tarea
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {dashTab === 'bitacora' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                  <Activity size={24}/>
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-tight">Actividad Reciente</h2>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Bitácora de seguimiento de todos tus expedientes</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 md:p-10 shadow-xl">
+                {bitacoraGlobal.length === 0 ? (
+                  <div className="text-center py-16">
+                    <Activity size={48} className="mx-auto text-slate-700 mb-4"/>
+                    <p className="text-slate-400 font-bold uppercase text-xs">No hay actividad registrada aún.</p>
+                  </div>
+                ) : (
+                  <div className="relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-800 before:to-transparent">
+                    {bitacoraGlobal.map((nota, i) => (
+                      <div key={nota.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-8 last:mb-0">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-slate-900 bg-slate-800 text-emerald-400 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-xl z-10">
+                          <MessageCircle size={16}/>
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-950 p-5 rounded-3xl border border-slate-800/50 shadow-sm group-hover:border-emerald-500/30 transition-all cursor-pointer" onClick={() => setSelectedExpedienteId(nota.expId)}>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                              {new Date(nota.created_at).toLocaleDateString()}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase">{new Date(nota.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                          </div>
+                          
+                          <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1 truncate">{nota.empresa}</h4>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-3">Asociado: {nota.clienteNombre}</p>
+                          
+                          <p className="text-slate-300 text-xs font-medium leading-relaxed">{nota.nota}</p>
+                          
+                          {(nota.fecha_proximo_seguimiento || nota.autorNombre) && (
+                            <div className="mt-4 pt-3 border-t border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              {nota.autorNombre && (
+                                <p className="text-[9px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                                  <User size={10}/> {nota.autorNombre}
+                                </p>
+                              )}
+                              {nota.fecha_proximo_seguimiento && (
+                                <p className="text-[9px] font-black text-amber-400 uppercase bg-amber-400/10 px-2 py-1 rounded self-start sm:self-auto">
+                                  Próx: {new Date(nota.fecha_proximo_seguimiento + 'T12:00:00').toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

@@ -421,3 +421,12 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
         - Se modificó la vista de lista (`agendaView === 'lista'`) para mapear utilizando la función de agrupación.
         - Se optimizó la celda de la vista de calendario (`agendaView === 'calendario'`) para que, cuando haya varios recordatorios de un mismo cliente en un día, solo muestre 1 fila indicando la cantidad: `Empresa (5)`.
 - **Estado**: La agenda es mucho más legible, agrupando la carga de trabajo diaria, vencida y futura por cliente en lugar de por tarjeta individual.
+
+### [11 Junio 2026] - Nuevas Herramientas: Mis Tareas y Actividad Reciente
+- **Acción**: Se eliminó el panel de Solicitud de Alta de la abogada y en su lugar se crearon dos nuevas vistas analíticas globales.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se creó la pestaña "Mis Tareas" que extrae dinámicamente el próximo paso (Hito no completado) de cada expediente y lo lista para fácil acceso.
+        - Se creó la pestaña "Actividad Reciente" que unifica y ordena de manera descendente todas las notas de bitácora de todos los expedientes de la abogada.
+        - Se leyeron los flujos del `MANUAL ÁREA LEGAL.pdf` para asegurar congruencia.
+- **Estado**: La abogada ahora tiene herramientas de productividad robustas sin necesidad de alterar la base de datos subyacente.
