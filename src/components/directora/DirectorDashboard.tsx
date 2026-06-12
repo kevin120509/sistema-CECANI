@@ -176,6 +176,15 @@ export default function DirectorDashboard({
 
   const filteredData = useMemo(() => {
     let result = activeTab === 'por_asignar' ? listosParaAsignar : activeTab === 'validacion' ? validacion : activeTab === 'bajas_docs' ? [] : concentrado;
+    
+    // --- DEDUPLICACIÓN POR ID ---
+    const seen = new Set();
+    result = result.filter(exp => {
+      const duplicate = seen.has(exp.id);
+      seen.add(exp.id);
+      return !duplicate;
+    });
+
     if (activeTab === 'concentrado') {
       result = [...result].sort((a, b) => {
         const aReq = a.documentos?.some(d => d.solicitud_borrado) ? 1 : 0;
@@ -454,34 +463,55 @@ export default function DirectorDashboard({
                   <p className="text-slate-500 font-black uppercase tracking-widest text-xs">No hay expedientes en esta categoría</p>
                 </div>
              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredData.map(exp => (
-                    <div key={exp.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-sky-500/30 transition-colors shadow-xl group">
-                      <div className="flex items-center gap-4 min-w-0 flex-1">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-300 font-black uppercase shrink-0 border border-slate-800 group-hover:border-sky-500/50 transition-colors">
+                    <div key={exp.id} className="bg-slate-900 rounded-3xl border border-slate-800 p-6 flex flex-col gap-6 hover:border-sky-500/30 transition-all shadow-xl group relative overflow-hidden">
+                      {/* Decoración sutil de fondo */}
+                      <div className="absolute -right-4 -top-4 w-24 h-24 bg-sky-500/5 rounded-full blur-2xl group-hover:bg-sky-500/10 transition-all"></div>
+                      
+                      <div className="flex items-start gap-4 relative">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-300 font-black text-xl uppercase shrink-0 border border-slate-800 group-hover:border-sky-500/50 transition-all shadow-inner">
                            {exp.nombre_empresa.charAt(0)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-white font-black uppercase tracking-tight text-sm truncate">{exp.nombre_empresa}</h4>
-                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5 truncate">{exp.cliente?.nombre_completo || 'Sin titular'}</p>
-                          {activeTab === 'concentrado' && (
-                             <p className="text-sky-400 text-[9px] mt-1.5 font-black uppercase tracking-widest truncate">Asesora: {exp.asesora?.nombre_completo || 'No asignada'}</p>
-                          )}
-                          <div className="flex gap-2 mt-2 flex-wrap">
-                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-slate-800 whitespace-nowrap">{exp.estatus.replace('_', ' ').toUpperCase()}</span>
-                            {exp.documentos?.some(d => d.solicitud_borrado) && <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/50 animate-pulse whitespace-nowrap">BAJA PENDIENTE</span>}
+                          <h4 className="text-white font-black uppercase tracking-tight text-sm break-words leading-tight group-hover:text-sky-400 transition-colors">{exp.nombre_empresa}</h4>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1.5 break-words line-clamp-1">{exp.cliente?.nombre_completo || 'Sin titular'}</p>
+                          
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-slate-950 text-slate-400 border border-slate-800 whitespace-nowrap">{exp.estatus.replace(/_/g, ' ').toUpperCase()}</span>
+                            {activeTab === 'concentrado' && (
+                               <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-sky-950/30 text-sky-400 border border-sky-900/30 whitespace-nowrap">Asesora: {exp.asesora?.nombre_completo?.split(' ')[0] || '---'}</span>
+                            )}
+                            {exp.documentos?.some(d => d.solicitud_borrado) && <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-red-950/50 text-red-400 border border-red-900/30 animate-pulse whitespace-nowrap">BAJA PENDIENTE</span>}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap gap-2 shrink-0">
+                      <div className="flex items-center gap-2 mt-auto pt-5 border-t border-slate-800/50">
                          {activeTab === 'concentrado' && (
-                           <button onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} className="px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] bg-slate-950 text-sky-400 hover:bg-slate-800 transition-all flex items-center gap-2 border border-slate-800">
-                             <FileText size={14}/> Ver Documentación
-                           </button>
+                           <>
+                            <button 
+                              onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }} 
+                              className="w-11 h-11 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:text-sky-400 hover:border-sky-500/50 transition-all shadow-lg shrink-0 group/btn"
+                              title="Ver Gestión y Concentrado"
+                            >
+                              <Eye size={18} className="group-hover/btn:scale-110 transition-transform" />
+                            </button>
+                            <button 
+                              onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} 
+                              className="flex-1 justify-center px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] bg-slate-950 text-sky-400 hover:bg-slate-800 transition-all flex items-center gap-2 border border-slate-800 group/docs"
+                            >
+                              <FileText size={14} className="shrink-0 group-hover/docs:scale-110 transition-transform"/> <span className="truncate">Documentación</span>
+                            </button>
+                           </>
                          )}
-                         <button onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} className={`px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 shadow-lg ${exp.documentos?.some(d => d.solicitud_borrado) ? 'bg-red-600 text-white shadow-red-600/20' : 'bg-[#0197D2] text-white border border-sky-500 hover:bg-sky-500 shadow-sky-600/10'}`}>
-                           {exp.documentos?.some(d => d.solicitud_borrado) ? <AlertTriangle size={14}/> : <ExternalLink size={14}/>} {activeTab === 'por_asignar' ? 'Validar Expediente' : 'Abrir Expediente'}
+
+                         <button 
+                           onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} 
+                           className={`flex-1 justify-center px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all flex items-center gap-2 shadow-lg ${exp.documentos?.some(d => d.solicitud_borrado) ? 'bg-red-600 text-white shadow-red-600/20 hover:bg-red-500' : 'bg-[#0197D2] text-white border border-[#0197D2] hover:bg-sky-500 shadow-sky-600/10'}`}
+                         >
+                           {exp.documentos?.some(d => d.solicitud_borrado) ? <AlertTriangle size={14} className="shrink-0"/> : <ExternalLink size={14} className="shrink-0"/>} 
+                           <span className="truncate">{activeTab === 'por_asignar' ? 'Validar' : 'Abrir'}</span>
                          </button>
                       </div>
                     </div>
@@ -954,75 +984,106 @@ export default function DirectorDashboard({
         )}
       </AnimatePresence>
 
-      {/* --- MODAL 2: GESTIÓN --- */}
+      {/* --- MODAL 2: GESTIÓN Y CONCENTRADO --- */}
       <AnimatePresence>
         {isAssignModalOpen && selectedExpediente && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
-               <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
-                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><ClipboardList size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Gestión y Concentrado</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Datos Operativos Escritos</p></div></div>
-                 <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2"><X size={24}/></button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-6xl w-full flex flex-col max-h-[95vh] overflow-hidden border border-slate-800">
+               <div className="bg-slate-950 p-8 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
+                 <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><ClipboardList size={28}/></div>
+                   <div>
+                     <h2 className="text-xl font-black uppercase tracking-tight">Gestión y Concentrado Operativo</h2>
+                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">{selectedExpediente.nombre_empresa}</p>
+                   </div>
+                 </div>
+                 <button onClick={() => setIsAssignModalOpen(false)} className="bg-slate-900 p-3 rounded-2xl text-slate-500 hover:text-white hover:bg-slate-800 transition-all shadow-xl"><X size={24}/></button>
                </div>
-               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-900/50">
-                  {/* PERFIL DEL CLIENTE TITULAR */}
-                  <div className="bg-slate-950 p-10 rounded-[2.5rem] border border-slate-800 shadow-inner">
-                    <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] flex items-center gap-3">
-                          <UserCircle size={20}/> Perfil del Cliente Titular
-                       </h3>
-                       <a 
-                         href={`https://wa.me/52${selectedExpediente.cliente?.telefono?.replace(/\D/g, '')}`} 
-                         target="_blank" 
-                         className="flex items-center gap-3 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/10"
-                       >
-                         <MessageCircle size={16}/> WhatsApp Directo
-                       </a>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-12">
-                       <TextData label="Nombre Completo" value={selectedExpediente.cliente?.nombre_completo} />
-                       <TextData label="RFC" value={selectedExpediente.cliente?.rfc} />
-                       <TextData label="CURP" value={selectedExpediente.cliente?.curp} />
-                       <TextData label="Teléfono" value={selectedExpediente.cliente?.telefono} />
-                       <TextData label="Estado Civil" value={selectedExpediente.cliente?.estado_civil} />
-                       <TextData label="Ocupación" value={selectedExpediente.cliente?.ocupacion} />
-                       <div className="md:col-span-3">
-                         <TextData label="Domicilio Completo" value={selectedExpediente.cliente?.domicilio_completo} />
-                       </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/80 p-10 rounded-[2.5rem] border border-slate-800 shadow-xl">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-8 flex items-center gap-3">
-                       <FileText size={20}/> Información Operativa (Bitácora)
-                    </h3>
-                    {(() => {
-                      const datos = Array.isArray(selectedExpediente.datos_concentrado) ? selectedExpediente.datos_concentrado[0] : (selectedExpediente.datos_concentrado as any);
-                      return (
-                        <div className="space-y-10">
-                          <div className="space-y-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 ml-2">Objeto Social Transcrito</p>
-                            <div className="bg-slate-950 border-2 border-slate-800 p-8 rounded-[2rem] text-slate-300 text-sm font-bold italic leading-relaxed whitespace-pre-wrap shadow-inner">{datos?.objeto_social_ventas || 'PENDIENTE DE TRANSCRIPCIÓN'}</div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <TextData label="Folio RPP" value={datos?.folio_rpp} />
-                            <TextData label="Libro" value={datos?.libro_rpp} />
-                            <TextData label="Volumen" value={datos?.volumen_rpp} />
-                            <TextData label="Estatus RPP" value={datos?.estatus_rpp} />
-                            <TextData label="Notaría" value={datos?.notaria} />
-                            <TextData label="Vendedora" value={datos?.vendedora} />
-                          </div>
+               
+               <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-10 bg-slate-900/50">
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                    
+                    {/* COLUMNA IZQUIERDA: PERFIL Y CONTACTO */}
+                    <div className="xl:col-span-5 space-y-8">
+                      <div className="bg-slate-950 p-8 rounded-[2rem] border border-slate-800 shadow-inner relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-sky-500/10 transition-all"></div>
+                        
+                        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
+                           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-400 flex items-center gap-3">
+                              <UserCircle size={18}/> Perfil del Cliente
+                           </h3>
+                           <a 
+                             href={`https://wa.me/52${selectedExpediente.cliente?.telefono?.replace(/\D/g, '')}`} 
+                             target="_blank" 
+                             className="flex items-center gap-2.5 px-4 py-2 bg-emerald-600/10 text-emerald-400 border border-emerald-600/20 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-emerald-600 hover:text-white transition-all shadow-lg"
+                           >
+                             <MessageCircle size={14}/> WhatsApp
+                           </a>
                         </div>
-                      );
-                    })()}
-                    <div className="mt-12 pt-10 border-t border-slate-800">
-                      <div className="bg-[#0197D2]/5 p-10 rounded-[2.5rem] border-2 border-sky-900/10 flex flex-col justify-center text-center shadow-inner">
-                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] mb-4">Inversión del Contrato</h3>
-                         <p className="text-4xl font-black text-white tracking-tighter">${selectedExpediente.contratos?.[0]?.monto_total?.toLocaleString() || '0.00'}</p>
-                         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 mt-4">Pesos Mexicanos (M.N.)</p>
+                        
+                        <div className="space-y-6">
+                           <TextData label="Nombre Completo" value={selectedExpediente.cliente?.nombre_completo} />
+                           <div className="grid grid-cols-2 gap-6">
+                             <TextData label="RFC" value={selectedExpediente.cliente?.rfc} />
+                             <TextData label="CURP" value={selectedExpediente.cliente?.curp} />
+                           </div>
+                           <div className="grid grid-cols-2 gap-6">
+                             <TextData label="Teléfono" value={selectedExpediente.cliente?.telefono} />
+                             <TextData label="Ocupación" value={selectedExpediente.cliente?.ocupacion} />
+                           </div>
+                           <TextData label="Domicilio Completo" value={selectedExpediente.cliente?.domicilio_completo} />
+                        </div>
+                      </div>
+
+                      <div className="bg-sky-950/20 p-8 rounded-[2rem] border border-sky-900/30 flex flex-col justify-center text-center shadow-2xl relative overflow-hidden">
+                         <div className="absolute inset-0 bg-gradient-to-br from-sky-600/5 to-transparent"></div>
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-500 mb-4 relative">Inversión Total del Proyecto</h3>
+                         <p className="text-5xl font-black text-white tracking-tighter relative drop-shadow-2xl">${selectedExpediente.contratos?.[0]?.monto_total?.toLocaleString() || '0.00'}</p>
+                         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-700 mt-5 relative">Pesos Mexicanos (M.N.)</p>
+                      </div>
+                    </div>
+
+                    {/* COLUMNA DERECHA: DATOS OPERATIVOS */}
+                    <div className="xl:col-span-7 space-y-8">
+                      <div className="bg-slate-950/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden h-full">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8 flex items-center gap-3">
+                           <FileText size={18}/> Información Operativa en Bitácora
+                        </h3>
+                        
+                        {(() => {
+                          const datos = Array.isArray(selectedExpediente.datos_concentrado) ? selectedExpediente.datos_concentrado[0] : (selectedExpediente.datos_concentrado as any);
+                          return (
+                            <div className="space-y-8">
+                              <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
+                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Objeto Social Transcrito</p>
+                                </div>
+                                <div className="bg-slate-950 border border-slate-800 p-6 rounded-xl text-slate-300 text-sm font-bold italic leading-relaxed whitespace-pre-wrap shadow-inner min-h-[120px] max-h-[250px] overflow-y-auto custom-scrollbar">{datos?.objeto_social_ventas || 'SIN TRANSCRIPCIÓN TODAVÍA'}</div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-10">
+                                <TextData label="Asesora Asignada" value={selectedExpediente.asesora?.nombre_completo || 'No asignada'} />
+                                <TextData label="Vendedora" value={datos?.vendedora} />
+                                <TextData label="Notaría" value={datos?.notaria} />
+                                <div className="md:col-span-3 h-px bg-slate-800/50 my-2"></div>
+                                <TextData label="Folio RPP" value={datos?.folio_rpp} />
+                                <TextData label="Libro" value={datos?.libro_rpp} />
+                                <TextData label="Volumen" value={datos?.volumen_rpp} />
+                                <TextData label="Estatus RPP" value={datos?.estatus_rpp} />
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
+               </div>
+               
+               <div className="bg-slate-950 p-6 px-10 flex items-center justify-between border-t border-slate-800 shrink-0">
+                 <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">ID Expediente: {selectedExpediente.id}</p>
+                 <button onClick={() => setIsAssignModalOpen(false)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all border border-slate-800 shadow-xl">Cerrar Concentrado</button>
                </div>
             </motion.div>
           </div>

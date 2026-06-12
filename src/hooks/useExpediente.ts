@@ -194,7 +194,7 @@ export function useExpediente(): UseExpedienteReturn {
 
   const currentStep = calcularPaso(data.expediente, data.contrato, data.documentos);
   const hasDocumentosRechazados = (data.documentos || []).some(
-    d => d.motivo_rechazo || (d.url_archivo === '' && !d.validado)
+    d => !!d.motivo_rechazo
   );
 
   return {
@@ -226,13 +226,19 @@ function calcularPaso(
   const tieneIne         = documentos.some(d => d.tipo === 'ine_frente'      && !!d.url_archivo);
   const tieneComprobante = documentos.some(d => d.tipo === 'comprobante_domicilio' && !!d.url_archivo);
 
+  // 3. Verificar si TODOS los documentos requeridos del paso 2 están validados
+  const docsRequeridos = ['ine_frente', 'ine_reverso', 'comprobante_domicilio'];
+  const allValidatedPaso2 = documentos.length > 0 && 
+    docsRequeridos.every(tipo => documentos.some(d => d.tipo === tipo && d.validado));
+
   // --- REGLA PASO 2 ---
   // Se queda en Paso 2 si:
   // - Aún está en registro inicial (falta algún doc)
   // - O si ya está en revisión pero la directora RECHAZÓ algún documento específico
+  // - O si está en revisión de la directora pero AÚN NO han sido todos validados (Muestra pantalla de espera)
   if (
     (expediente.estatus === 'en_registro' && (!tieneIne || !tieneComprobante)) ||
-    (expediente.estatus === 'revision_directora' && hasDocumentosRechazados)
+    (expediente.estatus === 'revision_directora' && (!allValidatedPaso2 || hasDocumentosRechazados))
   ) {
     return 2;
   }
@@ -254,8 +260,7 @@ function calcularPaso(
   const tieneContratoFirmado = contrato?.url_pdf_firmado_cliente != null;
 
   if (
-    ['en_registro', 'revision_directora'].includes(expediente.estatus) ||
-    (expediente.estatus === 'en_proceso' && (!tieneContratoFirmado || !tieneDobleFirma))
+    ['en_registro', 'revision_directora', 'en_proceso'].includes(expediente.estatus)
   ) {
     return 3;
   }

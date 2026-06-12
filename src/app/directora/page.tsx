@@ -54,7 +54,7 @@ export default async function DirectoraPage() {
 
   if (asignarError) console.error('Error fetching asignarData:', asignarError);
 
-  // 4. Obtener Concentrado Global (Optimizado para volumen masivo)
+  // 4. Obtener Concentrado Operativo (SOLO los que ya tienen asesora asignada)
   const { data: concentradoData, error: concentradoError } = await supabaseAdmin
     .from('expedientes')
     .select(`
@@ -67,6 +67,7 @@ export default async function DirectoraPage() {
       pagos(*),
       datos_concentrado(*)
     `)
+    .not('asesora_id', 'is', null)
     .order('created_at', { ascending: false });
 
   if (concentradoError) console.error('Error fetching concentradoData:', concentradoError);

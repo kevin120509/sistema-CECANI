@@ -284,7 +284,10 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
     'actividad', 'numero_control', 'notaria', 'estatus_rpp',
     'folio_rpp', 'libro_rpp', 'volumen_rpp',
     'total_contrato', 'periodicidad_pagos', 'num_pagos_realizados', 'saldo_cliente',
-    'asesora_encargada'
+    'asesora_encargada', 'cluni', 'pago_notario', 'pago_entrega_donataria',
+    'cantidad_cobrar_proximo', 'estatus_detalle', 'accion_realizar',
+    'cantidad_pagada_acumulada', 'fecha_ultimo_pago', 'quien_cobra',
+    'vendedora', 'fecha_contrato', 'link_reunion', 'fecha_reunion_acuerdos'
   ];
 
   const [concentradoForm, setConcentradoForm] = useState<Record<string, string>>({});
@@ -597,12 +600,12 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                       const hasAlert = alertasHoy.some(a => a.id === exp.id);
                       return (
                         <div key={exp.id} className={`bg-slate-900 rounded-2xl border p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors shadow-sm ${hasAlert ? 'border-red-500/50 hover:border-red-500' : 'border-slate-800 hover:border-slate-700'}`}>
-                          <div className="flex items-center gap-4 min-w-[300px]">
-                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold uppercase shrink-0 border border-slate-700">{exp.nombre_empresa.charAt(0)}</div>
-                            <div>
-                              <div className="flex items-center gap-2"><h4 className="text-slate-200 font-medium text-lg">{exp.nombre_empresa}</h4>{hasAlert && <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"/>}</div>
-                              <p className="text-slate-400 text-xs mt-0.5">{nombreCliente}</p>
-                              <div className="flex items-center gap-2 mt-2"><span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Nº {(exp as any).numero_control || 'S/C'}</span><span className="text-[10px] font-bold text-sky-400 flex items-center gap-1"><MapPin size={10}/> {(exp as any).cliente?.estado || 'S/U'}</span></div>
+                          <div className="flex items-start gap-4 min-w-[250px] min-w-0 flex-1">
+                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold uppercase shrink-0 border border-slate-700 mt-1">{exp.nombre_empresa.charAt(0)}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start gap-2"><h4 className="text-slate-200 font-medium text-lg break-words leading-tight">{exp.nombre_empresa}</h4>{hasAlert && <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse mt-1 shrink-0"/>}</div>
+                              <p className="text-slate-400 text-xs mt-1 break-words">{nombreCliente}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-2"><span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">Nº {(exp as any).numero_control || 'S/C'}</span><span className="text-[10px] font-bold text-sky-400 flex items-center gap-1 whitespace-nowrap"><MapPin size={10}/> {(exp as any).cliente?.estado || 'S/U'}</span></div>
                             </div>
                           </div>
                           <div className="flex-1 px-4 max-w-xs w-full">
@@ -748,20 +751,20 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
                  <div className="space-y-8 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                    {[
                       {
-                        titulo: 'Información de la Asociación',
-                        campos: ['actividad', 'objeto_social_ventas', 'estado', 'numero_control', 'notaria']
+                        titulo: '1. Datos del Cliente Titular',
+                        campos: ['nombre_completo', 'telefono_cliente', 'rfc', 'curp', 'estado_civil', 'ocupacion', 'domicilio_completo', 'estado']
                       },
                       {
-                        titulo: 'Representante Legal',
-                        campos: ['nombre_completo', 'rfc', 'curp', 'estado_civil', 'domicilio_completo', 'telefono_cliente']
+                        titulo: '2. Datos de la Asociación y Legal',
+                        campos: ['actividad', 'cluni', 'estatus_rpp', 'folio_rpp', 'libro_rpp', 'volumen_rpp', 'notaria', 'pago_notario', 'objeto_social_ventas']
                       },
                       {
-                        titulo: 'Estatus del Trámite',
-                        campos: ['estatus_rpp', 'folio_rpp', 'libro_rpp', 'volumen_rpp']
+                        titulo: '3. Datos de Pagos y Contrato',
+                        campos: ['asesora_encargada', 'vendedora', 'quien_cobra', 'total_contrato', 'periodicidad_pagos', 'pago_entrega_donataria', 'cantidad_cobrar_proximo', 'num_pagos_realizados', 'cantidad_pagada_acumulada', 'saldo_cliente', 'fecha_ultimo_pago', 'fecha_contrato']
                       },
                       {
-                        titulo: 'Administración y Finanzas',
-                        campos: ['total_contrato', 'periodicidad_pagos', 'num_pagos_realizados', 'saldo_cliente']
+                        titulo: '4. Seguimiento y Estatus',
+                        campos: ['estatus_detalle', 'accion_realizar', 'link_reunion', 'fecha_reunion_acuerdos']
                       }
                     ].map(seccion => (
                       <div key={seccion.titulo} className="bg-slate-950/30 p-6 rounded-2xl border border-slate-800 space-y-4 shadow-sm">

@@ -352,6 +352,29 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - **IMPORTANTE**: Ejecutar `migration_borrado_autorizado.sql` en el editor SQL de Supabase para habilitar las nuevas columnas.
     - Continuar con la revisión de seguridad de URLs firmadas en R2.
 
+### [11 Junio 2026] - Estabilización de Flujos y Corrección de Duplicados
+- **Acción**: Resolución de problemas de redundancia en UI y optimización de la experiencia del cliente tras la subida de archivos.
+- **Cambios**:
+    - **Portal Cliente**:
+        - `src/hooks/useExpediente.ts`: Se ajustó la lógica de `calcularPaso` para que el cliente permanezca en el Paso 2 (Documentación) mientras sus archivos están en estado de validación por dirección. Esto evita transiciones prematuras y el efecto de "múltiples recargas".
+        - `src/components/cliente/Paso3Contrato.tsx`: Se añadió un mensaje informativo indicando que el contrato debe ser aprobado antes de proceder con la firma y el pago inicial.
+    - **Panel Directora**:
+        - `src/app/directora/page.tsx`: Se refinó la consulta del "Concentrado" para excluir expedientes sin asesora asignada, separando claramente los casos nuevos de los operativos.
+        - `src/components/directora/DirectorDashboard.tsx`: Se implementó un sistema de deduplicación por ID en el filtrado de datos para garantizar que ningún cliente aparezca repetido en las vistas.
+- **Estado**: Flujo de usuario más coherente; eliminación de duplicados visuales en la administración.
+
+### [11 Junio 2026] - Optimización UI: Concentrado y Gestión Operativa (Directora)
+- **Acción**: Mejora de la usabilidad y presentación en la sección de "Concentrado" del panel de Directora.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`:
+        - **Layout Concentrado**: Se aumentó la densidad de información y se mejoró la responsividad del grid (`xl:grid-cols-3`). Se ajustaron los espacios y tipografía para evitar desbordamientos de texto.
+        - **Acceso a Gestión**: Se añadió un botón con icono de "ojo" en las tarjetas de concentrado para abrir el modal de "Gestión y Concentrado Operativo", el cual era inaccesible previamente.
+        - **Rediseño de Modal**: El modal de gestión fue reorganizado completamente:
+            - Separación clara entre "Perfil del Cliente" e "Información Operativa/Bitácora".
+            - Mejor visualización de la inversión total con acentos en azul y gradientes.
+            - Optimización de la lectura del objeto social con un contenedor con scroll interno y tipografía itálica.
+- **Estado**: Sección de concentrado optimizada para una gestión rápida y visualmente jerarquizada.
+
 ### [10 Junio 2026] - Rediseño Estético: Modo Oscuro "Deep Dark" (Directora)
 - **Acción**: Refactorización visual completa del panel de Directora y su login para alinearlos con la estética profesional del login de abogadas.
 - **Cambios**:
@@ -365,3 +388,10 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
         - Implementación de gradientes `Red/Sky/Emerald` en la cabecera de autenticación.
     - `src/app/directora/page.tsx`: Sincronización del color de fondo del layout principal.
 - **Estado**: Interfaz directiva modernizada y coherente con el resto del ecosistema administrativo.
+
+### [11 Junio 2026] - Integración de Datos Completos de Excel en Panel de Abogada
+- **Acción**: Actualización de la sección "Concentrado de Datos" en el Panel de Abogada (`ExpedienteManager.tsx`) para incluir y permitir la edición de todos los campos provenientes de los archivos Excel originales.
+- **Cambios**:
+    - Se agregaron campos faltantes a `CAMPOS_CONCENTRADO`: `cluni`, `pago_notario`, `pago_entrega_donataria`, `cantidad_cobrar_proximo`, `estatus_detalle`, `accion_realizar`, `cantidad_pagada_acumulada`, `fecha_ultimo_pago`, `quien_cobra`, `vendedora`, `fecha_contrato`, `link_reunion`, `fecha_reunion_acuerdos`.
+    - Se rediseñó la UI de la pestaña "Etapa Legal" para dividir la información en 4 secciones lógicas: "Datos del Cliente Titular", "Datos de la Asociación y Legal", "Datos de Pagos y Contrato", y "Seguimiento y Estatus".
+- **Estado**: La abogada ahora puede visualizar y modificar toda la información de contexto del cliente desde su panel sin necesidad de recurrir a documentos externos de Excel, con carga automática desde la base de datos `datos_concentrado`.

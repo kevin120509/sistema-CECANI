@@ -186,7 +186,14 @@ export default function Paso3Contrato({
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
         <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-emerald-500/20"><FileSignature size={36} /></div>
         <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Formalización Legal</h2>
-        <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto leading-relaxed">Descargue su instrumento legal, proceda con la firma autógrafa y sincronice su comprobante de pago inicial.</p>
+        <div className="space-y-4 max-w-2xl mx-auto">
+          <p className="text-slate-500 font-medium text-lg leading-relaxed italic">
+            "Le informamos que su contrato debe ser validado y aprobado por nuestra dirección antes de que pueda proceder con la firma y el pago inicial."
+          </p>
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest leading-relaxed">
+            Una vez aprobado, podrá descargar su instrumento legal, proceder con la firma autógrafa y sincronizar su comprobante.
+          </p>
+        </div>
       </motion.div>
 
       {(isContratoRechazado || isPagoRechazado) && (
