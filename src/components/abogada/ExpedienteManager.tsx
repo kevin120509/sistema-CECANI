@@ -26,7 +26,7 @@ interface ExpedienteManagerProps {
   expedientes: ExpedienteAbogada[];
   hitos: CatalogoHito[];
   alertasHoy: ExpedienteAbogada[];
-  solicitarAltaPanel?: React.ReactNode;
+
 }
 
 const CECANI_EMAIL = 'cecani.sc@gmail.com';
@@ -234,7 +234,7 @@ function DocumentStage({ title, docs, color, onUpload, uploadingType, integrante
 }
 
 
-export default function ExpedienteManager({ expedientes, hitos, alertasHoy, solicitarAltaPanel }: ExpedienteManagerProps) {
+export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: ExpedienteManagerProps) {
   const router = useRouter();
   
   // ---- REALTIME SYNC ---
@@ -481,7 +481,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
   const hitosLegales = hitos.filter(h => h.orden < 100);
   const hitosCapacitacion = hitos.filter(h => h.orden >= 101);
 
-  const [dashTab, setDashTab] = useState<'clientes' | 'agenda' | 'solicitudes'>('clientes');
+  const [dashTab, setDashTab] = useState<'clientes' | 'agenda'>('clientes');
   const [agendaView, setAgendaView] = useState<'lista' | 'calendario'>('lista');
 
   const todosRecordatorios = useMemo(() => {
@@ -536,9 +536,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
              <nav className="space-y-1">
                <SidebarLink icon={<Users size={18}/>} label="Mis Clientes" badge={expedientes.length} active={dashTab === 'clientes'} onClick={() => setDashTab('clientes')} />
                <SidebarLink icon={<Calendar size={18}/>} label="Agenda" badge={recordatoriosHoy.length + recordatoriosVencidos.length || undefined} active={dashTab === 'agenda'} onClick={() => setDashTab('agenda')} />
-               {solicitarAltaPanel && (
-                 <SidebarLink icon={<UserPlus size={18}/>} label="Solicitudes de Alta" active={dashTab === 'solicitudes'} onClick={() => setDashTab('solicitudes')} />
-               )}
+
              </nav>
           </div>
           <div className="p-6 border-t border-slate-800 space-y-4">
@@ -551,7 +549,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
 
         <main className="flex-1 p-6 md:p-8 w-full max-w-[1600px] mx-auto">
           <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            {(dashTab === 'clientes' || dashTab === 'solicitudes') && (
+            {dashTab === 'clientes' && (
               <div className="relative w-full md:w-96">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16}/>
                 <input type="text" placeholder="Search (ctrl+k)" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-12 pr-4 text-sm font-medium text-slate-200 outline-none focus:border-sky-500 w-full placeholder-slate-500 transition-all shadow-sm" />
@@ -660,7 +658,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy, soli
             </div>
           )}
 
-          {dashTab === 'solicitudes' && solicitarAltaPanel && (<div className="space-y-6"><div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800">{solicitarAltaPanel}</div></div>)}
+
         </main>
       </div>
     );
