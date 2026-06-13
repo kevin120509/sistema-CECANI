@@ -836,7 +836,7 @@ export default function ExpedienteManager({
           className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 h-screen overflow-y-auto ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}
         >
           <div className={`p-6 border-b border-slate-800 flex items-center justify-between ${!isSidebarOpen ? 'lg:justify-center lg:px-0' : ''}`}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <div className="w-8 h-8 shrink-0 bg-[#0197D2] rounded flex items-center justify-center text-white font-bold">
                 A
               </div>
@@ -920,7 +920,7 @@ export default function ExpedienteManager({
           <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4 w-full md:w-auto">
               <button
-                onClick={() => setIsSidebarOpen(true)}
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
                 className="p-2.5 bg-slate-900 text-slate-300 rounded-lg hover:text-white"
               >
                 <Menu size={20} />
@@ -939,14 +939,7 @@ export default function ExpedienteManager({
                 />
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2 hidden lg:hidden">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                <div className="w-8 h-8 rounded-full bg-[#0197D2] flex items-center justify-center text-white font-bold">
-                  A
-                </div>
-                <span>Abogada</span>
-              </div>
-            </div>
+
           </header>
 
           {dashTab === "clientes" && (
@@ -1448,7 +1441,7 @@ export default function ExpedienteManager({
             </div>
           </div>
         </div>
-        <div className="bg-slate-900 rounded-3xl p-6 md:p-8 text-white flex flex-col lg:flex-row justify-between gap-6 md:gap-8 items-center shadow-xl border border-slate-800 relative overflow-hidden">
+        <div className="bg-slate-900 rounded-3xl p-6 md:p-8 text-white flex flex-col lg:flex-row justify-between gap-6 md:gap-8 items-center shadow-xl border border-slate-800 relative overflow-hidden text-center lg:text-left">
           <div className="space-y-3 relative z-10 text-center lg:text-left">
             <h1 className="text-3xl font-bold tracking-tight">
               {selectedExpediente.nombre_empresa}
@@ -1465,12 +1458,12 @@ export default function ExpedienteManager({
               </p>
             </div>
           </div>
-          <div className="relative z-10 flex flex-wrap items-center justify-center lg:justify-end gap-4">
+          <div className="relative z-10 flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-end gap-4 w-full lg:w-auto">
             {urlContratoDoble || urlContratoGenerado || urlContratoCliente ? (
               <a
                 href={`/api/r2/download?url=${encodeURIComponent(urlContratoDoble || urlContratoGenerado || urlContratoCliente || "")}`}
                 target="_blank"
-                className="flex items-center gap-3 px-6 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 rounded-xl font-bold hover:bg-[#0197D2] hover:text-white transition-all shadow-lg"
+                className="flex items-center justify-center gap-3 px-6 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 rounded-xl font-bold hover:bg-[#0197D2] hover:text-white transition-all shadow-lg w-full sm:w-auto"
               >
                 <FileSignature size={20} />{" "}
                 {urlContratoDoble
@@ -1488,7 +1481,7 @@ export default function ExpedienteManager({
             <a
               href={`https://wa.me/52${(selectedExpediente as any).cliente?.telefono?.replace(/\D/g, "")}`}
               target="_blank"
-              className="flex items-center gap-3 px-6 py-3 bg-[#0197D2] text-white rounded-xl font-bold hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20"
+              className="flex items-center justify-center gap-3 px-6 py-3 bg-[#0197D2] text-white rounded-xl font-bold hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20 w-full sm:w-auto"
               title="Enviar WhatsApp al Cliente"
             >
               <MessageCircle size={20} /> Contacto
@@ -1669,7 +1662,7 @@ export default function ExpedienteManager({
           {activeTab === "documentacion" && (
             <div className="p-6 md:p-8 space-y-8 bg-slate-950 min-h-full">
               <div className="bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <h3 className="text-xl font-bold text-slate-200 flex items-center gap-3">
                     <Users size={24} className="text-sky-400" /> Integrantes de
                     Firma
@@ -2249,7 +2242,7 @@ function ReminderForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 lg:grid-cols-2 gap-16"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16"
     >
       <div className="space-y-10">
         <div className="flex items-center gap-6 text-sky-400">

@@ -358,10 +358,8 @@ export default function DirectorDashboard({
       <AnimatePresence>{isSidebarOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" />}</AnimatePresence>
       <aside className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}>
         <div className={`p-6 border-b border-slate-800 flex items-center justify-between ${!isSidebarOpen ? 'lg:justify-center lg:px-0' : ''}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 shrink-0 bg-sky-500 rounded flex items-center justify-center text-white font-bold">
-              D
-            </div>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">D</div>
             {isSidebarOpen && <span className="text-white font-black tracking-widest uppercase text-sm">Directora</span>}
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className={`text-slate-400 hover:text-white ${!isSidebarOpen ? 'hidden' : 'lg:hidden'}`}><X size={20}/></button>
@@ -387,13 +385,11 @@ export default function DirectorDashboard({
       <main className={`flex-1 p-6 md:p-8 w-full max-w-[1600px] transition-all duration-300 mx-auto ${isSidebarOpen ? '' : ''}`}>
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 bg-slate-900 text-slate-300 rounded-lg hover:text-white">
+            <button onClick={() => setIsSidebarOpen((prev) => !prev)} className="p-2.5 bg-slate-900 text-slate-300 rounded-lg hover:text-white lg:hidden">
               <Menu size={20}/>
             </button>
           </div>
-          <div className="flex flex-col items-end gap-2 hidden lg:hidden">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-300"><div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">D</div><span className="font-black uppercase tracking-widest text-xs">Directora</span></div>
-          </div>
+
         </header>
 
         {/* OVERVIEW CARDS */}
@@ -417,7 +413,7 @@ export default function DirectorDashboard({
           <div className="space-y-3">
              {activeTab === 'bajas_docs' ? (
                 solicitudesBaja.length === 0 ? (
-                  <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-sm">
+                  <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 md:p-16 text-center shadow-sm">
                     <Trash2 size={48} className="mx-auto text-slate-700 mb-4" />
                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Por el momento no hay solicitudes de baja pendientes.</p>
                   </div>
@@ -443,7 +439,7 @@ export default function DirectorDashboard({
                   
                   if (items.length === 0) {
                     return (
-                      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-sm">
+                      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 md:p-16 text-center shadow-sm">
                         <ShieldCheck size={48} className="mx-auto text-slate-700 mb-4" />
                         <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No hay expedientes en esta sección por el momento.</p>
                       </div>

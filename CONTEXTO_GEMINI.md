@@ -497,3 +497,10 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
         - Se creó la pestaña "Actividad Reciente" que unifica y ordena de manera descendente todas las notas de bitácora de todos los expedientes de la abogada.
         - Se leyeron los flujos del `MANUAL ÁREA LEGAL.pdf` para asegurar congruencia.
 - **Estado**: La abogada ahora tiene herramientas de productividad robustas sin necesidad de alterar la base de datos subyacente.
+
+### [13 Junio 2026] - Refinamiento de Responsividad y Menús Colapsables
+- **Acción**: Se ajustaron las interfaces de Directora, Abogada y Cliente para soportar resoluciones móviles y se corrigió el menú lateral.
+- **Cambios**:
+    - `ExpedienteManager.tsx` y `DirectorDashboard.tsx`: Menú colapsable en desktop activable presionando el avatar. Se eliminaron insignias duplicadas en la cabecera. Paddings responsivos y grids escalables.
+    - `Paso1CrearProyecto.tsx`: Se ajustaron los paddings estáticos a responsivos.
+- **Estado**: Interfaces responsivas listas para producción.

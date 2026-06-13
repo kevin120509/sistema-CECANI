@@ -686,7 +686,7 @@ function SuccessView({ isUpdate }: { isUpdate: boolean }) {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, rotateX: 20 }} 
             animate={{ opacity: 1, scale: 1, rotateX: 0 }} 
-            className="max-w-2xl mx-auto bg-slate-900 rounded-3xl p-16 text-center shadow-2xl shadow-slate-950/50 border border-slate-800"
+            className="max-w-2xl mx-auto bg-slate-900 rounded-3xl p-8 md:p-16 text-center shadow-2xl shadow-slate-950/50 border border-slate-800"
           >
             <div className="w-28 h-28 bg-emerald-900/30 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-inner">
               <CheckCircle2 size={56} />
