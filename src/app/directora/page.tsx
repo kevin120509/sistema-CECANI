@@ -72,19 +72,12 @@ export default async function DirectoraPage() {
 
   if (concentradoError) console.error('Error fetching concentradoData:', concentradoError);
 
-  // 5. Obtener Solicitudes de Alta pendientes de aprobación
-  const { data: solicitudesAltaData } = await supabaseAdmin
-    .from('solicitudes_alta')
-    .select('*, asesora:perfiles!asesora_id(nombre_completo)')
-    .order('created_at', { ascending: false });
-
   return (
     <main className="min-h-screen bg-slate-950 text-slate-300">
       <DirectorDashboard 
         abogadas={abogadasData || []} 
         porAsignar={asignarData || []}
         concentrado={concentradoData || []} 
-        solicitudesAlta={(solicitudesAltaData || []) as any}
       />
     </main>
   );

@@ -81,8 +81,10 @@ export default async function AbogadaPage() {
       .eq('asesora_id', user.id)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   } else {
-    // Si es admin/directora en el panel legal: Ve TODOS para supervisión y pruebas (incluyendo los de Excel sin asignar)
+    // Si es admin/directora en el panel legal: Ve TODOS los ASIGNADOS para supervisión.
+    // Los NO ASIGNADOS (como los de Excel) se gestionan desde el panel de Directora (/directora).
     query = query
+      .not('asesora_id', 'is', null)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   }
 

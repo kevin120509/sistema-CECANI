@@ -93,18 +93,19 @@ export default function AbogadaAuth() {
             </div>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-slate-800 text-center">
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4">
+          <div className="mt-10 pt-8 border-t border-slate-800 flex flex-col items-center gap-4">
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">
               {isRegister ? '¿Ya tienes una cuenta?' : '¿No tienes acceso todavía?'}
             </p>
             <button
+              type="button"
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError(null);
               }}
-              className="text-sky-500 font-black uppercase text-[11px] tracking-widest hover:text-sky-400 transition-colors"
+              className="w-full bg-slate-800 text-sky-400 border border-sky-900/50 font-black uppercase text-[11px] tracking-widest py-4 rounded-xl hover:bg-slate-700 hover:text-sky-300 transition-all shadow-md"
             >
-              {isRegister ? 'Volver al Inicio de Sesión' : 'Solicitar Registro de Abogada'}
+              {isRegister ? '← Volver al Inicio de Sesión' : 'Regístrate como Abogada'}
             </button>
           </div>
         </div>

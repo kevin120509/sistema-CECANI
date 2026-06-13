@@ -352,16 +352,13 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - **IMPORTANTE**: Ejecutar `migration_borrado_autorizado.sql` en el editor SQL de Supabase para habilitar las nuevas columnas.
     - Continuar con la revisión de seguridad de URLs firmadas en R2.
 
-### [12 Junio 2026] - Sincronización Local-Vercel y Corrección de Compilación
-- **Acción**: Sincronización manual de cambios locales con Vercel tras detectar fallos en despliegues automáticos debido a errores de compilación.
+### [12 Junio 2026] - Corrección de Visibilidad (Datos Excel) y Despliegue
+- **Acción**: Sincronización local-Vercel y corrección de visibilidad para los 800+ expedientes importados.
 - **Cambios**:
-    - `src/components/abogada/ExpedienteManager.tsx`:
-        - Restauración de variables perdidas: se definieron `tareasPendientes` y `bitacoraGlobal` mediante `useMemo` para recuperar las pestañas de tareas y actividad.
-        - Importación de iconos faltantes de `lucide-react` (`Trash2`, `Calendar`, `CheckSquare`, `ChevronRight`, `X`).
-        - Corrección de acceso a propiedades no existentes (`nombre_asociacion_autorizado`, `nombre_asociacion_1`) en el objeto `datos_concentrado`.
-    - `src/components/cliente/Paso3Contrato.tsx`:
-        - Corrección de typo en variable `isContratoValidated` -> `isContratoValidado`.
-- **Estado**: Repositorio GitHub actualizado y despliegue en Vercel disparado exitosamente. `npx tsc --noEmit` validado localmente con 0 errores.
+    *   **Visibilidad Total (Admin)**: Modificado `src/app/abogada/page.tsx` para que admins/directoras puedan ver expedientes no asignados. Se aumentó el límite de consulta a 2000 registros.
+    *   **Gestión de Históricos (Directora)**: Ajustado `DirectorDashboard.tsx` para mostrar expedientes de Excel en "Por Asignar" y permitir su asignación a abogadas sin requerir el flujo digital estricto (contrato/pago).
+    *   **Fix Compilación**: Corregidos 24 errores de TypeScript en `ExpedienteManager.tsx` y `Paso3Contrato.tsx` (iconos faltantes, typos y variables de `useMemo` perdidas).
+- **Estado**: Despliegue en Vercel exitoso. Los datos de Excel ya son visibles y gestionables por el equipo administrativo.
 
 ### [11 Junio 2026] - Fix: Alta Maestra y Visibilidad en Panel Legal
 - **Acción**: Corrección de la visibilidad de expedientes creados manualmente y automatización de validación documental.

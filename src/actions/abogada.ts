@@ -15,6 +15,39 @@ function getTareaService() {
   return new TareaService(new SupabaseTareaRepository());
 }
 
+/**
+ * Helper para verificar si el usuario tiene permiso sobre un expediente.
+ */
+async function verificarAccesoExpediente(supabase: any, expedienteId: string, userId: string): Promise<boolean> {
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('rol')
+    .eq('id', userId)
+    .single();
+  
+  if (perfil?.rol === 'directora' || perfil?.rol === 'admin') {
+    return true;
+  }
+
+  const { data: exp } = await supabase
+    .from('expedientes')
+    .select('id')
+    .eq('id', expedienteId)
+    .eq('asesora_id', userId)
+    .maybeSingle();
+
+  if (exp) return true;
+
+  const { data: expRel } = await supabase
+    .from('expediente_asesoras')
+    .select('id')
+    .eq('expediente_id', expedienteId)
+    .eq('asesora_id', userId)
+    .maybeSingle();
+
+  return !!expRel;
+}
+
 export async function marcarHitoCompletado(
   expedienteId: string,
   hitoId: string,
@@ -68,38 +101,7 @@ export async function guardarDatosConcentrado(
     return { success: false, error: 'No autorizado' };
   }
 
-  // Verificar que el expediente pertenece a esta abogada (Legacy o Nueva Tabla)
-  const { data: expLegacy } = await supabase
-    .from('expedientes')
-    .select('id')
-    .eq('id', expedienteId)
-    .eq('asesora_id', user.id)
-    .maybeSingle();
-
-  let tienePermiso = !!expLegacy;
-
-  if (!tienePermiso) {
-    const { data: expRel } = await supabase
-      .from('expediente_asesoras')
-      .select('id')
-      .eq('expediente_id', expedienteId)
-      .eq('asesora_id', user.id)
-      .maybeSingle();
-    tienePermiso = !!expRel;
-  }
-
-  // Si es Directora o Admin, tiene permiso total
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('rol')
-    .eq('id', user.id)
-    .single();
-  
-  if (perfil?.rol === 'directora' || perfil?.rol === 'admin') {
-    tienePermiso = true;
-  }
-
-  if (!tienePermiso) {
+  if (!(await verificarAccesoExpediente(supabase, expedienteId, user.id))) {
     return { success: false, error: 'No tienes permisos sobre este expediente.' };
   }
 
@@ -178,8 +180,15 @@ export async function agregarIntegrante(
   expedienteId: string,
   nombre: string
 ): Promise<ActionResult> {
-  const adminClient = createAdminClient();
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { success: false, error: 'No autorizado' };
 
+  if (!(await verificarAccesoExpediente(supabase, expedienteId, user.id))) {
+    return { success: false, error: 'No tienes permisos sobre este expediente.' };
+  }
+
+  const adminClient = createAdminClient();
   try {
     const { error } = await adminClient
       .from('expediente_integrantes')
@@ -189,7 +198,6 @@ export async function agregarIntegrante(
       });
 
     if (error) throw error;
-
     revalidatePath('/abogada');
     return { success: true };
   } catch (error: any) {
@@ -204,16 +212,31 @@ export async function agregarIntegrante(
 export async function eliminarIntegranteAction(
   integranteId: string
 ): Promise<ActionResult> {
-  const adminClient = createAdminClient();
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { success: false, error: 'No autorizado' };
 
+  const adminClient = createAdminClient();
   try {
+    // Primero obtener el expediente_id para validar permiso
+    const { data: integrante } = await adminClient
+      .from('expediente_integrantes')
+      .select('expediente_id')
+      .eq('id', integranteId)
+      .single();
+
+    if (!integrante) return { success: false, error: 'Integrante no encontrado.' };
+
+    if (!(await verificarAccesoExpediente(supabase, integrante.expediente_id, user.id))) {
+      return { success: false, error: 'No tienes permisos sobre este expediente.' };
+    }
+
     const { error } = await adminClient
       .from('expediente_integrantes')
       .delete()
       .eq('id', integranteId);
 
     if (error) throw error;
-
     revalidatePath('/abogada');
     return { success: true };
   } catch (error: any) {

@@ -115,7 +115,10 @@ export default function DirectoraLogin() {
               </button>
             </div>
 
-            <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+            <div className="mt-10 pt-8 border-t border-slate-800 flex flex-col items-center gap-4">
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">
+                {isRegistering ? '¿Ya tienes una cuenta?' : '¿Necesitas una cuenta?'}
+              </p>
               <button
                 type="button"
                 onClick={() => {
@@ -123,9 +126,9 @@ export default function DirectoraLogin() {
                   setError(null);
                   setSuccess(null);
                 }}
-                className="text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:text-sky-500 transition-colors"
+                className="w-full bg-slate-800 text-sky-400 border border-sky-900/50 font-black uppercase text-[11px] tracking-widest py-4 rounded-xl hover:bg-slate-700 hover:text-sky-300 transition-all shadow-md"
               >
-                {isRegistering ? '¿Ya tienes una cuenta? Inicia Sesión' : '¿Necesitas una cuenta? Solicita Registro'}
+                {isRegistering ? '← Iniciar Sesión' : 'Regístrate como Directora'}
               </button>
             </div>
           </form>

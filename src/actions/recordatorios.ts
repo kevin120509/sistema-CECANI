@@ -75,6 +75,24 @@ export async function eliminarRecordatorioAction(
 
   try {
     const adminSupabase = createAdminClient();
+    
+    // 1. Obtener expediente_id del recordatorio para validar permiso
+    const { data: recordatorio } = await adminSupabase
+      .from('recordatorios')
+      .select('expediente_id')
+      .eq('id', recordatorioId)
+      .single();
+
+    if (!recordatorio) return { success: false, error: 'Recordatorio no encontrado.' };
+
+    // 2. Validar permiso usando el repositorio (que ya tiene la lógica de admin/asesora)
+    const repo = new SupabaseRecordatorioRepository();
+    const tienePermiso = await repo.verificarPermisoExpediente(recordatorio.expediente_id, user.id);
+    
+    if (!tienePermiso) {
+      return { success: false, error: 'No tienes permisos para eliminar este recordatorio.' };
+    }
+
     const { error } = await adminSupabase
       .from('recordatorios')
       .delete()
