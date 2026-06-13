@@ -168,7 +168,18 @@ export default function DirectorDashboard({
   }, [router]);
 
   const validacion = useMemo(() => porAsignar.filter(exp => exp.estatus === 'revision_directora' || exp.documentos?.some(d => !!d.motivo_rechazo)), [porAsignar]);
-  const listosParaAsignar = useMemo(() => porAsignar.filter(exp => exp.estatus === 'en_proceso' && !exp.documentos?.some(d => !!d.motivo_rechazo) && exp.contratos?.[0]?.url_pdf_firmado_cliente && (exp.pagos?.length || 0) > 0), [porAsignar]);
+  
+  // Listos para asignar: Incluye los que pasaron el flujo estándar Y los de Excel (que están en_proceso pero no tienen asesora)
+  const listosParaAsignar = useMemo(() => porAsignar.filter(exp => {
+    // Si ya está en validación, no va aquí
+    if (validacion.some(v => v.id === exp.id)) return false;
+    
+    // Si es un expediente en proceso y no tiene asesora, debe ser visible para asignar
+    if (exp.estatus === 'en_proceso') return true;
+    
+    // Flujo estándar
+    return exp.contratos?.[0]?.url_pdf_firmado_cliente && (exp.pagos?.length || 0) > 0;
+  }), [porAsignar, validacion]);
 
   const solicitudesBaja = useMemo(() => {
     return concentrado.reduce((acc, exp) => {
@@ -933,7 +944,10 @@ export default function DirectorDashboard({
                        const pagosValid = selectedExpediente.pagos?.length ? selectedExpediente.pagos.every(p => p.verificado) : true;
                        const allDocsValidated = docsValid && pagosValid && ((selectedExpediente.documentos?.length || 0) > 0 || (selectedExpediente.pagos?.length || 0) > 0);
                        const hasDobleFirma = !!selectedExpediente.contratos?.[0]?.url_pdf_doble_firma;
-                       const isReadyToAssign = allDocsValidated && hasDobleFirma;
+                       
+                       // Permitir asignación si es un registro de Excel/Manual (ya en_proceso) o si pasó el flujo digital completo
+                       const isLegacy = selectedExpediente.estatus === 'en_proceso';
+                       const isReadyToAssign = isLegacy || (allDocsValidated && hasDobleFirma);
 
                        if (!isReadyToAssign) {
                          return (

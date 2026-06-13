@@ -81,14 +81,14 @@ export default async function AbogadaPage() {
       .eq('asesora_id', user.id)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   } else {
-    // Si es admin/directora en el panel legal: Ve todos los asignados para supervisión, 
-    // pero OCULTAMOS los no asignados para evitar ruido y errores de flujo.
+    // Si es admin/directora en el panel legal: Ve TODOS para supervisión y pruebas (incluyendo los de Excel sin asignar)
     query = query
-      .not('asesora_id', 'is', null)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   }
 
-  const { data: expedientesData, error: expedientesError } = await query.order('created_at', { ascending: false });
+  const { data: expedientesData, error: expedientesError } = await query
+    .order('created_at', { ascending: false })
+    .limit(2000);
   if (expedientesError) {
     console.error("SUPABASE QUERY ERROR IN ABOGADA/PAGE:", expedientesError);
   }
