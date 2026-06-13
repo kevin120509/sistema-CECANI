@@ -1,35 +1,27 @@
-# Flujo del Sistema CECANI - Portal Cliente (Actualizado)
+# Flujo de Proceso Estricto - Sistema CECANI
 
-Este documento detalla el proceso desde que un cliente inicia su trámite hasta el seguimiento por parte de la abogada, integrando la nueva Arquitectura Híbrida.
+Este documento detalla el orden secuencial y obligatorio de las validaciones entre el Cliente y la Directora. **No se deben permitir saltos en este flujo.**
 
-## 1. Registro Legal y Cotización (Cliente - Paso 1)
-- **Datos Personales y Legales**: El cliente ingresa su nombre, RFC, CURP, Ocupación, Estado Civil y Domicilio Completo. Estos datos son vitales para las declaraciones del contrato.
-- **Configuración de Empresa**: Define el nombre de la organización y la figura legal deseada.
-- **Calculadora Modular**: Selecciona el servicio base y módulos extra (Web, CLUNI, etc.). El sistema calcula el total con descuentos por pago de contado si aplica.
-- **Persistencia**: Se crea el **Expediente** y el registro en la tabla `perfiles` de Supabase.
+## Fase 1: Integración Documental (Validación)
+1.  **Cliente**: Sube documentación obligatoria (INE frente/reverso, Comprobante de domicilio, CURP).
+2.  **Sistema**: Muestra pantalla de "Validación en curso" al cliente.
+3.  **Directora (Pestaña Validación)**:
+    *   Revisa y aprueba/rechaza cada documento del cliente.
+    *   Valida el **Contrato Generado por Sistema**.
+4.  **Disparador**: Una vez que TODO (documentos + contrato generado) está validado, el flujo avanza para el cliente.
 
-## 2. Carga de Documentos Iniciales (Cliente - Paso 2)
-- **Identificación**: El cliente sube INE (frente/vuelta) y Comprobante de Domicilio.
-- **Almacenamiento Híbrido**: Los archivos se suben a **Cloudflare R2** (`/documentacion/`) y las URLs se guardan en la tabla `documentos` de Supabase.
-- **Generación de Contrato**: Al finalizar este paso, el sistema genera automáticamente el **Contrato PDF Profesional** con los datos del Paso 1 y lo sube a R2 (`/contratos/`).
-- **NOTIFICACIÓN**: Se avisa a la **Directora** del nuevo expediente.
+## Fase 2: Formalización Legal y Pago (Por Asignar)
+1.  **Cliente**: Recibe el contrato aprobado, lo descarga, lo firma y lo vuelve a subir.
+2.  **Cliente**: Sube comprobante de pago e ingresa el monto pagado.
+3.  **Directora (Pestaña Por Asignar)**:
+    *   Valida el **Contrato Firmado por el Cliente**.
+    *   Valida el **Comprobante de Pago** y el monto reportado.
+4.  **Directora**: Debe subir obligatoriamente el **Contrato con Doble Firma** (CECANI + Cliente).
 
-## 3. Descarga, Firma y Pago (Cliente - Paso 3)
-- **Descarga**: El cliente descarga su contrato personalizado desde el sistema.
-- **Firma**: Sube el contrato ya firmado (escaneado/foto). Se guarda en R2 como `Contrato_FIRMADO_POR_CLIENTE_...`.
-- **Pago**: Sube el comprobante de su pago inicial y registra el monto pagado.
-- **Estatus**: El expediente pasa a `en_proceso`.
-
-## 4. Validación, Doble Firma y Asignación (Directora)
-- **Revisión**: La Directora comprueba los datos legales, el contrato firmado y el pago.
-- **Doble Firma**: Sube el contrato final con la firma de CECANI.
-- **Asignación**: Designa a una **Asesora** para iniciar el trámite legal.
-
-## 5. Seguimiento Operativo (Asesora)
-- **Gestión en Panel**: Seguimiento de hitos (CLUNI, Notaría, RPP) mediante la tabla de Concentración.
-- **Bitácora**: Registro de avances y comunicación.
-- **Capacitación**: Liberación de cursos y diplomados según el avance del cliente.
+## Fase 3: Operatividad (Asignación)
+1.  **Desbloqueo**: El botón/apartado para **Asignar Abogada** solo se habilita si y solo si el Contrato con Doble Firma ha sido cargado exitosamente.
+2.  **Directora**: Selecciona y asigna la abogada titular.
+3.  **Finalización**: El expediente pasa al "Concentrado Operativo" y al panel de la abogada asignada.
 
 ---
-*Documento actualizado por Gemini CLI - Mayo 2026*
-*Arquitectura: Next.js + Supabase + Cloudflare R2*
+*Regla de Oro: Ningún cliente puede ser asignado a una abogada sin tener un contrato con doble firma resguardado en el sistema.*

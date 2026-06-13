@@ -461,14 +461,30 @@ export async function validarContratoAction(contratoId: string, expedienteId: st
     const adminSupabase = createAdminClient();
     
     // 1. Marcar el documento como validado en la tabla de documentos
-    const { error: docError } = await adminSupabase
+    const { data: docContratos, error: selectError } = await adminSupabase
       .from('documentos')
-      .update({ validado: true, motivo_rechazo: null })
+      .select('id')
       .eq('expediente_id', expedienteId)
-      .eq('tipo', 'contrato_firmado');
+      .eq('nombre_personalizado', 'contrato_firmado');
 
-    if (docError) {
-      console.warn('Advertencia al validar documento contrato:', docError.message);
+    if (selectError) throw selectError;
+
+    if (!docContratos || docContratos.length === 0) {
+      const { error: insErr } = await adminSupabase.from('documentos').insert({ 
+        expediente_id: expedienteId, 
+        tipo: 'otro', 
+        nombre_personalizado: 'contrato_firmado',
+        url_archivo: 'VALIDADO_POR_DIRECTORA', 
+        validado: true 
+      });
+      if (insErr) throw insErr;
+    } else {
+      const { error: updErr } = await adminSupabase
+        .from('documentos')
+        .update({ validado: true, motivo_rechazo: null })
+        .eq('expediente_id', expedienteId)
+        .eq('nombre_personalizado', 'contrato_firmado');
+      if (updErr) throw updErr;
     }
 
     // 2. Notificar al cliente
@@ -977,5 +993,62 @@ export async function eliminarSolicitudAltaAction(solicitudId: string): Promise<
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Validar manualmente datos faltantes (Contrato y Pago) para casos de Excel o Alta Maestra
+ */
+export async function validarDatosFaltantesManualAction(expedienteId: string, clienteId: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    
+    // 1. Simular contrato firmado
+    const { data: contrato } = await adminSupabase.from('contratos').select('id, url_pdf_firmado_cliente').eq('expediente_id', expedienteId).single();
+    
+    if (contrato) {
+       if (!contrato.url_pdf_firmado_cliente) {
+           await adminSupabase.from('contratos').update({ url_pdf_firmado_cliente: 'VALIDADO_MANUALMENTE' }).eq('id', contrato.id);
+       }
+    } else {
+       await adminSupabase.from('contratos').insert({
+         expediente_id: expedienteId,
+         url_pdf_firmado_cliente: 'VALIDADO_MANUALMENTE'
+       });
+    }
+
+    const { data: docContrato } = await adminSupabase.from('documentos').select('id').eq('expediente_id', expedienteId).eq('nombre_personalizado', 'contrato_firmado').maybeSingle();
+    if (!docContrato) {
+        await adminSupabase.from('documentos').insert({ expediente_id: expedienteId, tipo: 'otro', nombre_personalizado: 'contrato_firmado', url_archivo: 'VALIDADO_MANUALMENTE', validado: true });
+    } else {
+        await adminSupabase.from('documentos').update({ validado: true }).eq('id', docContrato.id);
+    }
+
+    // 2. Simular pago
+    const { data: pagos } = await adminSupabase.from('pagos').select('id').eq('expediente_id', expedienteId);
+    if (!pagos || pagos.length === 0) {
+        await adminSupabase.from('pagos').insert({
+           expediente_id: expedienteId,
+           cliente_id: clienteId,
+           monto: 0,
+           url_comprobante: 'VALIDADO_MANUALMENTE',
+           verificado: true,
+           fecha_pago: new Date().toISOString().split('T')[0]
+        });
+    } else {
+        await adminSupabase.from('pagos').update({ verificado: true }).eq('expediente_id', expedienteId);
+    }
+    
+    const { data: docPago } = await adminSupabase.from('documentos').select('id').eq('expediente_id', expedienteId).eq('nombre_personalizado', 'comprobante_pago').maybeSingle();
+    if (!docPago) {
+        await adminSupabase.from('documentos').insert({ expediente_id: expedienteId, tipo: 'otro', nombre_personalizado: 'comprobante_pago', url_archivo: 'VALIDADO_MANUALMENTE', validado: true });
+    } else {
+        await adminSupabase.from('documentos').update({ validado: true }).eq('id', docPago.id);
+    }
+
+    revalidatePath('/directora');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Error al validar datos manualmente' };
   }
 }

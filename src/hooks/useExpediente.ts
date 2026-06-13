@@ -60,6 +60,7 @@ export function useExpediente(): UseExpedienteReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
+  const isFirstLoad = useRef(true);
   const supabaseRef = useRef(createClient());
   const clienteIdRef = useRef<string>('');
 
@@ -70,7 +71,10 @@ export function useExpediente(): UseExpedienteReturn {
     const clienteId = getOrCreateClienteId();
     clienteIdRef.current = clienteId;
 
-    setIsLoading(true);
+    if (isFirstLoad.current) {
+      setIsLoading(true);
+      isFirstLoad.current = false;
+    }
     setError(null);
 
     try {
@@ -136,6 +140,15 @@ export function useExpediente(): UseExpedienteReturn {
       fetchData();
     }
 
+    // --- DEBOUNCED FETCH FOR REALTIME ---
+    let debounceTimer: NodeJS.Timeout;
+    const debouncedFetch = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchData();
+      }, 500);
+    };
+
     // --- SUSCRIPCIÓN EN TIEMPO REAL ---
     const supabase = supabaseRef.current;
     const clienteId = getOrCreateClienteId();
@@ -147,7 +160,7 @@ export function useExpediente(): UseExpedienteReturn {
         { event: '*', schema: 'public', table: 'expedientes', filter: `cliente_id=eq.${clienteId}` },
         () => {
           console.log('Realtime: Cambio en expediente detectado.');
-          fetchData();
+          debouncedFetch();
         }
       )
       .on(
@@ -155,7 +168,7 @@ export function useExpediente(): UseExpedienteReturn {
         { event: '*', schema: 'public', table: 'documentos' },
         () => {
           console.log('Realtime: Cambio en documentos detectado.');
-          fetchData();
+          debouncedFetch();
         }
       )
       .on(
@@ -163,7 +176,7 @@ export function useExpediente(): UseExpedienteReturn {
         { event: '*', schema: 'public', table: 'contratos' },
         () => {
           console.log('Realtime: Cambio en contratos detectado.');
-          fetchData();
+          debouncedFetch();
         }
       )
       .on(
@@ -171,7 +184,7 @@ export function useExpediente(): UseExpedienteReturn {
         { event: '*', schema: 'public', table: 'pagos' },
         () => {
           console.log('Realtime: Cambio en pagos detectado.');
-          fetchData();
+          debouncedFetch();
         }
       )
       .subscribe();
@@ -234,10 +247,10 @@ function calcularPaso(
   // --- REGLA PASO 2 ---
   // Se queda en Paso 2 si:
   // - Aún está en registro inicial (falta algún doc)
-  // - O si está en revisión de la directora (se queda en pantalla de validación hasta que la directora apruebe todo)
+  // - O si está en revisión de la directora Y no han sido validados todos
   if (
     (expediente.estatus === 'en_registro' && (!tieneIne || !tieneComprobante)) ||
-    (expediente.estatus === 'revision_directora')
+    (expediente.estatus === 'revision_directora' && !allValidatedPaso2)
   ) {
     return 2;
   }
@@ -245,8 +258,8 @@ function calcularPaso(
   // --- REGLA PASO 4 (FINALIZADO) ---
   // Si ya tiene contrato firmado por el cliente Y el pago está verificado por dirección,
   // el cliente ya terminó su parte y pasa a la vista de seguimiento legal.
-  const isContratoValidado = documentos.some(d => d.tipo === 'contrato_firmado' && d.validado);
-  const isPagoVerificado = (expediente.pagos as any)?.some((p: any) => p.verificado) || documentos.some(d => d.tipo === 'comprobante_pago' && d.validado);
+  const isContratoValidado = documentos.some(d => (d.tipo === 'contrato_firmado' || d.nombre_personalizado === 'contrato_firmado') && d.validado) || !!contrato?.url_pdf_doble_firma;
+  const isPagoVerificado = (expediente.pagos as any)?.some((p: any) => p.verificado) || documentos.some(d => (d.tipo === 'comprobante_pago' || d.nombre_personalizado === 'comprobante_pago') && d.validado);
 
   if (isContratoValidado && isPagoVerificado) {
     return 4;

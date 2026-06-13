@@ -68,7 +68,7 @@ export default function Paso4SoloLectura({
   documentos,
 }: Paso4Props) {
   const config = ESTATUS_CONFIG[expediente.estatus] || ESTATUS_CONFIG.revision_directora;
-  const pendienteAsignar = !expediente.asesora_id && (contrato?.url_pdf_firmado_cliente || documentos.some(d => d.tipo === 'contrato_firmado'));
+  const pendienteAsignar = !expediente.asesora_id && (contrato?.url_pdf_firmado_cliente || documentos.some(d => (d.tipo === 'contrato_firmado' || d.nombre_personalizado === 'contrato_firmado')));
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 pb-24 py-4">
@@ -144,7 +144,7 @@ export default function Paso4SoloLectura({
           </section>
 
           {/* Descargas Rápidas */}
-          {contrato?.url_pdf_generado && (
+          {contrato && (
             <section className="bg-slate-950 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden group border border-slate-800">
               <header className="flex items-center gap-4 mb-10 relative z-10">
                 <div className="w-10 h-10 bg-[#0197D2] text-white rounded-xl flex items-center justify-center shadow-lg"><Download size={20} /></div>
@@ -152,9 +152,14 @@ export default function Paso4SoloLectura({
               </header>
               
               <div className="space-y-4 relative z-10">
-                <QuickLink label="Contrato Oficial" href={contrato.url_pdf_generado} />
-                {(contrato.url_pdf_firmado_cliente || documentos.find(d => d.tipo === 'contrato_firmado')?.url_archivo) && (
-                  <QuickLink label="Copia Firmada" href={contrato.url_pdf_firmado_cliente || documentos.find(d => d.tipo === 'contrato_firmado')!.url_archivo!} isSuccess />
+                {contrato.url_pdf_generado && (
+                  <QuickLink label="Contrato Oficial" href={contrato.url_pdf_generado} />
+                )}
+                {(contrato.url_pdf_firmado_cliente || documentos.find(d => (d.tipo === 'contrato_firmado' || d.nombre_personalizado === 'contrato_firmado'))?.url_archivo) && (
+                  <QuickLink label="Copia Firmada" href={contrato.url_pdf_firmado_cliente || documentos.find(d => (d.tipo === 'contrato_firmado' || d.nombre_personalizado === 'contrato_firmado'))!.url_archivo!} isSuccess={!contrato.url_pdf_doble_firma} />
+                )}
+                {contrato.url_pdf_doble_firma && (
+                  <QuickLink label="Contrato Doble Firma" href={contrato.url_pdf_doble_firma} isSuccess />
                 )}
               </div>
               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0197D2]/10 rounded-full blur-[100px] group-hover:bg-[#0197D2]/20 transition-all duration-1000" />

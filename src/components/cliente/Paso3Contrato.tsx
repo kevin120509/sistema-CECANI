@@ -49,8 +49,8 @@ export default function Paso3Contrato({
 
   const pago = Array.isArray(expediente.pagos) ? expediente.pagos[0] : (expediente.pagos as any);
   
-  const docContratoFirmado = expediente.documentos?.find(d => d.tipo === 'contrato_firmado');
-  const docPago = expediente.documentos?.find(d => d.tipo === 'comprobante_pago');
+  const docContratoFirmado = expediente.documentos?.find(d => d.tipo === 'contrato_firmado' || d.nombre_personalizado === 'contrato_firmado');
+  const docPago = expediente.documentos?.find(d => d.tipo === 'comprobante_pago' || d.nombre_personalizado === 'comprobante_pago');
 
   const hasContratoEnBD = !!contrato.url_pdf_firmado_cliente || !!docContratoFirmado?.url_archivo;
   const isContratoValidado = !!docContratoFirmado?.validado;
@@ -61,7 +61,7 @@ export default function Paso3Contrato({
   const isPagoRechazado = (!!pago?.motivo_rechazo || !!docPago?.motivo_rechazo) && !isPagoVerificado;
 
   const isUnderReview = hasContratoEnBD && hasPagoEnBD && !isContratoRechazado && !isPagoRechazado;
-  const isWaitingForDirector = !contrato.url_pdf_generado || expediente.estatus === 'revision_directora';
+  const isWaitingForDirector = !contrato.url_pdf_generado;
 
   const handleDescargar = () => {
     if (isWaitingForDirector) return;
@@ -140,7 +140,7 @@ export default function Paso3Contrato({
 
   if (isUnderReview && !isPending && !error) {
     return (
-      <div className="max-w-4xl mx-auto py-24 text-center space-y-12">
+      <div className="max-w-4xl mx-auto py-12 sm:py-24 text-center space-y-8 sm:space-y-12">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border transition-all duration-1000 ${isPagoVerificado ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#0197D2]/10 text-sky-600 border-sky-600/20 animate-pulse'}`}>
           {isPagoVerificado ? <ShieldCheck size={56} /> : <Clock size={56} />}
         </motion.div>
@@ -157,7 +157,12 @@ export default function Paso3Contrato({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-          <ReviewCard label="Contrato Firmado" status="resguardado" icon={<FileSignature size={28}/>} color="sky" />
+          <ReviewCard 
+            label="Contrato Firmado" 
+            status={isContratoValidado ? 'validado' : 'resguardado'} 
+            icon={<FileSignature size={28}/>} 
+            color={isContratoValidado ? 'emerald' : 'sky'} 
+          />
           <ReviewCard 
             label="Inversión Inicial" 
             status={isPagoVerificado ? 'validado' : 'en_verificacion'} 
@@ -184,8 +189,8 @@ export default function Paso3Contrato({
   return (
     <div className="max-w-5xl mx-auto space-y-16 pb-24 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-6">
-        <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-emerald-500/20"><FileSignature size={36} /></div>
-        <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Formalización Legal</h2>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 text-emerald-400 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-emerald-500/20 shrink-0"><FileSignature size={32} className="sm:size-[36px]" /></div>
+        <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tighter uppercase leading-tight sm:leading-none">Formalización Legal</h2>
         <div className="space-y-4 max-w-2xl mx-auto">
           <p className="text-slate-500 font-medium text-lg leading-relaxed italic">
             "Le informamos que su contrato debe ser validado y aprobado por nuestra dirección antes de que pueda proceder con la firma y el pago inicial."

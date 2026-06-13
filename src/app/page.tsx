@@ -158,20 +158,20 @@ export default function HomePage() {
                       backgroundColor: isActive ? '#0197D2' : (isCompleted ? '#9DC701' : '#030712')
                     }}
                     className={`
-                      w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4
-                      ${isActive ? 'text-white border-sky-900/50 shadow-[0_15px_30px_rgba(1,151,210,0.3)]' : 
-                        isCompleted ? 'text-white border-emerald-900/50 shadow-[0_10px_20px_rgba(157,199,1,0.2)]' : 
+                      w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 border-2 sm:border-4
+                      ${isActive ? 'text-white border-sky-900/50 shadow-[0_10px_20px_rgba(1,151,210,0.3)]' : 
+                        isCompleted ? 'text-white border-emerald-900/50 shadow-[0_8px_15px_rgba(157,199,1,0.2)]' : 
                         'text-slate-500 border-slate-800 shadow-sm'}
                     `}
                   >
-                    {isCompleted ? <CheckCircle2 size={26} strokeWidth={3} /> : <Icon size={26} strokeWidth={isActive ? 3 : 2} />}
+                    {isCompleted ? <CheckCircle2 size={20} className="sm:size-[26px]" strokeWidth={3} /> : <Icon size={20} className="sm:size-[26px]" strokeWidth={isActive ? 3 : 2} />}
                   </motion.div>
-                  <div className="absolute -bottom-10 whitespace-nowrap text-center">
-                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-[#0197D2] scale-105' : isCompleted ? 'text-[#9DC701]' : 'text-slate-400'}`}>
+                  <div className="absolute -bottom-10 whitespace-nowrap text-center hidden xs:block">
+                    <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-all duration-300 ${isActive ? 'text-[#0197D2] scale-105' : isCompleted ? 'text-[#9DC701]' : 'text-slate-400'}`}>
                       {label}
                     </span>
                     {isActive && (
-                      <motion.div layoutId="active-dot" className="w-1.5 h-1.5 bg-[#0197D2] rounded-full mx-auto mt-2 shadow-[0_0_10px_rgba(1,151,210,0.8)]" />
+                      <motion.div layoutId="active-dot" className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#0197D2] rounded-full mx-auto mt-1 sm:mt-2 shadow-[0_0_10px_rgba(1,151,210,0.8)]" />
                     )}
                   </div>
                 </div>

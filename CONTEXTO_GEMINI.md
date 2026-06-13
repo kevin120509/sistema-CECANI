@@ -90,16 +90,24 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - Se eliminó la verificación de `planPagos` en el `step === 2`.
     - Se añadió una verificación específica para `planPagos` en el `step === 3`.
 - **Estado**: El flujo del cliente es ahora fluido y permite avanzar correctamente tras configurar la empresa.
+## 6. Bitácora de Sesión
+### [13 Junio 2026] - Formalización de Flujo Secuencial y Bloqueo de Asignación
+- **Acción**: Se estableció un flujo obligatorio entre Cliente y Directora para garantizar la integridad legal del expediente.
+- **Cambios**:
+    - `FLUJO_PROCESO.md`: Creación del manual de flujo (Integración -> Formalización -> Operatividad).
+    - `src/components/directora/DirectorDashboard.tsx`: Se implementó un bloqueo lógico; el botón de "Asignar Abogada" ahora es invisible hasta que se carga el **Contrato con Doble Firma**.
+- **Estado**: Flujo administrativo blindado contra saltos accidentales.
 
 ### [13 Junio 2026] - Optimización de Responsividad en Interfaces
 - **Acción**: Se auditó y mejoró la responsividad de las tres interfaces principales.
 - **Cambios**:
-    - `src/components/abogada/ExpedienteManager.tsx`: Se implementó un sidebar colapsable para móviles con menú de hamburguesa y estados de animación.
-    - `src/components/directora/DirectorDashboard.tsx`: Se verificó la correcta operación del menú móvil existente.
-    - `src/components/cliente/`: Se validó el uso de grids fluidos en los pasos del registro.
+    - `src/components/abogada/ExpedienteManager.tsx`: Sidebar colapsable.
+    - `src/app/page.tsx`: Stepper adaptativo.
+    - `src/components/cliente/Paso1CrearProyecto.tsx`: Diseño de topbar para móviles.
 - **Estado**: Todas las interfaces operativas son ahora amigables con dispositivos móviles.
 
 ### [13 Junio 2026] - Implementación de Borrado Total de Clientes
+
 - **Acción**: Se añadió la funcionalidad para que la Directora elimine clientes por completo desde el Concentrado.
 - **Cambios**:
     - `src/lib/r2.ts`: Nueva función `borrarCarpetaExpedienteR2` para limpieza de bodega.

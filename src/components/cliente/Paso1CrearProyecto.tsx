@@ -258,38 +258,38 @@ export default function Paso1CrearProyecto({
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-[1600px] mx-auto py-4">
-      {/* Sidebar: Sub-pasos dinámicos */}
-      <aside className="lg:w-[320px] shrink-0">
-        <div className="sticky top-28 bg-slate-900 rounded-3xl p-8 text-white shadow-2xl overflow-hidden border border-slate-800 group">
+      {/* Sidebar / Topbar: Sub-pasos dinámicos */}
+      <aside className="w-full lg:w-[320px] shrink-0">
+        <div className="lg:sticky lg:top-28 bg-slate-900 rounded-3xl p-6 lg:p-8 text-white shadow-2xl overflow-hidden border border-slate-800 group">
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-12">
+            <div className="flex items-center gap-3 mb-8 lg:mb-12">
               <div className="p-2.5 bg-[#0197D2]/10 rounded-xl">
                 <Sparkles className="text-blue-400" size={18} />
               </div>
               <h2 className="text-xs font-black tracking-[0.2em] uppercase text-blue-400">Configuración</h2>
             </div>
             
-            <nav className="space-y-14">
+            <nav className="flex lg:flex-col justify-between lg:justify-start lg:space-y-14">
               {['Identidad', 'Estructura', 'Servicios'].map((label, idx) => {
                 const stepNum = idx + 1;
                 const active = subStep === stepNum;
                 const done = subStep > stepNum;
                 return (
-                  <div key={label} className="relative flex items-center gap-6 group cursor-default">
+                  <div key={label} className="relative flex flex-col lg:flex-row items-center gap-3 lg:gap-6 group cursor-default flex-1 lg:flex-none">
                     {idx < 2 && (
-                      <div className={`absolute left-5 top-10 w-0.5 h-14 transition-all duration-700 ${done ? 'bg-[#0197D2]' : 'bg-slate-800'}`} />
+                      <div className={`hidden lg:block absolute left-5 top-10 w-0.5 h-14 transition-all duration-700 ${done ? 'bg-[#0197D2]' : 'bg-slate-800'}`} />
                     )}
                     <div className={`
-                      w-11 h-11 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all duration-500 z-10
-                      ${active ? 'bg-[#0197D2] text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-110 -rotate-3 border border-white/20' : 
-                        done ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-600 border border-white/5'}
+                      w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center text-[9px] sm:text-[10px] font-black transition-all duration-500 z-10
+                      ${active ? 'bg-[#0197D2] text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] scale-110 border border-white/20' : 
+                        done ? 'bg-emerald-500 text-white' : 'bg-slate-950 text-slate-600 border border-white/5'}
                     `}>
                       {done ? '✓' : stepNum}
                     </div>
-                    <div className="flex flex-col">
-                      <span className={`text-[9px] font-black uppercase tracking-[0.25em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+                    <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+                      <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.25em] transition-colors duration-300 ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
                       {active && (
-                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-[#0197D2] mt-2 w-8 rounded-full" />
+                        <motion.div layoutId="substep-indicator" className="h-0.5 bg-[#0197D2] mt-1 sm:mt-2 w-6 sm:w-8 rounded-full" />
                       )}
                     </div>
                   </div>
@@ -299,7 +299,6 @@ export default function Paso1CrearProyecto({
           </div>
           {/* Decorative gradients */}
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0197D2]/10 rounded-full blur-[100px] group-hover:bg-[#0197D2]/20 transition-all duration-1000" />
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-indigo-600/10 rounded-full blur-[80px]" />
         </div>
       </aside>
 
@@ -309,7 +308,7 @@ export default function Paso1CrearProyecto({
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="bg-[#0a0f1d] rounded-[4rem] p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] border border-white/5 relative overflow-hidden premium-border"
+          className="bg-[#0a0f1d] rounded-3xl md:rounded-[4rem] p-5 sm:p-8 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] border border-white/5 relative overflow-hidden premium-border"
         >
           {/* Error Message */}
           <AnimatePresence>
@@ -384,7 +383,7 @@ export default function Paso1CrearProyecto({
                           <h4 className="text-[10px] font-black tracking-[0.5em] uppercase text-sky-500 mb-4">Pago Total Proyectado</h4>
                           <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Incluye honorarios, trámites y gestión legal</p>
                         </div>
-                        <div className="text-7xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-400 tracking-tighter flex items-baseline gap-2 tabular-nums">
+                        <div className="text-4xl xs:text-5xl sm:text-7xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-400 tracking-tighter flex items-baseline gap-2 tabular-nums">
                           <span className="text-3xl font-light text-sky-500/30">$</span>
                           {presupuestoTotal.toLocaleString()}
                           <span className="text-sm font-bold text-sky-500/20 tracking-widest">MXN</span>
@@ -591,14 +590,14 @@ export default function Paso1CrearProyecto({
 
 function StepContent({ title, icon, children, variants }: any) {
   return (
-    <motion.section variants={variants} className="space-y-12">
-      <header className="flex items-center gap-8 mb-16">
-        <div className="w-20 h-20 bg-slate-950 text-sky-500 rounded-[2.5rem] flex items-center justify-center shadow-inner border border-slate-800">
+    <motion.section variants={variants} className="space-y-8 sm:space-y-12">
+      <header className="flex flex-col sm:flex-row items-center sm:items-center gap-6 sm:gap-8 mb-10 sm:mb-16 text-center sm:text-left">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-950 text-sky-500 rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center shadow-inner border border-slate-800 shrink-0">
           {icon}
         </div>
         <div>
-          <h3 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{title}</h3>
-          <div className="flex items-center gap-2 mt-4">
+          <h3 className="text-2xl sm:text-4xl font-black text-white tracking-tighter uppercase leading-tight sm:leading-none">{title}</h3>
+          <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
             <div className="h-1.5 w-12 bg-[#0197D2] rounded-full" />
             <div className="h-1.5 w-4 bg-sky-200 rounded-full" />
             <div className="h-1.5 w-4 bg-sky-100 rounded-full" />
@@ -692,7 +691,7 @@ function SuccessView({ isUpdate }: { isUpdate: boolean }) {
             <div className="w-28 h-28 bg-emerald-900/30 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-inner">
               <CheckCircle2 size={56} />
             </div>
-      <h2 className="text-5xl font-black text-white tracking-tighter uppercase mb-6 leading-tight">
+      <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tighter uppercase mb-6 leading-tight">
         {isUpdate ? 'Expediente Actualizado' : 'Misión Cumplida'}
       </h2>
       <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-md mx-auto">

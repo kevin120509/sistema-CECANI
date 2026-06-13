@@ -455,7 +455,6 @@ export default function ExpedienteManager({
     "rfc",
     "curp",
     "estado_civil",
-    "ocupacion",
     "domicilio_completo",
     "estado",
     "telefono_cliente",
@@ -470,22 +469,23 @@ export default function ExpedienteManager({
     "total_contrato",
     "periodicidad_pagos",
     "num_pagos_realizados",
+    "cantidad_pagada_acumulada",
     "saldo_cliente",
     "asesora_encargada",
     "cluni",
     "pago_notario",
     "pago_entrega_donataria",
     "cantidad_cobrar_proximo",
-    "estatus_detalle",
-    "accion_realizar",
-    "cantidad_pagada_acumulada",
-    "fecha_ultimo_pago",
-    "quien_cobra",
     "vendedora",
-    "fecha_contrato",
-    "link_reunion",
-    "fecha_reunion_acuerdos",
+    "quien_cobra",
+    "fecha_ultimo_pago",
+    "fecha_contrato"
   ];
+
+  const handleConcentradoChange = (campo: string, valor: string) =>
+    setConcentradoForm((prev) => ({ ...prev, [campo]: valor }));
+
+
 
   const filteredExpedientes = useMemo(() => {
     return expedientes.filter((exp) => {
@@ -536,24 +536,21 @@ export default function ExpedienteManager({
       CAMPOS_CONCENTRADO.forEach((campo) => {
         const dbValue = (dbData as any)[campo] || "";
         const defaults: any = {
-          nombre_completo: cliente?.nombre_completo || "",
-          rfc: cliente?.rfc || "",
-          curp: cliente?.curp || "",
-          estado_civil: cliente?.estado_civil || "",
-          ocupacion: cliente?.ocupacion || "",
-          domicilio_completo: cliente?.domicilio_completo || "",
-          estado: cliente?.estado || "",
-          telefono_cliente: cliente?.telefono || "",
-          total_contrato:
-            montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : "",
-          saldo_cliente: montoContrato > 0 ? `$${saldo.toLocaleString()}` : "",
-          num_pagos_realizados: totalPagosNum > 0 ? String(totalPagosNum) : "",
-          periodicidad_pagos: planPagosLabel,
-          actividad:
-            (selectedExpediente as any).figura?.descripcion ||
-            (dbData as any).actividad ||
-            "",
-          numero_control: (selectedExpediente as any).numero_control || "",
+           nombre_completo: cliente?.nombre_completo || '',
+           telefono_cliente: cliente?.telefono || '',
+           rfc: cliente?.rfc || '',
+           curp: cliente?.curp || '',
+           estado_civil: cliente?.estado_civil || '',
+           domicilio_completo: cliente?.domicilio_completo || '',
+           estado: cliente?.estado || '',
+           total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
+           periodicidad_pagos: planPagosLabel || '',
+           asesora_encargada: (selectedExpediente as any).asesora?.nombre_completo || '',
+           num_pagos_realizados: totalPagosNum > 0 ? String(totalPagosNum) : '',
+           cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
+           saldo_cliente: (montoContrato > 0 && saldo >= 0) ? `$${saldo.toLocaleString()}` : '',
+           actividad: (selectedExpediente as any).figura?.descripcion || (dbData as any).actividad || "",
+           numero_control: (selectedExpediente as any).numero_control || "",
         };
         newForm[campo] = dbValue || defaults[campo] || "";
       });
@@ -561,8 +558,6 @@ export default function ExpedienteManager({
     }
   }, [selectedExpedienteId, selectedExpediente]);
 
-  const handleConcentradoChange = (campo: string, valor: string) =>
-    setConcentradoForm((prev) => ({ ...prev, [campo]: valor }));
   const handleSaveConcentrado = async () => {
     if (!selectedExpediente) return;
     setIsSavingConcentrado(true);
@@ -621,6 +616,15 @@ export default function ExpedienteManager({
       router.refresh();
     } else {
       toast.error(res.error || "Error");
+    }
+  };
+  const handleCompleteReminder = async (id: string, expedienteId: string) => {
+    const res = await actualizarEstatusRecordatorio(id, expedienteId, "completado");
+    if (res.success) {
+      toast.success("Recordatorio completado");
+      router.refresh();
+    } else {
+      toast.error(res.error || "Error al completar");
     }
   };
   const handleDeleteReminder = async (id: string) => {
@@ -829,26 +833,35 @@ export default function ExpedienteManager({
         </AnimatePresence>
 
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 transform lg:translate-x-0 lg:sticky lg:top-0 border-r border-slate-800 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 h-screen overflow-y-auto ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}
         >
-          <div className="p-6 border-b border-slate-800 flex items-center justify-end lg:hidden">
+          <div className={`p-6 border-b border-slate-800 flex items-center justify-between ${!isSidebarOpen ? 'lg:justify-center lg:px-0' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 shrink-0 bg-[#0197D2] rounded flex items-center justify-center text-white font-bold">
+                A
+              </div>
+              {isSidebarOpen && <span className="text-white font-black tracking-widest uppercase text-sm">Abogada</span>}
+            </div>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="text-slate-400 hover:text-white"
+              className={`text-slate-400 hover:text-white ${!isSidebarOpen ? 'hidden' : 'lg:hidden'}`}
             >
               <X size={20} />
             </button>
           </div>
-          <div className="p-6 flex-1">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">
-              Panel Legal
-            </p>
-            <nav className="space-y-1">
+          <div className={`py-6 flex-1 ${isSidebarOpen ? 'px-6' : 'px-2'}`}>
+            {isSidebarOpen && (
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">
+                Panel Legal
+              </p>
+            )}
+            <nav className="space-y-2">
               <SidebarLink
                 icon={<Users size={18} />}
                 label="Mis Clientes"
                 badge={expedientes.length}
                 active={dashTab === "clientes"}
+                isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("clientes");
                   setIsSidebarOpen(false);
@@ -859,6 +872,7 @@ export default function ExpedienteManager({
                 label="Mis Tareas"
                 badge={tareasPendientes.length || undefined}
                 active={dashTab === "tareas"}
+                isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("tareas");
                   setIsSidebarOpen(false);
@@ -868,6 +882,7 @@ export default function ExpedienteManager({
                 icon={<Activity size={18} />}
                 label="Actividad Reciente"
                 active={dashTab === "bitacora"}
+                isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("bitacora");
                   setIsSidebarOpen(false);
@@ -881,6 +896,7 @@ export default function ExpedienteManager({
                   undefined
                 }
                 active={dashTab === "agenda"}
+                isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("agenda");
                   setIsSidebarOpen(false);
@@ -888,13 +904,14 @@ export default function ExpedienteManager({
               />
             </nav>
           </div>
-          <div className="p-6 border-t border-slate-800 space-y-4">
-            <NotificationStatusIndicator />
+          <div className={`px-6 py-6 mt-auto border-t border-slate-800 ${!isSidebarOpen ? 'lg:px-2' : ''}`}>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-[#0197D2] text-white font-bold text-sm shadow-lg shadow-sky-600/25 hover:bg-sky-500 transition-all"
+              className={`w-full flex items-center justify-center gap-3 ${isSidebarOpen ? 'px-4 py-3' : 'p-3'} rounded-xl bg-[#0197D2] text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 transition-all`}
+              title="Salir"
             >
-              <LogOut size={18} /> Salir
+              <LogOut size={18} className="shrink-0" />
+              {isSidebarOpen && <span>Salir</span>}
             </button>
           </div>
         </aside>
@@ -904,7 +921,7 @@ export default function ExpedienteManager({
             <div className="flex items-center gap-4 w-full md:w-auto">
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-2.5 bg-slate-900 text-slate-300 rounded-lg lg:hidden hover:text-white"
+                className="p-2.5 bg-slate-900 text-slate-300 rounded-lg hover:text-white"
               >
                 <Menu size={20} />
               </button>
@@ -922,9 +939,9 @@ export default function ExpedienteManager({
                 />
               </div>
             </div>
-            <div className="flex items-center gap-4 hidden md:flex">
+            <div className="flex flex-col items-end gap-2 hidden lg:hidden">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">
+                <div className="w-8 h-8 rounded-full bg-[#0197D2] flex items-center justify-center text-white font-bold">
                   A
                 </div>
                 <span>Abogada</span>
@@ -1406,7 +1423,7 @@ export default function ExpedienteManager({
     (selectedExpediente as any).integrantes || ([] as ExpedienteIntegrante[]);
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden p-6 md:p-8">
+    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden p-4 sm:p-6 md:p-8">
       <div className="max-w-[1600px] w-full mx-auto space-y-6 md:space-y-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <button
@@ -1431,7 +1448,7 @@ export default function ExpedienteManager({
             </div>
           </div>
         </div>
-        <div className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col lg:flex-row justify-between gap-8 items-center shadow-xl border border-slate-800 relative overflow-hidden">
+        <div className="bg-slate-900 rounded-3xl p-6 md:p-8 text-white flex flex-col lg:flex-row justify-between gap-6 md:gap-8 items-center shadow-xl border border-slate-800 relative overflow-hidden">
           <div className="space-y-3 relative z-10 text-center lg:text-left">
             <h1 className="text-3xl font-bold tracking-tight">
               {selectedExpediente.nombre_empresa}
@@ -1514,7 +1531,7 @@ export default function ExpedienteManager({
         </div>
         <div className="bg-slate-900 rounded-3xl shadow-xl border border-slate-800 min-h-[600px] overflow-hidden">
           {activeTab === "etapa_legal" && (
-            <div className="p-8 space-y-8 bg-slate-900">
+            <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-900">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-200 flex items-center gap-3">
                   <FileText size={24} className="text-red-400" /> Concentrado de
@@ -1542,7 +1559,6 @@ export default function ExpedienteManager({
                       "rfc",
                       "curp",
                       "estado_civil",
-                      "ocupacion",
                       "domicilio_completo",
                       "estado",
                     ],
@@ -1578,15 +1594,6 @@ export default function ExpedienteManager({
                       "fecha_contrato",
                     ],
                   },
-                  {
-                    titulo: "4. Seguimiento y Estatus",
-                    campos: [
-                      "estatus_detalle",
-                      "accion_realizar",
-                      "link_reunion",
-                      "fecha_reunion_acuerdos",
-                    ],
-                  },
                 ].map((seccion) => (
                   <div
                     key={seccion.titulo}
@@ -1596,31 +1603,63 @@ export default function ExpedienteManager({
                       {seccion.titulo}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {seccion.campos.map((campo) => (
-                        <div key={campo} className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            {campo.replace(/_/g, " ")}
-                          </label>
-                          {campo === "objeto_social_ventas" ? (
-                            <textarea
-                              value={concentradoForm[campo] || ""}
-                              onChange={(e) =>
-                                handleConcentradoChange(campo, e.target.value)
-                              }
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 min-h-[120px] outline-none focus:border-sky-600"
-                            />
-                          ) : (
-                            <input
-                              type="text"
-                              value={concentradoForm[campo] || ""}
-                              onChange={(e) =>
-                                handleConcentradoChange(campo, e.target.value)
-                              }
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 outline-none focus:border-sky-600"
-                            />
-                          )}
-                        </div>
-                      ))}
+                      {seccion.campos.map((campo) => {
+                        let defaultValue = concentradoForm[campo] || "";
+                        
+                        // Autocompletado de la base de datos si está vacío
+                        if (!defaultValue) {
+                           if (campo === 'nombre_completo') defaultValue = (selectedExpediente as any).cliente?.nombre_completo || '';
+                           if (campo === 'telefono_cliente') defaultValue = (selectedExpediente as any).cliente?.telefono || '';
+                           if (campo === 'rfc') defaultValue = (selectedExpediente as any).cliente?.rfc || '';
+                           if (campo === 'curp') defaultValue = (selectedExpediente as any).cliente?.curp || '';
+                           if (campo === 'estado_civil') defaultValue = (selectedExpediente as any).cliente?.estado_civil || '';
+                           if (campo === 'domicilio_completo') defaultValue = (selectedExpediente as any).cliente?.domicilio_completo || '';
+                           if (campo === 'total_contrato') defaultValue = contrato?.monto_total ? `$${contrato.monto_total.toLocaleString()}` : '';
+                           if (campo === 'periodicidad_pagos') defaultValue = contrato?.plan_pagos || '';
+                           if (campo === 'asesora_encargada') defaultValue = (selectedExpediente as any).asesora?.nombre_completo || '';
+                           if (campo === 'num_pagos_realizados') {
+                               const numPagos = ((selectedExpediente as any).pagos || []).length;
+                               defaultValue = numPagos > 0 ? numPagos.toString() : '';
+                           }
+                           if (campo === 'cantidad_pagada_acumulada') {
+                               const pagos = (selectedExpediente as any).pagos || [];
+                               const pagado = pagos.reduce((acc: number, p: any) => acc + (Number(p.monto) || 0), 0);
+                               defaultValue = pagado > 0 ? `$${pagado.toLocaleString()}` : '';
+                           }
+                           if (campo === 'saldo_cliente' && contrato?.monto_total) {
+                               const pagos = (selectedExpediente as any).pagos || [];
+                               const pagado = pagos.reduce((acc: number, p: any) => acc + (Number(p.monto) || 0), 0);
+                               const saldo = contrato.monto_total - pagado;
+                               defaultValue = saldo >= 0 ? `$${saldo.toLocaleString()}` : '';
+                           }
+                        }
+
+                        return (
+                          <div key={campo} className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                              {campo.replace(/_/g, " ")}
+                            </label>
+                            {campo === "objeto_social_ventas" ? (
+                              <textarea
+                                value={defaultValue}
+                                onChange={(e) =>
+                                  handleConcentradoChange(campo, e.target.value)
+                                }
+                                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-medium min-h-[120px] outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={defaultValue}
+                                onChange={(e) =>
+                                  handleConcentradoChange(campo, e.target.value)
+                                }
+                                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-medium outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 shadow-inner"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -1796,16 +1835,25 @@ export default function ExpedienteManager({
                     />
                   );
                 })}
-                {documentosExtrasDisponibles.length > 0 &&
-                  (() => {
+                {(() => {
                     const docsGenerales =
                       selectedExpediente.documentos?.filter(
                         (d) => !d.integrante_id,
                       ) || [];
-                    const modelExtras = documentosExtrasDisponibles.map((t) => {
+                    
+                    // Asegurarnos de que los documentos extra ya subidos también aparezcan
+                    const extrasGuardados = docsGenerales
+                      .filter(d => !DOCS_MAP[d.tipo] && !DOCS_MAP[d.nombre_personalizado as string] && !DOCS_PERSONALES.includes(d.tipo) && !DOCS_PROCESO.includes(d.tipo) && d.tipo === 'otro')
+                      .map(d => d.nombre_personalizado || d.tipo);
+
+                    const allExtras = Array.from(new Set([...documentosExtrasDisponibles, ...extrasGuardados]));
+
+                    if (allExtras.length === 0) return null;
+
+                    const modelExtras = allExtras.map((t) => {
                       const dbType = t;
                       const found = docsGenerales.find(
-                        (d) => d.tipo === dbType,
+                        (d) => d.nombre_personalizado === dbType || d.tipo === dbType,
                       );
                       return {
                         type: t,
@@ -1963,7 +2011,7 @@ export default function ExpedienteManager({
                 </h3>
                 <div className="space-y-3">
                   {recordatorios.length === 0 ? (
-                    <div className="text-center p-8 bg-slate-900 rounded-xl border border-slate-800">
+                    <div className="text-center p-6 md:p-8 bg-slate-900 rounded-xl border border-slate-800">
                       <p className="text-slate-500 text-sm font-bold">
                         No hay recordatorios pendientes.
                       </p>
@@ -1994,9 +2042,10 @@ export default function ExpedienteManager({
                           <div className="flex gap-1">
                             {r.estatus === "pendiente" && (
                               <button
-                                onClick={() => {
-                                  setSelectedReminderId(r.id);
-                                  setShowReminderForm(r.titulo);
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleCompleteReminder(r.id, r.expediente_id || selectedExpediente?.id || '');
                                 }}
                                 className="px-3 py-1.5 text-[10px] font-bold text-slate-300 bg-slate-800 rounded hover:bg-slate-700 transition-colors border border-slate-700"
                               >
@@ -2113,11 +2162,11 @@ export default function ExpedienteManager({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-slate-900 rounded-[3rem] shadow-2xl max-w-6xl w-full p-8 md:p-12 border-4 border-slate-800 max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="relative bg-slate-900 rounded-[2rem] sm:rounded-[3rem] shadow-2xl max-w-6xl w-full p-6 sm:p-8 md:p-12 border-4 border-slate-800 max-h-[90vh] overflow-y-auto custom-scrollbar"
             >
               <button
                 onClick={() => setShowReminderForm(null)}
-                className="absolute top-8 right-8 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 sm:top-8 sm:right-8 text-slate-400 hover:text-white transition-colors"
               >
                 <X size={32} />
               </button>
@@ -2209,7 +2258,7 @@ function ReminderForm({
             Programar {template.titulo}
           </h3>
         </div>
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           <div className="space-y-4">
             <label className="text-[12px] font-black uppercase tracking-widest text-slate-500">
               Fecha del Compromiso
@@ -2238,7 +2287,7 @@ function ReminderForm({
           <label className="text-[12px] font-black uppercase tracking-widest text-slate-500">
             Documentación Requerida (Sugerencias del Paso)
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(template.sugerencias.length > 0
               ? template.sugerencias
               : DOCS_CATALOGO
@@ -2330,6 +2379,7 @@ function SidebarLink({
   badgeColor = "sky",
   active,
   onClick,
+  isSidebarOpen = true,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -2337,6 +2387,7 @@ function SidebarLink({
   badgeColor?: "sky" | "red";
   active: boolean;
   onClick: () => void;
+  isSidebarOpen?: boolean;
 }) {
   const badgeStyles = {
     sky: "bg-[#0197D2] text-white",
@@ -2345,15 +2396,18 @@ function SidebarLink({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all text-left ${active ? "bg-[#0197D2] text-white shadow-xl shadow-sky-600/20" : "text-slate-400 hover:text-white hover:bg-slate-800/30"}`}
+      title={!isSidebarOpen ? label : undefined}
+      className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all ${!isSidebarOpen ? 'justify-center px-0' : 'justify-between'} ${active ? "bg-[#0197D2] text-white shadow-xl shadow-sky-600/20" : "text-slate-400 hover:text-white hover:bg-slate-800/30"}`}
     >
-      <div className="flex items-center gap-3">
-        <span className={active ? "text-white" : "text-slate-500"}>{icon}</span>
-        <span className="text-[11px] font-black uppercase tracking-widest">
-          {label}
-        </span>
+      <div className={`flex items-center gap-3 ${!isSidebarOpen ? 'justify-center' : ''}`}>
+        <span className={`${active ? "text-white" : "text-slate-500"} shrink-0`}>{icon}</span>
+        {isSidebarOpen && (
+          <span className="text-[11px] font-black uppercase tracking-widest text-left">
+            {label}
+          </span>
+        )}
       </div>
-      {badge !== undefined && badge > 0 && (
+      {isSidebarOpen && badge !== undefined && badge > 0 && (
         <span
           className={`text-[9px] font-black px-2 py-0.5 rounded-full ${badgeStyles[badgeColor]}`}
         >
@@ -2397,37 +2451,39 @@ function GroupedRecordatorioCard({
 }) {
   const colors = {
     red: {
-      bg: "bg-rose-950/20",
+      bg: "bg-rose-950/30",
       border: "border-rose-900/50",
       text: "text-rose-400",
-      headerBg: "bg-rose-900/10",
+      headerBg: "bg-gradient-to-r from-rose-900/20 to-transparent",
+      glow: "shadow-[0_0_15px_rgba(225,29,72,0.1)]"
     },
     sky: {
-      bg: "bg-sky-950/20",
+      bg: "bg-sky-950/30",
       border: "border-sky-900/50",
       text: "text-sky-400",
-      headerBg: "bg-sky-900/10",
+      headerBg: "bg-gradient-to-r from-sky-900/20 to-transparent",
+      glow: "shadow-[0_0_15px_rgba(1,151,210,0.1)]"
     },
   };
   const c = colors[color] || colors.sky;
   return (
     <div
-      className={`${c.bg} border ${c.border} rounded-2xl overflow-hidden shadow-sm`}
+      className={`${c.bg} border ${c.border} rounded-2xl overflow-hidden ${c.glow} transition-all duration-300 hover:border-slate-700/50 hover:-translate-y-0.5`}
     >
       <div
-        className={`${c.headerBg} border-b ${c.border} px-5 py-3 flex items-center justify-between`}
+        className={`${c.headerBg} border-b ${c.border} px-5 py-4 flex items-center justify-between backdrop-blur-sm`}
       >
         <div className="min-w-0 pr-4">
-          <h4 className="text-sm font-black text-slate-200 uppercase tracking-wide truncate">
+          <h4 className="text-base font-black text-white uppercase tracking-wider truncate drop-shadow-sm">
             {group.empresa}
           </h4>
-          <p className="text-[10px] font-bold text-slate-500 uppercase truncate">
-            {group.clienteNombre}
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5 flex items-center gap-1.5">
+            <Users size={10} className="opacity-70" /> {group.clienteNombre}
           </p>
         </div>
         <button
           onClick={() => onClick(group.expId)}
-          className={`shrink-0 text-[10px] font-bold ${c.text} bg-slate-900 border ${c.border} px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-all`}
+          className={`shrink-0 text-[10px] font-black tracking-widest uppercase ${c.text} bg-slate-900 border ${c.border} px-4 py-2 rounded-xl hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-black/50`}
         >
           Ver Expediente
         </button>
