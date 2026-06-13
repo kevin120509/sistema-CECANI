@@ -270,7 +270,7 @@ export default function Paso3Contrato({
                   label="Contrato Firmado *" 
                   archivo={contratoFirmado} 
                   dbDoc={docContratoFirmado} 
-                  isValidated={isContratoValidated}
+                  isValidated={isContratoValidado}
                   isRejected={isContratoRechazado}
                   disabled={isPending || isWaitingForDirector || (hasContratoEnBD && !isContratoRechazado)} 
                   onFileChange={(e: any) => handleFileChange(e, setContratoFirmado)} 

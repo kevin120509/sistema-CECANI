@@ -18,7 +18,7 @@ import {
   ExternalLink, CheckCircle2, Clock, FileUp, FileSignature,
   AlertCircle, Users, Loader2, Bell, MessageCircle, 
   AlertTriangle, Info, Mail, MapPin, UserPlus, HelpCircle, LayoutDashboard, LogOut,
-  ListTodo, Activity
+  ListTodo, Activity, Trash2, Calendar, CheckSquare, ChevronRight, X
 } from 'lucide-react';
 import { PLANES_PAGO_LABELS } from '@/lib/constants';
 
@@ -524,6 +524,31 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
     return { firstDay, days, month, year };
   }, [recordatoriosPendientes]);
 
+  const tareasPendientes = useMemo(() => {
+    return expedientes.map(exp => {
+      const hitoActual = hitos.find(h => {
+        const st = exp.seguimiento_tareas?.find(s => s.hito_id === h.id);
+        return !st || st.estatus !== 'completado';
+      });
+      return { exp, hitoActual };
+    }).filter(t => t.hitoActual);
+  }, [expedientes, hitos]);
+
+  const bitacoraGlobal = useMemo(() => {
+    const notas: any[] = [];
+    expedientes.forEach(exp => {
+      (exp.bitacora || []).forEach((b: any) => {
+        notas.push({
+          ...b,
+          empresa: exp.nombre_empresa,
+          clienteNombre: (exp as any).cliente?.nombre_completo || '',
+          expId: exp.id,
+        });
+      });
+    });
+    return notas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [expedientes]);
+
   if (!selectedExpediente) {
     return (
       <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden">
@@ -685,7 +710,7 @@ export default function ExpedienteManager({ expedientes, hitos, alertasHoy }: Ex
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <p className="text-sm font-black text-white uppercase leading-tight line-clamp-2">
-                              {t.exp.datos_concentrado?.[0]?.nombre_asociacion_autorizado || t.exp.datos_concentrado?.[0]?.nombre_asociacion_1 || t.exp.nombre_empresa}
+                              {t.exp.nombre_empresa}
                             </p>
                             <p className="text-[10px] font-bold text-slate-500 uppercase mt-1 truncate">{t.exp.cliente?.nombre_completo}</p>
                           </div>
