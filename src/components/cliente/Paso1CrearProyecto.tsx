@@ -166,8 +166,13 @@ export default function Paso1CrearProyecto({
       // Validaciones eliminadas a petición del usuario para permitir mayor flexibilidad
       return true;
     } else if (step === 2) {
-      if (!f.nombreEmpresa.trim() || !f.figuraId || !f.planPagos) {
-        setLocalError('La configuración de la empresa y el plan de pagos son requeridos.');
+      if (!f.nombreEmpresa.trim() || !f.figuraId) {
+        setLocalError('El nombre de la empresa y la figura jurídica son requeridos.');
+        return false;
+      }
+    } else if (step === 3) {
+      if (!f.planPagos) {
+        setLocalError('Debe seleccionar un plan de pagos para continuar.');
         return false;
       }
     }

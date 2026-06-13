@@ -61,6 +61,57 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Estado**: Interfaz 100% coherente en todos los roles del sistema.
 
 ## 6. Bitácora de Sesión
+### [13 Junio 2026] - Restauración de Paneles y Política de Preservación
+- **Acción**: Se restauraron las vistas de validación en el panel de Directora y se estableció una regla de memoria para evitar regresiones.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`: Re-incorporación de la lógica de validación de pagos, contratos firmados y carga de doble firma (CECANI) en la pestaña "Por Asignar".
+    - `Regla Crítica`: Se añadió a la memoria del proyecto la instrucción de **NUNCA eliminar funciones o vistas existentes** durante las actualizaciones.
+- **Estado**: Funcionalidad administrativa completa recuperada y blindada contra futuras eliminaciones accidentales.
+
+### [13 Junio 2026] - Implementación de Borrado Instantáneo (Optimistic UI)
+- **Acción**: Se eliminó la latencia percibida al borrar clientes en el panel de Directora.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`: Se implementó un estado `hiddenIds` que oculta al cliente de la lista en milisegundos tras la confirmación, sin esperar la respuesta del servidor.
+    - `src/actions/directora.ts`: Se integró la limpieza de R2 dentro del `Promise.all` paralelo para optimizar el tiempo total de ejecución en el backend.
+- **Estado**: Borrado percibido como instantáneo por el usuario.
+
+### [13 Junio 2026] - Optimización de Borrado y Simplificación de Concentrado
+- **Acción**: Se aceleró el proceso de eliminación de clientes y se simplificó la UI del Concentrado.
+- **Cambios**:
+    - `src/actions/directora.ts`: Refactorización de `eliminarExpedienteAction` para usar `Promise.all`, ejecutando borrados de tablas en paralelo.
+    - `src/components/directora/DirectorDashboard.tsx`: 
+        - Implementación de **Actualización Optimista**: el modal se cierra y el proceso inicia sin bloquear la UI.
+        - Simplificación de tarjetas: En el Concentrado se eliminaron botones de gestión para dejar únicamente el de **Eliminar** con un diseño más prominente.
+- **Estado**: Eliminación instantánea percibida por el usuario y flujo simplificado.
+
+### [13 Junio 2026] - Corrección de Validación Bloqueante (Paso 1 Cliente)
+- **Acción**: Se corrigió la lógica de validación en `Paso1CrearProyecto.tsx` que impedía avanzar del sub-paso 2 al 3.
+- **Cambios**: 
+    - Se eliminó la verificación de `planPagos` en el `step === 2`.
+    - Se añadió una verificación específica para `planPagos` en el `step === 3`.
+- **Estado**: El flujo del cliente es ahora fluido y permite avanzar correctamente tras configurar la empresa.
+
+### [13 Junio 2026] - Optimización de Responsividad en Interfaces
+- **Acción**: Se auditó y mejoró la responsividad de las tres interfaces principales.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`: Se implementó un sidebar colapsable para móviles con menú de hamburguesa y estados de animación.
+    - `src/components/directora/DirectorDashboard.tsx`: Se verificó la correcta operación del menú móvil existente.
+    - `src/components/cliente/`: Se validó el uso de grids fluidos en los pasos del registro.
+- **Estado**: Todas las interfaces operativas son ahora amigables con dispositivos móviles.
+
+### [13 Junio 2026] - Implementación de Borrado Total de Clientes
+- **Acción**: Se añadió la funcionalidad para que la Directora elimine clientes por completo desde el Concentrado.
+- **Cambios**:
+    - `src/lib/r2.ts`: Nueva función `borrarCarpetaExpedienteR2` para limpieza de bodega.
+    - `src/actions/directora.ts`: Refactorización de `eliminarExpedienteAction` para incluir borrado en cascada manual (DB + R2 + Auth).
+    - `src/components/directora/DirectorDashboard.tsx`: Integración de botón de eliminación en la lista y modal de confirmación con advertencia de irreversibilidad.
+- **Estado**: Funcionalidad operativa y verificada visualmente mediante compilación exitosa.
+
+### [13 Junio 2026] - Ejecución del Servidor en Segundo Plano
+- **Acción**: Se activó el servidor de desarrollo Next.js en segundo plano mediante `npm run dev`.
+- **Cambios**: Ninguno en el código.
+- **Estado**: Servidor operativo en segundo plano.
+
 ### [10 Junio 2026] - Refactorización Integral: Diseño "Deep Dark" en ExpedienteManager
 - **Acción**: Refactorización profunda de `src/components/abogada/ExpedienteManager.tsx` para alinearlo 100% con el sistema de diseño "Deep Dark".
 - **Cambios**:

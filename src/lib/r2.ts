@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
@@ -160,4 +160,44 @@ export async function generarUrlFirmadaR2(urlArchivo: string): Promise<string> {
 
   // Expira en 24 horas (86400 segundos)
   return await getSignedUrl(client, command, { expiresIn: 86400 });
+}
+
+/**
+ * Borra todos los archivos dentro de una "carpeta" (prefijo) en R2.
+ * Útil para eliminar expedientes completos.
+ */
+export async function borrarCarpetaExpedienteR2(expedienteId: string): Promise<boolean> {
+  const bucketName = process.env.R2_BUCKET_NAME;
+  if (!bucketName) return false;
+
+  try {
+    const client = getR2Client();
+    const prefix = `expedientes/${expedienteId}/`;
+
+    // 1. Listar todos los objetos con el prefijo
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+    });
+
+    const listResponse = await client.send(listCommand);
+
+    if (!listResponse.Contents || listResponse.Contents.length === 0) {
+      return true; // No hay archivos que borrar
+    }
+
+    // 2. Preparar el comando de borrado múltiple
+    const deleteCommand = new DeleteObjectsCommand({
+      Bucket: bucketName,
+      Delete: {
+        Objects: listResponse.Contents.map((obj) => ({ Key: obj.Key! })),
+      },
+    });
+
+    await client.send(deleteCommand);
+    return true;
+  } catch (error) {
+    console.error("Error en borrarCarpetaExpedienteR2:", error);
+    return false;
+  }
 }

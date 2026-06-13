@@ -62,6 +62,7 @@ import {
   Calendar,
   CheckSquare,
   ChevronRight,
+  Menu,
   X,
   Scale,
 } from "lucide-react";
@@ -447,6 +448,7 @@ export default function ExpedienteManager({
     "clientes" | "tareas" | "agenda" | "bitacora"
   >("clientes");
   const [agendaView, setAgendaView] = useState<"lista" | "calendario">("lista");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const CAMPOS_CONCENTRADO = [
     "nombre_completo",
@@ -814,8 +816,29 @@ export default function ExpedienteManager({
   if (!selectedExpediente) {
     return (
       <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden">
-        <aside className="w-72 shrink-0 bg-slate-900 text-slate-300 flex flex-col min-h-screen sticky top-0 border-r border-slate-800">
-          <div className="p-6 border-b border-slate-800 flex items-center justify-end"></div>
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden"
+            />
+          )}
+        </AnimatePresence>
+
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 transform lg:translate-x-0 lg:sticky lg:top-0 border-r border-slate-800 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
+          <div className="p-6 border-b border-slate-800 flex items-center justify-end lg:hidden">
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="text-slate-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
           <div className="p-6 flex-1">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">
               Panel Legal
@@ -826,20 +849,29 @@ export default function ExpedienteManager({
                 label="Mis Clientes"
                 badge={expedientes.length}
                 active={dashTab === "clientes"}
-                onClick={() => setDashTab("clientes")}
+                onClick={() => {
+                  setDashTab("clientes");
+                  setIsSidebarOpen(false);
+                }}
               />
               <SidebarLink
                 icon={<ListTodo size={18} />}
                 label="Mis Tareas"
                 badge={tareasPendientes.length || undefined}
                 active={dashTab === "tareas"}
-                onClick={() => setDashTab("tareas")}
+                onClick={() => {
+                  setDashTab("tareas");
+                  setIsSidebarOpen(false);
+                }}
               />
               <SidebarLink
                 icon={<Activity size={18} />}
                 label="Actividad Reciente"
                 active={dashTab === "bitacora"}
-                onClick={() => setDashTab("bitacora")}
+                onClick={() => {
+                  setDashTab("bitacora");
+                  setIsSidebarOpen(false);
+                }}
               />
               <SidebarLink
                 icon={<Calendar size={18} />}
@@ -849,7 +881,10 @@ export default function ExpedienteManager({
                   undefined
                 }
                 active={dashTab === "agenda"}
-                onClick={() => setDashTab("agenda")}
+                onClick={() => {
+                  setDashTab("agenda");
+                  setIsSidebarOpen(false);
+                }}
               />
             </nav>
           </div>
@@ -866,18 +901,26 @@ export default function ExpedienteManager({
 
         <main className="flex-1 p-6 md:p-8 w-full max-w-[1600px] mx-auto">
           <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="relative w-full md:w-96">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-12 pr-4 text-sm font-medium text-slate-200 outline-none focus:border-sky-500 w-full placeholder-slate-500 transition-all shadow-sm"
-              />
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2.5 bg-slate-900 text-slate-300 rounded-lg lg:hidden hover:text-white"
+              >
+                <Menu size={20} />
+              </button>
+              <div className="relative w-full md:w-96">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="Buscar cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-12 pr-4 text-sm font-medium text-slate-200 outline-none focus:border-sky-500 w-full placeholder-slate-500 transition-all shadow-sm"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-4 hidden md:flex">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-300">

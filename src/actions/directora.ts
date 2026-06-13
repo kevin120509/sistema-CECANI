@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPushNotification } from '@/lib/onesignal-server';
-import { subirArchivoR2 } from '@/lib/r2';
+import { subirArchivoR2, borrarCarpetaExpedienteR2 } from '@/lib/r2';
 
 // Importaciones de la Arquitectura Limpia
 import { AuthService } from '@/core/services/AuthService';
@@ -83,8 +83,20 @@ export async function eliminarExpedienteAction(expedienteId: string, clienteId: 
 
     const adminSupabase = createAdminClient();
 
-    // 1. Eliminar expediente (la base de datos debería manejar cascada para contratos/documentos/pagos si está configurado, 
-    // pero lo hacemos manual o confiamos en el esquema)
+    // 1. Eliminar archivos en R2 y dependencias de la DB EN PARALELO para máxima velocidad
+    await Promise.all([
+      borrarCarpetaExpedienteR2(expedienteId),
+      adminSupabase.from('bitacora').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('contratos').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('datos_concentrado').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('documentos').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('pagos').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('seguimiento_tareas').delete().eq('expediente_id', expedienteId),
+      adminSupabase.from('expediente_asesoras').delete().eq('expediente_id', expedienteId)
+    ]);
+
+    // 2. Eliminar el expediente, el perfil y el usuario de Auth
+    // Estos se hacen secuencialmente para respetar la integridad y asegurar el borrado total
     const { error: expError } = await adminSupabase
       .from('expedientes')
       .delete()
@@ -92,7 +104,6 @@ export async function eliminarExpedienteAction(expedienteId: string, clienteId: 
 
     if (expError) throw expError;
 
-    // 2. Eliminar perfil del cliente
     const { error: perfilError } = await adminSupabase
       .from('perfiles')
       .delete()
@@ -100,12 +111,13 @@ export async function eliminarExpedienteAction(expedienteId: string, clienteId: 
 
     if (perfilError) throw perfilError;
 
-    // 3. Eliminar usuario de Auth (Opcional, pero recomendado para limpieza total)
     await adminSupabase.auth.admin.deleteUser(clienteId);
 
     revalidatePath('/directora');
+    revalidatePath('/abogada');
     return { success: true };
   } catch (error: any) {
+    console.error('Error al eliminar cliente completo:', error);
     return { error: error.message || 'Error al eliminar registro' };
   }
 }

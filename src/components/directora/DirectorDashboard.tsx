@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { asignarAbogada, subirContratoDobleFirma, crearClienteManualAction, eliminarExpedienteAction } from '@/actions/directora';
+import { asignarAbogada, subirContratoDobleFirma, crearClienteManualAction, eliminarExpedienteAction, validarDocumentoAction, validarPagoAction, validarContratoAction, rechazarDocumentoR2Action, rechazarPagoAction, rechazarContratoClienteAction } from '@/actions/directora';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
 import { registrarDocumento } from '@/actions/documentos';
 import { logoutAbogada } from '@/actions/auth-abogada';
@@ -40,7 +40,12 @@ import {
   ClipboardList,
   Settings,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  CreditCard,
+  FileCheck,
+  Send,
+  Check,
+  Ban
 } from 'lucide-react';
 
 export type PerfilAbogada = { id: string; nombre_completo: string };
@@ -113,6 +118,9 @@ export default function DirectorDashboard({
   const [dobleFirmaFile, setDobleFirmaFile] = useState<File | null>(null);
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
   const [quickViewUrl, setQuickViewUrl] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [expedienteToDelete, setExpedienteToDelete] = useState<ExpedienteDirector | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
 
   // --- SYNC SELECTED EXPEDIENTE ---
   useEffect(() => {
@@ -172,6 +180,111 @@ export default function DirectorDashboard({
         router.refresh();
       } else {
         alert(res.error);
+      }
+    });
+  };
+
+  const handleValidarDoc = async (id: string, valid: boolean) => {
+    startTransition(async () => {
+      const res = await validarDocumentoAction(id, valid);
+      if (res.success) toast.success(valid ? 'Documento aprobado' : 'Documento marcado como pendiente');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleRechazarDoc = async (doc: any) => {
+    const motivo = prompt('Motivo del rechazo del documento:');
+    if (!motivo) return;
+    startTransition(async () => {
+      const res = await rechazarDocumentoR2Action(doc.id, doc.tipo, selectedExpediente!.id, selectedExpediente!.cliente_id, motivo, doc.url_archivo);
+      if (res.success) toast.success('Documento rechazado y notificado al cliente');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleValidarPago = async (pagoId: string) => {
+    if (!selectedExpediente) return;
+    startTransition(async () => {
+      const res = await validarPagoAction(pagoId, selectedExpediente.id, selectedExpediente.cliente_id);
+      if (res.success) toast.success('Pago verificado');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleRechazarPago = async (pago: any) => {
+    const motivo = prompt('Motivo del rechazo del pago:');
+    if (!motivo) return;
+    startTransition(async () => {
+      const res = await rechazarPagoAction(pago.id, selectedExpediente!.id, selectedExpediente!.cliente_id, motivo, pago.url_comprobante);
+      if (res.success) toast.success('Pago rechazado y notificado');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleValidarContrato = async () => {
+    if (!selectedExpediente) return;
+    startTransition(async () => {
+      const res = await validarContratoAction(selectedExpediente.contratos?.[0]?.id || '', selectedExpediente.id, selectedExpediente.cliente_id);
+      if (res.success) toast.success('Contrato firmado aprobado');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleRechazarContratoCliente = async () => {
+    const motivo = prompt('Motivo del rechazo del contrato firmado:');
+    if (!motivo) return;
+    const url = selectedExpediente?.contratos?.[0]?.url_pdf_firmado_cliente;
+    startTransition(async () => {
+      const res = await rechazarContratoClienteAction(selectedExpediente!.contratos?.[0]?.id || '', selectedExpediente!.id, selectedExpediente!.cliente_id, motivo, url || '');
+      if (res.success) toast.success('Contrato rechazado y notificado');
+      else toast.error(res.error);
+    });
+  };
+
+  const handleUploadDobleFirma = async () => {
+    if (!dobleFirmaFile || !selectedExpediente) return;
+    setIsUploadingDobleFirma(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', dobleFirmaFile);
+      formData.append('expediente_id', selectedExpediente.id);
+      formData.append('contrato_id', selectedExpediente.contratos?.[0]?.id || '');
+      
+      const res = await subirContratoDobleFirma(formData);
+      if (res.success) {
+        toast.success('Contrato con doble firma subido correctamente');
+        setDobleFirmaFile(null);
+      } else {
+        toast.error(res.error || 'Error al subir');
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setIsUploadingDobleFirma(false);
+    }
+  };
+
+  const handleEliminar = async () => {
+    if (!expedienteToDelete) return;
+    
+    // Capturamos el ID para la eliminación optimista
+    const idToRemove = expedienteToDelete.id;
+    setHiddenIds(prev => [...prev, idToRemove]);
+    
+    startTransition(async () => {
+      // Cerramos el modal inmediatamente
+      setIsDeleteModalOpen(false);
+      
+      const res = await eliminarExpedienteAction(idToRemove, expedienteToDelete.cliente_id);
+      
+      if (res.success) {
+        toast.success('Cliente eliminado correctamente');
+        setExpedienteToDelete(null);
+        router.refresh(); // Refresco real por detrás
+      } else {
+        // Si falla, lo mostramos de nuevo
+        setHiddenIds(prev => prev.filter(id => id !== idToRemove));
+        toast.error(res.error || 'Error al eliminar');
       }
     });
   };
@@ -239,6 +352,7 @@ export default function DirectorDashboard({
              ) : (
                 (() => {
                   const items = (activeTab === 'por_asignar' ? listosParaAsignar : activeTab === 'concentrado' ? concentrado : validacion)
+                    .filter(exp => !hiddenIds.includes(exp.id))
                     .filter(exp => {
                       const search = searchQuery.toLowerCase();
                       const matchesSearch = exp.nombre_empresa.toLowerCase().includes(search) || exp.cliente?.nombre_completo.toLowerCase().includes(search) || exp.numero_control?.toLowerCase().includes(search);
@@ -266,8 +380,27 @@ export default function DirectorDashboard({
                       </div>
                     </div>
                     <div className="flex items-center gap-12">
-                      <div className="hidden md:block text-right"><p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Estatus</p><span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">{exp.estatus}</span></div>
-                      <button onClick={() => { setSelectedExpediente(exp); if(activeTab === 'validacion') setIsValidationModalOpen(true); else setIsAssignModalOpen(true); }} className="px-6 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sky-400 font-black uppercase tracking-widest text-[10px] hover:text-white hover:bg-sky-600 transition-all">Gestionar</button>
+                      <div className="flex items-center gap-2">
+                        {activeTab === 'concentrado' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setExpedienteToDelete(exp); setIsDeleteModalOpen(true); }}
+                            className="p-3 bg-red-600/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-600 hover:text-white transition-all group-hover:scale-110"
+                            title="Eliminar Cliente"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => { 
+                            setSelectedExpediente(exp); 
+                            if(activeTab === 'validacion') setIsValidationModalOpen(true); 
+                            else setIsAssignModalOpen(true); 
+                          }} 
+                          className="px-6 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sky-400 font-black uppercase tracking-widest text-[10px] hover:text-white hover:bg-sky-600 transition-all"
+                        >
+                          Gestionar
+                        </button>
+                      </div>
                     </div>
                   </div>
                   ));
@@ -281,12 +414,177 @@ export default function DirectorDashboard({
       <AnimatePresence>{isAssignModalOpen && selectedExpediente && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" /><motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
          <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800"><div className="flex items-center gap-4"><Building2 size={24} className="text-sky-500"/><h2 className="text-lg font-black uppercase tracking-tight">{selectedExpediente.nombre_empresa}</h2></div><div className="flex gap-2"><button onClick={() => onEliminarExpediente(selectedExpediente.id, selectedExpediente.cliente_id)} className="p-2 text-red-500 hover:bg-red-600/10 rounded-lg transition-all"><Trash2 size={20}/></button><button onClick={() => setIsAssignModalOpen(false)} className="p-2 text-slate-500 hover:text-white"><X size={24}/></button></div></div>
          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-900/50">
+            {/* Sección de Pagos y Firma */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div className="space-y-6"><h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Perfil del Cliente</h3><div className="space-y-4"><TextData label="Nombre" value={selectedExpediente.cliente?.nombre_completo} /><TextData label="RFC" value={selectedExpediente.cliente?.rfc} /><TextData label="Teléfono" value={selectedExpediente.cliente?.telefono} /></div></div>
-               <div className="space-y-6"><h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Inversión</h3><p className="text-4xl font-black text-white">${selectedExpediente.contratos?.[0]?.monto_total?.toLocaleString() || '0'}</p><form onSubmit={handleAsignar} className="space-y-4 pt-4"><label className="text-[10px] font-black uppercase text-slate-500">Asignar Abogada</label><select value={asesoraId} onChange={e => setAsesoraId(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-sky-600"><option value="">Seleccionar...</option>{abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}</select><button type="submit" disabled={isPending} className="w-full py-3 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all disabled:opacity-50">Confirmar Asignación</button></form></div>
+               <div className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2 flex items-center gap-2"><CreditCard size={14}/> Comprobantes de Pago</h3>
+                  <div className="space-y-3">
+                     {selectedExpediente.pagos?.map((pago: any, idx) => (
+                        <div key={idx} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+                           <div>
+                              <p className="text-white font-black text-sm">${pago.monto.toLocaleString()}</p>
+                              <p className="text-[9px] text-slate-500 uppercase font-bold">{pago.fecha_pago || 'Fecha no registrada'}</p>
+                           </div>
+                           <div className="flex gap-2">
+                              <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(pago.url_comprobante)}`)} className="p-2 bg-slate-900 text-sky-400 rounded-lg hover:text-white"><Eye size={16}/></button>
+                              {!pago.verificado && (
+                                 <>
+                                    <button onClick={() => handleValidarPago(pago.id)} className="p-2 bg-sky-600/10 text-sky-500 rounded-lg hover:bg-sky-600 hover:text-white"><Check size={16}/></button>
+                                    <button onClick={() => handleRechazarPago(pago)} className="p-2 bg-red-600/10 text-red-500 rounded-lg hover:bg-red-600 hover:text-white"><Ban size={16}/></button>
+                                 </>
+                              )}
+                           </div>
+                        </div>
+                     ))}
+                     {(!selectedExpediente.pagos || selectedExpediente.pagos.length === 0) && <p className="text-[10px] text-slate-600 italic">No hay pagos registrados aún.</p>}
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2 flex items-center gap-2"><FileSignature size={14}/> Contrato Firmado</h3>
+                  {selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente ? (
+                     <div className="bg-slate-950 p-6 rounded-3xl border border-sky-500/20 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <span className="text-[10px] font-black uppercase text-sky-500 bg-sky-500/10 px-3 py-1 rounded-full">Recibido</span>
+                           <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente || '')}`)} className="flex items-center gap-2 text-xs font-black text-white hover:text-sky-400"><Eye size={16}/> Ver Documento</button>
+                        </div>
+                        <div className="flex gap-3">
+                           <button onClick={handleValidarContrato} className="flex-1 py-3 bg-sky-600 text-white rounded-xl font-black uppercase text-[10px] hover:bg-sky-500 transition-all">Aprobar Firma</button>
+                           <button onClick={handleRechazarContratoCliente} className="flex-1 py-3 bg-slate-800 text-red-500 rounded-xl font-black uppercase text-[10px] hover:bg-red-600 hover:text-white transition-all">Rechazar</button>
+                        </div>
+                     </div>
+                  ) : (
+                     <div className="bg-slate-950/50 p-8 rounded-3xl border border-dashed border-slate-800 text-center">
+                        <Clock size={32} className="mx-auto text-slate-700 mb-2"/>
+                        <p className="text-[10px] font-black text-slate-600 uppercase">Esperando firma del cliente</p>
+                     </div>
+                  )}
+               </div>
+            </div>
+
+            {/* Doble Firma y Asignación */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-800">
+               <div className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Doble Firma (CECANI)</h3>
+                  <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
+                     {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma ? (
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-3 text-emerald-500"><CheckCircle2 size={20}/> <span className="text-xs font-black uppercase">Contrato Finalizado</span></div>
+                           <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_doble_firma || '')}`)} className="text-sky-400 hover:text-white"><Eye size={18}/></button>
+                        </div>
+                     ) : (
+                        <div className="space-y-4">
+                           <label className="block w-full cursor-pointer group">
+                              <div className="border-2 border-dashed border-slate-800 group-hover:border-sky-500/50 rounded-2xl p-6 transition-all text-center">
+                                 <UploadCloud size={24} className="mx-auto text-slate-600 mb-2 group-hover:text-sky-500"/>
+                                 <p className="text-[10px] font-black text-slate-500 uppercase group-hover:text-slate-300">{dobleFirmaFile ? dobleFirmaFile.name : 'Subir Contrato con Doble Firma'}</p>
+                                 <input type="file" className="hidden" accept=".pdf" onChange={e => setDobleFirmaFile(e.target.files?.[0] || null)} />
+                              </div>
+                           </label>
+                           {dobleFirmaFile && (
+                              <button onClick={handleUploadDobleFirma} disabled={isUploadingDobleFirma} className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black uppercase text-[10px] hover:bg-emerald-500 flex items-center justify-center gap-2">
+                                 {isUploadingDobleFirma ? <Loader2 className="animate-spin" size={16}/> : <><Send size={16}/> Enviar Contrato Final</>}
+                              </button>
+                           )}
+                        </div>
+                     )}
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Asignación de Abogada</h3>
+                  <form onSubmit={handleAsignar} className="space-y-4">
+                     <select value={asesoraId} onChange={e => setAsesoraId(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs font-bold text-white outline-none focus:border-sky-600">
+                        <option value="">Seleccionar Abogada...</option>
+                        {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
+                     </select>
+                     <button type="submit" disabled={isPending} className="w-full py-4 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20">Confirmar Asignación</button>
+                  </form>
+               </div>
             </div>
          </div>
       </motion.div></div>)}</AnimatePresence>
+
+      <AnimatePresence>{isValidationModalOpen && selectedExpediente && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" /><motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-6xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-800">
+         <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800"><div className="flex items-center gap-4"><Shield size={24} className="text-emerald-500"/><h2 className="text-lg font-black uppercase tracking-tight">Validación: {selectedExpediente.nombre_empresa}</h2></div><button onClick={() => setIsValidationModalOpen(false)} className="p-2 text-slate-500 hover:text-white"><X size={24}/></button></div>
+         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10">
+            {/* Header Información */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               <TextData label="Representante" value={selectedExpediente.cliente?.nombre_completo} />
+               <TextData label="RFC" value={selectedExpediente.cliente?.rfc} />
+               <TextData label="Teléfono" value={selectedExpediente.cliente?.telefono} />
+               <TextData label="Empresa" value={selectedExpediente.nombre_empresa} />
+            </div>
+
+            {/* Documentación */}
+            <div className="space-y-6">
+               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800 pb-3 flex items-center gap-2"><ClipboardList size={16}/> Revisión Documental</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {selectedExpediente.documentos?.filter(d => ['ine_frente', 'ine_reverso', 'comprobante_domicilio', 'curp'].includes(d.tipo)).map(doc => (
+                     <div key={doc.id} className={"bg-slate-950 p-5 rounded-3xl border transition-all " + (doc.validado ? "border-emerald-500/20" : "border-slate-800")}>
+                        <div className="flex items-center justify-between mb-4">
+                           <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{doc.tipo.replace(/_/g, ' ')}</span>
+                           {doc.validado ? <CheckCircle2 size={16} className="text-emerald-500"/> : <Clock size={16} className="text-amber-500"/>}
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)} className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-800 transition-all flex items-center justify-center gap-2"><Eye size={14}/> Ver</button>
+                           {!doc.validado ? (
+                              <button onClick={() => handleValidarDoc(doc.id, true)} className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 transition-all">Validar</button>
+                           ) : (
+                              <button onClick={() => handleValidarDoc(doc.id, false)} className="p-2.5 bg-slate-900 text-slate-500 rounded-xl hover:text-red-500"><X size={16}/></button>
+                           )}
+                           <button onClick={() => handleRechazarDoc(doc)} className="p-2.5 bg-slate-900 text-slate-600 rounded-xl hover:text-red-500"><Ban size={16}/></button>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            </div>
+
+            {/* Contrato de Sistema */}
+            <div className="space-y-6">
+               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800 pb-3 flex items-center gap-2"><FileText size={16}/> Contrato Generado por Sistema</h3>
+               {selectedExpediente.contratos?.[0]?.url_pdf_generado ? (
+                  <div className="bg-slate-950 p-6 rounded-3xl border border-sky-500/20 flex items-center justify-between">
+                     <div className="flex items-center gap-4"><FileText size={32} className="text-sky-500"/><div className="text-left"><p className="text-white font-black text-sm uppercase">Contrato Digital</p><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Generado automáticamente</p></div></div>
+                     <div className="flex gap-4">
+                        <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_generado || '')}`)} className="px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-800 transition-all flex items-center gap-2"><Eye size={16}/> Previsualizar</button>
+                        <button onClick={() => { setIsValidationModalOpen(false); setIsAssignModalOpen(true); }} className="px-8 py-3 bg-sky-600 text-white rounded-xl font-black uppercase text-[10px] hover:bg-sky-500 transition-all flex items-center gap-2">Siguiente Paso <ArrowRight size={16}/></button>
+                     </div>
+                  </div>
+               ) : (
+                  <div className="bg-slate-950/50 p-12 rounded-3xl border border-dashed border-slate-800 text-center">
+                     <AlertTriangle size={40} className="mx-auto text-amber-500 mb-4"/>
+                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">El contrato aún no ha sido generado o hubo un error en el proceso.</p>
+                  </div>
+               )}
+            </div>
+         </div>
+      </motion.div></div>)}</AnimatePresence>
+
+      <AnimatePresence>
+        {isDeleteModalOpen && expedienteToDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsDeleteModalOpen(false)} className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 border border-slate-800 rounded-[2rem] p-8 max-w-md w-full shadow-2xl text-center">
+              <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle size={40} />
+              </div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tight mb-2">¿Confirmar Eliminación?</h2>
+              <p className="text-slate-400 text-sm font-medium mb-8">
+                Esta acción es <span className="text-red-500 font-bold italic">irreversible</span>. 
+                Se borrarán todos los datos de <span className="text-white font-bold">{expedienteToDelete.nombre_empresa}</span>, 
+                incluyendo expedientes, pagos, documentos y archivos en la nube.
+              </p>
+              <div className="flex gap-4">
+                <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-700 transition-all">Cancelar</button>
+                <button onClick={handleEliminar} disabled={isPending} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all disabled:opacity-50">
+                  {isPending ? <Loader2 className="animate-spin mx-auto" size={18} /> : 'Sí, Eliminar Todo'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>{quickViewUrl && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-6"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuickViewUrl(null)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" /><motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2rem] shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-800"><div className="bg-slate-950 p-4 flex justify-between border-b border-slate-800"><h2 className="text-[10px] font-black uppercase text-sky-500">Visor Digital</h2><button onClick={() => setQuickViewUrl(null)} className="text-slate-500 hover:text-white"><X size={24}/></button></div><div className="flex-1 bg-slate-950"><iframe src={quickViewUrl} className="w-full h-full border-none" /></div></motion.div></div>)}</AnimatePresence>
     </div>
