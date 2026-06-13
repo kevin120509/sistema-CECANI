@@ -149,24 +149,16 @@ export default function DirectorDashboard({
   // --- REALTIME INTEGRATION ---
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel('director_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, (payload: any) => {
-        if (payload.eventType === 'INSERT') {
-          toast.success('¡Nuevo expediente!', { action: { label: 'Ver', onClick: () => setActiveTab('validacion') } });
-        }
-        router.refresh();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'documentos' }, (payload: any) => {
-        if (payload.eventType === 'UPDATE' && payload.new.solicitud_borrado === true && payload.old.solicitud_borrado !== true) {
-          toast.warning('⚠️ Solicitud de Baja', { action: { label: 'Ver', onClick: () => setActiveTab('concentrado') } });
-        }
-        router.refresh();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const channels = [
+      supabase.channel('expedientes_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'expedientes' }, () => router.refresh()).subscribe(),
+      supabase.channel('documentos_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'documentos' }, () => router.refresh()).subscribe(),
+      supabase.channel('contratos_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'contratos' }, () => router.refresh()).subscribe(),
+      supabase.channel('pagos_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'pagos' }, () => router.refresh()).subscribe()
+    ];
+    return () => { channels.forEach(c => supabase.removeChannel(c)); };
   }, [router]);
 
+  // --- DERIVED DATA ---
   const validacion = useMemo(() => porAsignar.filter(exp => exp.estatus === 'revision_directora' || exp.documentos?.some(d => !!d.motivo_rechazo)), [porAsignar]);
   
   // Listos para asignar: Incluye los que pasaron el flujo estándar Y los de Excel (que están en_proceso pero no tienen asesora)
@@ -182,71 +174,88 @@ export default function DirectorDashboard({
   }), [porAsignar, validacion]);
 
   const solicitudesBaja = useMemo(() => {
-    return concentrado.reduce((acc, exp) => {
-      const docs = exp.documentos?.filter(d => d.solicitud_borrado && d.estatus_borrado === 'pendiente') || [];
-      return acc.concat(docs.map(d => ({ ...d, expediente: exp })));
-    }, [] as any[]);
-  }, [concentrado]);
-
-  const filteredData = useMemo(() => {
-    let result = activeTab === 'por_asignar' ? listosParaAsignar : activeTab === 'validacion' ? validacion : activeTab === 'bajas_docs' ? [] : concentrado;
-    
-    // --- DEDUPLICACIÓN POR ID ---
-    const seen = new Set();
-    result = result.filter(exp => {
-      const duplicate = seen.has(exp.id);
-      seen.add(exp.id);
-      return !duplicate;
-    });
-
-    if (activeTab === 'concentrado') {
-      result = [...result].sort((a, b) => {
-        const aReq = a.documentos?.some(d => d.solicitud_borrado) ? 1 : 0;
-        const bReq = b.documentos?.some(d => d.solicitud_borrado) ? 1 : 0;
-        return bReq - aReq;
-      });
-      if (selectedAsesoraName !== 'all') {
-        const q = selectedAsesoraName.toLowerCase();
-        result = result.filter(exp => exp.asesora?.nombre_completo?.toLowerCase().includes(q) || exp.expediente_asesoras?.some(ea => ea.asesora?.nombre_completo?.toLowerCase().includes(q)));
+    const all = [...porAsignar, ...concentrado];
+    const docs = [];
+    for(const exp of all) {
+      if(exp.documentos) {
+        for(const doc of exp.documentos) {
+          if(doc.solicitud_borrado && doc.estatus_borrado === 'pendiente') {
+            docs.push({ ...doc, expediente: exp });
+          }
+        }
       }
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(exp => exp.nombre_empresa?.toLowerCase().includes(q) || exp.cliente?.nombre_completo?.toLowerCase().includes(q));
-    }
-    return result;
-  }, [activeTab, listosParaAsignar, concentrado, validacion, selectedAsesoraName, searchQuery]);
+    return docs;
+  }, [porAsignar, concentrado]);
 
   const individualAsesoras = useMemo(() => {
     const names = new Set<string>();
-    abogadas.forEach(a => a.nombre_completo.split(/[\/\-]| y /i).forEach(part => names.add(part.trim().toUpperCase())));
+    concentrado.forEach(e => {
+       if(e.asesora?.nombre_completo) names.add(e.asesora.nombre_completo);
+       e.expediente_asesoras?.forEach(rel => names.add(rel.asesora.nombre_completo));
+    });
     return Array.from(names).sort();
-  }, [abogadas]);
+  }, [concentrado]);
 
-  const handleLogout = async () => { if (confirm('¿Cerrar sesión?')) { setIsLoggingOut(true); await logoutAbogada(); window.location.reload(); } };
-  const handleEliminar = async (id: string, cid: string, n: string) => { if (!confirm(`¿Eliminar expediente de ${n}?`)) return; startTransition(async () => { const res = await eliminarExpedienteAction(id, cid); if (res.error) alert(res.error); }); };
+  // --- ACTIONS ---
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await logoutAbogada();
+    router.push('/abogada');
+  };
 
-  const resetCreateState = () => { setCreateStep(1); setNewClientInfo(null); setFiles({}); setFinalAsesoraId(''); setIsCreateModalOpen(false); };
+  const handleAsignar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedExpediente || !asesoraId) return;
+    startTransition(async () => {
+      const res = await asignarAbogada(selectedExpediente.id, asesoraId);
+      if (res.success) {
+        setIsAssignModalOpen(false);
+        setAsesoraId('');
+        toast.success('Abogada asignada correctamente');
+        router.refresh();
+      } else alert(res.error);
+    });
+  };
+
+  const onEliminarExpediente = async (id: string, cid: string) => {
+    if (!confirm("¿Seguro que deseas eliminar este expediente por completo? Esta acción no se puede deshacer.")) return;
+    startTransition(async () => {
+      const res = await eliminarExpedienteAction(id, cid);
+      if (res.error) alert(res.error);
+    });
+  };
+
+  const resetCreateState = () => {
+    setCreateStep(1);
+    setNewClientInfo(null);
+    setFiles({});
+    setFinalAsesoraId('');
+    setIsCreateModalOpen(false);
+  };
   const onInitManualRegistry = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const res = await crearClienteManualAction(formData);
-      if (res.success && res.data) { setNewClientInfo({ ...res.data, nombre_empresa: formData.get('nombre_empresa') as string }); setCreateStep(2); }
-      else alert(res.error || 'Error');
+      if (res.success && res.data) {
+        setNewClientInfo({ ...res.data, nombre_empresa: formData.get('nombre_empresa') as string });
+        setCreateStep(2);
+      } else alert(res.error || 'Error');
     });
   };
 
   const onUploadMasterDocs = async () => {
-    if (!newClientInfo) return;
+    if(!newClientInfo) return;
     startTransition(async () => {
       try {
         const empresaKey = newClientInfo.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_');
         const upload = async (file: File, folder: string, label: string) => {
           setUploadProgress(`Subiendo ${label}...`);
-          const fd = new FormData(); fd.append('file', file);
+          const fd = new FormData();
+          fd.append('file', file);
           const res = await subirArchivoR2Action(fd, folder);
-          if (!res.success || !res.data) throw new Error(res.error);
+          if(!res.success || !res.data) throw new Error(res.error);
           return res.data.url;
         };
         if (files.contrato) { const url = await upload(files.contrato, `expedientes/${empresaKey}/contratos`, 'Contrato'); await (await import('@/actions/contrato')).guardarContratoFirmado(newClientInfo.contrato_id, url); await registrarDocumento(newClientInfo.expediente_id, 'contrato_firmado', url, null, true); }
@@ -293,12 +302,6 @@ export default function DirectorDashboard({
         <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 bg-slate-900 text-slate-300 rounded-lg lg:hidden hover:text-white"><Menu size={20}/></button>
-            {(activeTab === 'concentrado' || activeTab === 'solicitudes') && (
-              <div className="relative w-full md:w-96">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16}/>
-                <input type="text" placeholder="Search (ctrl+k)" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-12 pr-4 text-sm font-medium text-slate-200 outline-none focus:border-sky-600 w-full placeholder-slate-500 transition-all shadow-inner" />
-              </div>
-            )}
           </div>
           <div className="flex flex-col items-end gap-2 hidden md:flex">
              <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
@@ -313,44 +316,193 @@ export default function DirectorDashboard({
 
         {/* OVERVIEW CARDS */}
         {activeTab !== 'concentrado' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
            <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
              <div className="flex justify-between items-start mb-4">
                 <span className="px-2.5 py-1 rounded bg-sky-500/10 text-sky-400 text-[10px] font-black uppercase tracking-widest border border-sky-500/20 flex items-center gap-1">↑ Activos</span>
              </div>
-             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Por Asignar</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Abogadas</p>
              <div className="flex items-end justify-between mt-1">
-                <h3 className="text-3xl font-black text-white">{listosParaAsignar.length}</h3>
+                <h3 className="text-3xl font-black text-white">{abogadas.length}</h3>
                 <Users size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
            
            <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
              <div className="flex justify-between items-start mb-4">
-                <span className="px-2.5 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-1">↓ Revisión</span>
+                <span className="px-2.5 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-1">↓ Bajas</span>
              </div>
-             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Validación Pendiente</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Bajas Pendientes</p>
              <div className="flex items-end justify-between mt-1">
-                <h3 className="text-3xl font-black text-white">{validacion.length}</h3>
-                <ShieldCheck size={32} className="text-[#0197D2]/20" />
+                <h3 className="text-3xl font-black text-white">{solicitudesBaja.length}</h3>
+                <Trash2 size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
 
            <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
              <div className="flex justify-between items-start mb-4">
-                <span className="px-2.5 py-1 rounded bg-sky-500/10 text-sky-400 text-[10px] font-black uppercase tracking-widest border border-sky-500/20 flex items-center gap-1">✓ Activos</span>
+                <span className="px-2.5 py-1 rounded bg-sky-500/10 text-sky-400 text-[10px] font-black uppercase tracking-widest border border-sky-500/20 flex items-center gap-1">✓ Listos</span>
              </div>
-             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Concentrado Activo</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Por Asignar</p>
              <div className="flex items-end justify-between mt-1">
-                <h3 className="text-3xl font-black text-white">{concentrado.length}</h3>
+                <h3 className="text-3xl font-black text-white">{listosParaAsignar.length}</h3>
                 <ClipboardList size={32} className="text-[#0197D2]/20" />
+             </div>
+           </div>
+
+           <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
+             <div className="flex justify-between items-start mb-4">
+                <span className="px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-500/20 flex items-center gap-1">○ Revisión</span>
+             </div>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">En Validación</p>
+             <div className="flex items-end justify-between mt-1">
+                <h3 className="text-3xl font-black text-white">{validacion.length}</h3>
+                <ShieldCheck size={32} className="text-[#0197D2]/20" />
              </div>
            </div>
         </div>
         )}
 
+        {/* SEARCH BAR (Global for list tabs) */}
+        {['por_asignar', 'concentrado', 'validacion'].includes(activeTab) && (
+          <div className="mb-8 relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-sky-500 transition-colors" size={20} />
+            <input 
+              type="text" 
+              placeholder="Buscar por cliente, empresa o número de control..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border-2 border-slate-800 rounded-3xl py-5 pl-16 pr-8 text-sm font-bold text-white outline-none focus:border-sky-600/50 transition-all placeholder:text-slate-700 shadow-2xl"
+            />
+          </div>
+        )}
+
         {/* LISTADOS */}
-        {activeTab === 'solicitudes' ? (
+        {activeTab === 'por_asignar' ? (
+          <div className="space-y-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-100 mb-4">Listos para Asignación Operativa</h2>
+            {listosParaAsignar.length === 0 ? (
+              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-xl">
+                <p className="text-slate-500 font-black uppercase tracking-widest text-xs">No hay expedientes listos para asignar</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {listosParaAsignar.filter(exp => {
+                  const search = searchQuery.toLowerCase();
+                  return exp.nombre_empresa.toLowerCase().includes(search) || 
+                         exp.cliente?.nombre_completo.toLowerCase().includes(search) ||
+                         exp.numero_control?.toLowerCase().includes(search);
+                }).map(exp => (
+                  <div key={exp.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between hover:border-sky-500/30 transition-all group">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center text-sky-500 font-black border border-slate-800 uppercase text-lg">{exp.nombre_empresa.charAt(0)}</div>
+                      <div>
+                        <h4 className="text-white font-black uppercase tracking-tight text-sm group-hover:text-sky-400 transition-colors">{exp.nombre_empresa}</h4>
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{exp.cliente?.nombre_completo}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-12">
+                      <div className="hidden md:block text-right">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Monto Contrato</p>
+                        <p className="text-xs font-black text-slate-300">${exp.contratos?.[0]?.monto_total?.toLocaleString()}</p>
+                      </div>
+                      <div className="hidden md:block text-right">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Estatus Actual</p>
+                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">{exp.estatus}</span>
+                      </div>
+                      <button 
+                        onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }}
+                        className="px-6 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sky-400 font-black uppercase tracking-widest text-[10px] hover:text-white hover:bg-sky-600 transition-all shadow-lg"
+                      >
+                        Gestionar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'concentrado' ? (
+          <div className="space-y-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-100 mb-4">Concentrado de Expedientes Operativos</h2>
+            <div className="space-y-3">
+              {concentrado.filter(exp => {
+                const search = searchQuery.toLowerCase();
+                const matchesSearch = exp.nombre_empresa.toLowerCase().includes(search) || 
+                                     exp.cliente?.nombre_completo.toLowerCase().includes(search) ||
+                                     exp.numero_control?.toLowerCase().includes(search);
+                const matchesAsesora = selectedAsesoraName === 'all' || 
+                                      exp.asesora?.nombre_completo === selectedAsesoraName || 
+                                      exp.expediente_asesoras?.some(rel => rel.asesora.nombre_completo === selectedAsesoraName);
+                return matchesSearch && matchesAsesora;
+              }).map(exp => (
+                <div key={exp.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between hover:border-sky-500/30 transition-all group">
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center text-slate-400 font-black border border-slate-800 uppercase text-lg">{exp.nombre_empresa.charAt(0)}</div>
+                    <div>
+                      <h4 className="text-white font-black uppercase tracking-tight text-sm group-hover:text-sky-400 transition-colors">{exp.nombre_empresa}</h4>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{exp.cliente?.nombre_completo}</p>
+                        <span className="text-[8px] text-slate-700">•</span>
+                        <p className="text-sky-600 text-[10px] font-black uppercase tracking-widest">{exp.asesora?.nombre_completo || 'SIN ASESORA'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-12">
+                    <div className="hidden md:block text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Inversión</p>
+                      <p className="text-xs font-black text-slate-300">${exp.contratos?.[0]?.monto_total?.toLocaleString()}</p>
+                    </div>
+                    <div className="hidden md:block text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Actualizado</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase">{new Date(exp.updated_at).toLocaleDateString('es-MX')}</p>
+                    </div>
+                    <button 
+                      onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }}
+                      className="w-10 h-10 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 flex items-center justify-center hover:text-white hover:bg-slate-800 transition-all shadow-lg"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : activeTab === 'validacion' ? (
+          <div className="space-y-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-100 mb-4">Expedientes en Proceso de Validación</h2>
+            <div className="space-y-3">
+              {validacion.filter(exp => {
+                const search = searchQuery.toLowerCase();
+                return exp.nombre_empresa.toLowerCase().includes(search) || 
+                       exp.cliente?.nombre_completo.toLowerCase().includes(search) ||
+                       exp.numero_control?.toLowerCase().includes(search);
+              }).map(exp => (
+                <div key={exp.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between hover:border-emerald-500/30 transition-all group">
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center text-emerald-500 font-black border border-slate-800 uppercase text-lg">{exp.nombre_empresa.charAt(0)}</div>
+                    <div>
+                      <h4 className="text-white font-black uppercase tracking-tight text-sm group-hover:text-emerald-400 transition-colors">{exp.nombre_empresa}</h4>
+                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{exp.cliente?.nombre_completo}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-12">
+                    <div className="hidden md:block text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Creado</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase">{new Date(exp.created_at).toLocaleDateString('es-MX')}</p>
+                    </div>
+                    <button 
+                      onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }}
+                      className="px-6 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-emerald-500 font-black uppercase tracking-widest text-[10px] hover:text-white hover:bg-emerald-600 transition-all shadow-lg"
+                    >
+                      Revisar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : activeTab === 'solicitudes' ? (
           <div className="space-y-4">
             <h2 className="text-sm font-black uppercase tracking-widest text-slate-100 mb-4">Solicitudes de Alta Pendientes</h2>
             {solicitudesAlta.length === 0 ? (
@@ -450,603 +602,68 @@ export default function DirectorDashboard({
                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{doc.expediente?.nombre_empresa}</p>
                          </div>
                        </div>
-                       <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)} className="px-4 py-2 bg-slate-950 text-sky-400 font-black uppercase tracking-widest text-[10px] rounded-xl border border-slate-800 hover:bg-slate-800 transition-all flex items-center gap-2"><ExternalLink size={14}/> Ver Documento</button>
+                       <div className="flex items-center gap-2">
+                         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-red-950 text-red-400 border border-red-900/50">Pendiente</span>
+                       </div>
                      </div>
-                     <p className="text-xs text-slate-400 italic bg-slate-950 p-4 rounded-xl border border-slate-800 mb-4">Motivo: "{doc.motivo_borrado || 'Sin especificar'}"</p>
-                     <div className="flex gap-3 mt-auto">
-                       <button
-                         onClick={async () => {
-                           toast.loading('Aprobando...', { id: 'aprobar-doc' });
-                           const res = await (await import('@/actions/documentos')).aprobarBorradoAction(doc.id);
-                           if (res.success) toast.success('Autorizado', { id: 'aprobar-doc' });
-                           else toast.error(res.error || 'Error', { id: 'aprobar-doc' });
-                         }}
-                         className="flex-1 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-500/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[#0197D2] hover:text-white transition-all shadow-lg"
-                       >Aprobar Eliminación</button>
-                       <button
-                         onClick={async () => {
-                           toast.loading('Rechazando...', { id: 'rechazar-doc' });
-                           const res = await (await import('@/actions/documentos')).rechazarBorradoAction(doc.id);
-                           if (res.success) toast.error('Rechazado', { id: 'rechazar-doc' });
-                           else toast.error(res.error || 'Error', { id: 'rechazar-doc' });
-                         }}
-                         className="flex-1 py-3 bg-red-600/10 text-red-400 border border-red-500/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all shadow-lg"
-                       >Rechazar Baja</button>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                       <div>
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Motivo de la Abogada:</p>
+                         <p className="text-xs text-slate-300 italic">"{doc.motivo_borrado || 'No especificado'}"</p>
+                       </div>
+                       <div className="flex flex-col gap-3">
+                         <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)} className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:text-white transition-all"><Eye size={14}/> Ver Documento</button>
+                         <div className="flex gap-2">
+                           <button onClick={async () => {
+                             if(!confirm('¿Confirmar ELIMINACIÓN PERMANENTE de este archivo?')) return;
+                             const res = await (await import('@/actions/documentos')).aprobarBorradoAction(doc.id);
+                             if(res.success) toast.success('Documento eliminado permanentemente');
+                             else toast.error(res.error || 'Error');
+                           }} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-lg shadow-red-600/10">Autorizar Baja</button>
+                           <button onClick={async () => {
+                             const res = await (await import('@/actions/documentos')).rechazarBorradoAction(doc.id);
+                             if(res.success) toast.success('Solicitud rechazada');
+                             else toast.error(res.error || 'Error');
+                           }} className="flex-1 py-2.5 bg-slate-800 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:text-white transition-all border border-slate-700">Ignorar</button>
+                         </div>
+                       </div>
                      </div>
                    </div>
                  ))}
                </div>
             )}
           </div>
-        ) : (
-          <div className="space-y-4">
-             {filteredData.length === 0 ? (
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-xl">
-                  <p className="text-slate-500 font-black uppercase tracking-widest text-xs">No hay expedientes en esta categoría</p>
-                </div>
-             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredData.map(exp => (
-                    <div key={exp.id} className="bg-slate-900 rounded-3xl border border-slate-800 p-6 flex flex-col gap-6 hover:border-sky-500/30 transition-all shadow-xl group relative overflow-hidden">
-                      {/* Decoración sutil de fondo */}
-                      <div className="absolute -right-4 -top-4 w-24 h-24 bg-sky-500/5 rounded-full blur-2xl group-hover:bg-sky-500/10 transition-all"></div>
-                      
-                      <div className="flex items-start gap-4 relative">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-950 flex items-center justify-center text-slate-300 font-black text-xl uppercase shrink-0 border border-slate-800 group-hover:border-sky-500/50 transition-all shadow-inner">
-                           {exp.nombre_empresa.charAt(0)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-white font-black uppercase tracking-tight text-sm break-words leading-tight group-hover:text-sky-400 transition-colors">{exp.nombre_empresa}</h4>
-                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1.5 break-words line-clamp-1">{exp.cliente?.nombre_completo || 'Sin titular'}</p>
-                          
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-slate-950 text-slate-400 border border-slate-800 whitespace-nowrap">{exp.estatus.replace(/_/g, ' ').toUpperCase()}</span>
-                            {activeTab === 'concentrado' && (
-                               <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-sky-950/30 text-sky-400 border border-sky-900/30 whitespace-nowrap">Asesora: {exp.asesora?.nombre_completo?.split(' ')[0] || '---'}</span>
-                            )}
-                            {exp.documentos?.some(d => d.solicitud_borrado) && <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-red-950/50 text-red-400 border border-red-900/30 animate-pulse whitespace-nowrap">BAJA PENDIENTE</span>}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-auto pt-5 border-t border-slate-800/50">
-                         {activeTab === 'concentrado' && (
-                           <>
-                            <button 
-                              onClick={() => { setSelectedExpediente(exp); setIsAssignModalOpen(true); }} 
-                              className="w-11 h-11 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:text-sky-400 hover:border-sky-500/50 transition-all shadow-lg shrink-0 group/btn"
-                              title="Ver Gestión y Concentrado"
-                            >
-                              <Eye size={18} className="group-hover/btn:scale-110 transition-transform" />
-                            </button>
-                            <button 
-                              onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} 
-                              className="flex-1 justify-center px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] bg-slate-950 text-sky-400 hover:bg-slate-800 transition-all flex items-center gap-2 border border-slate-800 group/docs"
-                            >
-                              <FileText size={14} className="shrink-0 group-hover/docs:scale-110 transition-transform"/> <span className="truncate">Documentación</span>
-                            </button>
-                           </>
-                         )}
-
-                         <button 
-                           onClick={() => { setSelectedExpediente(exp); setIsValidationModalOpen(true); }} 
-                           className={`flex-1 justify-center px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all flex items-center gap-2 shadow-lg ${exp.documentos?.some(d => d.solicitud_borrado) ? 'bg-red-600 text-white shadow-red-600/20 hover:bg-red-500' : 'bg-[#0197D2] text-white border border-[#0197D2] hover:bg-sky-500 shadow-sky-600/10'}`}
-                         >
-                           {exp.documentos?.some(d => d.solicitud_borrado) ? <AlertTriangle size={14} className="shrink-0"/> : <ExternalLink size={14} className="shrink-0"/>} 
-                           <span className="truncate">{activeTab === 'por_asignar' ? 'Validar' : 'Abrir'}</span>
-                         </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-             )}
-          </div>
-        )}
+        ) : null}
       </main>
 
-      {/* --- MODAL 1: EXPEDIENTE --- */}
-      <AnimatePresence>
-        {isValidationModalOpen && selectedExpediente && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
-               <div className="bg-slate-950 p-6 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
-                 <div className="flex items-center gap-4"><div className="w-12 h-12 bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><FileText size={24}/></div><div><h2 className="text-lg font-black uppercase tracking-tight">Expediente Documental</h2><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">{selectedExpediente.nombre_empresa}</p></div></div>
-                 <button onClick={() => setIsValidationModalOpen(false)} className="text-slate-500 hover:text-white transition-colors p-2"><X size={24}/></button>
-               </div>
-               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-900/50">
-                 {/* SECCIÓN DE CONTRATOS */}
-                 <div className="bg-slate-950 p-8 rounded-3xl border border-slate-800 shadow-inner space-y-8">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0197D2] border-b border-slate-800 pb-4 flex items-center gap-3">
-                       <FileSignature size={18}/> Contratos Oficiales
-                    </h3>
-                    <div className="flex flex-col gap-5">
-                        
-                        {/* 1. Contrato Generado */}
-                        {(activeTab === 'validacion' || activeTab === 'concentrado') && selectedExpediente.contratos?.[0]?.url_pdf_generado && (
-                          <div className="flex items-center justify-between bg-slate-900/50 p-5 rounded-2xl border border-slate-800">
-                            <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_generado!)}`)} className="flex items-center gap-3 px-6 py-3 bg-indigo-600/10 text-indigo-400 border border-indigo-600/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 hover:text-white transition-all shadow-lg">
-                              <FileText size={16}/> Ver Contrato (Sistema)
-                            </button>
-                            
-                            {!selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
-                              <div className="flex items-center gap-4">
-                                <button
-                                  onClick={async () => {
-                                    const contratoId = selectedExpediente.contratos![0].id;
-                                    toast.loading('Aprobando contrato...', { id: 'approve-contract' });
-                                    try {
-                                      const { aprobarContratoGeneradoCliente } = await import('@/actions/directora');
-                                      const res = await aprobarContratoGeneradoCliente(selectedExpediente.id, contratoId);
-                                      if (!res.success) throw new Error(res.error);
-                                      toast.success('Contrato aprobado. El cliente ha sido notificado para firmar.', { id: 'approve-contract' });
-                                    } catch (err: any) {
-                                      toast.error(err.message, { id: 'approve-contract' });
-                                    }
-                                  }}
-                                  className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/10 cursor-pointer"
-                                >
-                                  <CheckCircle2 size={16}/> Aprobar Contrato
-                                </button>
-
-                                <div className="h-8 w-px bg-slate-800 mx-2" />
-                                
-                                <input 
-                                  type="file" 
-                                  accept=".pdf" 
-                                  id="upload-nuevo-generado" 
-                                  className="hidden" 
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    const contratoId = selectedExpediente.contratos![0].id;
-                                    toast.loading('Reemplazando contrato...', { id: 'replace-contract' });
-                                    try {
-                                      const ext = file.name.split('.').pop() || 'pdf';
-                                      const empresaFormat = selectedExpediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_');
-                                      const newFile = new File([file], `Contrato_CORREGIDO_${empresaFormat}.${ext}`, { type: file.type });
-                                      const fd = new FormData();
-                                      fd.append('file', newFile);
-                                      
-                                      const { subirArchivoR2Action } = await import('@/actions/r2-actions');
-                                      const uploadRes = await subirArchivoR2Action(fd, `expedientes/${empresaFormat}/contratos`);
-                                      
-                                      if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error || 'Error subiendo archivo');
-                                      
-                                      const { actualizarContratoGeneradoAction } = await import('@/actions/directora');
-                                      const linkRes = await actualizarContratoGeneradoAction(contratoId, uploadRes.data.url);
-                                      
-                                      if (!linkRes.success) throw new Error(linkRes.error || 'Error vinculando contrato');
-                                      
-                                      toast.success('Contrato corregido y reemplazado', { id: 'replace-contract' });
-                                      router.refresh();
-                                    } catch (err: any) {
-                                      toast.error(err.message || 'Error inesperado', { id: 'replace-contract' });
-                                    } finally {
-                                      e.target.value = '';
-                                    }
-                                  }}
-                                />
-                                <label htmlFor="upload-nuevo-generado" className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-slate-400 border border-slate-800 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 hover:text-white transition-all cursor-pointer shadow-lg">
-                                  <UploadCloud size={16}/> Subir Corrección
-                                </label>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* 2. Contrato Firmado Cliente */}
-                        {(activeTab === 'por_asignar' || activeTab === 'concentrado') && selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
-                          <div className="flex items-center gap-4 bg-slate-900/50 p-5 rounded-2xl border border-slate-800">
-                            <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_firmado_cliente!)}`)} className="flex items-center gap-3 px-6 py-3 bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[#0197D2] hover:text-white transition-all shadow-lg">
-                              <FileSignature size={16}/> Ver Firma Cliente
-                            </button>
-                          </div>
-                        )}
-
-                        {/* 3. Doble Firma */}
-                        {(activeTab === 'por_asignar' || activeTab === 'concentrado') && selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
-                          <div className="flex items-center gap-4 bg-slate-900/50 p-5 rounded-2xl border border-slate-800">
-                            {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma ? (
-                              <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_doble_firma!)}`)} className="flex items-center gap-3 px-6 py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 transition-all shadow-2xl shadow-red-600/20">
-                                <Shield size={18}/> Ver Firma CECANI (Final)
-                              </button>
-                            ) : (
-                                <div className="flex items-center gap-4">
-                                  <input 
-                                    type="file" 
-                                    accept=".pdf" 
-                                    id="upload-doble-firma" 
-                                    className="hidden" 
-                                    onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (!file) return;
-                                      
-                                      const contratoId = selectedExpediente.contratos![0].id;
-                                      setIsUploadingDobleFirma(true);
-                                      try {
-                                        const ext = file.name.split('.').pop() || 'pdf';
-                                        const empresaFormat = selectedExpediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_');
-                                        const newFile = new File([file], `Contrato_DOBLE_FIRMA_${empresaFormat}.${ext}`, { type: file.type });
-                                        const fd = new FormData();
-                                        fd.append('file', newFile);
-                                        
-                                        const { subirArchivoR2Action } = await import('@/actions/r2-actions');
-                                        const uploadRes = await subirArchivoR2Action(fd, `expedientes/${empresaFormat}/contratos`);
-                                        
-                                        if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error || 'Error subiendo archivo');
-                                        
-                                        const { vincularContratoDobleFirmaAction } = await import('@/actions/directora');
-                                        const linkRes = await vincularContratoDobleFirmaAction(contratoId, uploadRes.data.url);
-                                        
-                                        if (!linkRes.success) throw new Error(linkRes.error || 'Error vinculando contrato');
-                                        
-                                        toast.success('Contrato con Doble Firma subido exitosamente');
-                                        router.refresh();
-                                      } catch (err: any) {
-                                        toast.error(err.message || 'Error inesperado');
-                                      } finally {
-                                        setIsUploadingDobleFirma(false);
-                                        e.target.value = '';
-                                      }
-                                    }}
-                                  />
-                                  <label htmlFor="upload-doble-firma" className={`flex items-center gap-3 px-6 py-4 bg-red-600 text-white border border-red-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 transition-all cursor-pointer shadow-xl shadow-red-600/20 ${isUploadingDobleFirma ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    {isUploadingDobleFirma ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />} 
-                                    {isUploadingDobleFirma ? 'Subiendo...' : 'Subir Doble Firma (Documento Final)'}
-                                  </label>
-                                </div>
-                              )
-                            }
-                          </div>
-                        )}
-                        
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   {(activeTab === 'validacion' || activeTab === 'concentrado') && selectedExpediente.documentos?.map(doc => {
-                     const viewUrl = `/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`;
-                     const isPdf = doc.url_archivo?.toLowerCase().endsWith('.pdf');
-                     const tipoLabel = doc.tipo.replace(/_/g, ' ').toUpperCase();
-                     const isRejected = doc.motivo_rechazo && !doc.validado;
-
-                     return (
-                       <div key={doc.id} className={`rounded-3xl border overflow-hidden transition-all shadow-xl bg-slate-950/50 ${
-                         isRejected ? 'border-red-600/40 bg-red-950/5' :
-                         doc.solicitud_borrado ? 'border-red-600/40 bg-red-950/5' :
-                         doc.validado ? 'border-sky-600/20' :
-                         'border-slate-800'
-                       }`}>
-                         <div
-                           className="relative w-full h-52 bg-slate-950 cursor-pointer group overflow-hidden"
-                           onClick={() => setQuickViewUrl(viewUrl)}
-                         >
-                           {isPdf ? (
-                             <iframe
-                               src={viewUrl}
-                               className="w-full h-full pointer-events-none opacity-80"
-                               title={tipoLabel}
-                             />
-                           ) : (
-                             <img
-                               src={viewUrl}
-                               alt={tipoLabel}
-                               className="w-full h-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-110"
-                               onError={(e) => {
-                                 (e.target as HTMLImageElement).style.display = 'none';
-                                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                               }}
-                             />
-                           )}
-                           <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 hidden`}>
-                             <FileText size={40} className="text-slate-800" />
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">Sin previsualización</p>
-                           </div>
-
-                           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/70 transition-all flex items-center justify-center">
-                             <div className="opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
-                               <div className="bg-slate-900/90 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-2xl border border-slate-800">
-                                 <Eye size={18} className="text-sky-400" />
-                                 <span className="text-[11px] font-black uppercase tracking-widest text-white">Ver Documento</span>
-                               </div>
-                             </div>
-                           </div>
-
-                           <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-                             {doc.validado && (
-                               <span className="bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✓ Validado</span>
-                             )}
-                             {isRejected && (
-                               <span className="bg-red-600/20 border border-red-600/30 text-red-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✕ Rechazado</span>
-                             )}
-                             {!doc.validado && !isRejected && (
-                               <span className="bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
-                             )}
-                           </div>
-                         </div>
-
-                           <div className="p-6">
-                             <div className="flex items-center justify-between mb-6">
-                               <div className="min-w-0 flex-1">
-                                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-200 truncate">{tipoLabel}</p>
-                                 {isRejected && doc.motivo_rechazo && (
-                                   <p className="text-[10px] font-bold text-red-400 mt-2 bg-red-950/30 p-2 rounded-lg border border-red-900/20">↳ {doc.motivo_rechazo}</p>
-                                 )}
-                               </div>
-                               <button
-                                 onClick={() => setQuickViewUrl(viewUrl)}
-                                 className="w-10 h-10 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center text-sky-400 hover:bg-slate-800 transition-all shadow-xl ml-4 shrink-0"
-                               >
-                                 <Eye size={18} />
-                               </button>
-                             </div>
-                             
-                             {!doc.validado && !isRejected && !doc.solicitud_borrado && (
-                               <div className="grid grid-cols-2 gap-3 mt-4">
-                                 <button onClick={async () => {
-                                   try {
-                                     const { validarDocumentoAction } = await import('@/actions/directora');
-                                     const res = await validarDocumentoAction(doc.id, true);
-                                     if(res.success) { toast.success('Documento aprobado'); router.refresh(); }
-                                     else throw new Error(res.error);
-                                   } catch(err: any) { toast.error(err.message); }
-                                 }} className="bg-[#0197D2] text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Aprobar</button>
-                                 
-                                 <button onClick={async () => {
-                                   const motivo = prompt('Motivo de rechazo:');
-                                   if (!motivo) return;
-                                   try {
-                                     const { rechazarDocumentoR2Action } = await import('@/actions/directora');
-                                     const res = await rechazarDocumentoR2Action(doc.id, doc.tipo, selectedExpediente.id, selectedExpediente.cliente_id, motivo, doc.url_archivo);
-                                     if(res.success) { toast.error('Documento rechazado'); router.refresh(); }
-                                     else throw new Error(res.error);
-                                   } catch(err: any) { toast.error(err.message); }
-                                 }} className="bg-slate-800 text-slate-400 border border-slate-700 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all">Rechazar</button>
-                               </div>
-                             )}
-
-                             {doc.validado && (
-                               <div className="mt-4 px-4 py-3 bg-emerald-950/10 border border-emerald-900/30 rounded-xl flex justify-center items-center gap-3 text-emerald-400">
-                                 <CheckCircle2 size={18}/>
-                                 <span className="text-[10px] font-black uppercase tracking-widest">Documento Verificado</span>
-                               </div>
-                             )}
-
-                           {doc.solicitud_borrado && (
-                             <div className="mt-6 p-5 bg-slate-950 rounded-2xl border border-red-900/40 space-y-4">
-                               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500 flex items-center gap-2">
-                                 <AlertTriangle size={14}/> Solicitud de Baja
-                               </p>
-                               <p className="text-xs text-slate-400 italic leading-relaxed">"{doc.motivo_borrado || 'SIN MOTIVO ESPECIFICADO'}"</p>
-                               <div className="grid grid-cols-2 gap-3 mt-4">
-                                 <button onClick={async () => { if(confirm('¿Autorizar eliminación definitiva?')) { const res = await (await import('@/actions/documentos')).aprobarBorradoAction(doc.id); if(res.success) toast.success('Autorizado'); else alert(res.error); } }} className="bg-red-600 text-white py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-500 shadow-lg shadow-red-600/10">Autorizar</button>
-                                 <button onClick={async () => { const res = await (await import('@/actions/documentos')).rechazarBorradoAction(doc.id); if(res.success) toast.error('Rechazado'); else alert(res.error); }} className="bg-slate-900 text-slate-500 border border-slate-800 py-2.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">Ignorar</button>
-                               </div>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-                     );
-                   })}
-                   {/* PAGOS */}
-                   {(activeTab === 'por_asignar' || activeTab === 'concentrado') && selectedExpediente.pagos?.map((pago: any) => {
-                     if (!pago.url_comprobante) return null;
-                     const viewUrl = `/api/r2/download?url=${encodeURIComponent(pago.url_comprobante)}`;
-                     const isPdf = pago.url_comprobante?.toLowerCase().endsWith('.pdf');
-                     const isRejected = pago.motivo_rechazo && !pago.verificado;
-
-                     return (
-                       <div key={pago.id || Math.random().toString()} className={`rounded-3xl border overflow-hidden transition-all shadow-xl bg-slate-950/50 ${
-                         isRejected ? 'border-red-600/40 bg-red-950/5' :
-                         pago.verificado ? 'border-sky-600/20' :
-                         'border-slate-800'
-                       }`}>
-                         <div
-                           className="relative w-full h-52 bg-slate-950 cursor-pointer group overflow-hidden"
-                           onClick={() => setQuickViewUrl(viewUrl)}
-                         >
-                           {isPdf ? (
-                             <iframe
-                               src={viewUrl}
-                               className="w-full h-full pointer-events-none opacity-80"
-                               title="Comprobante de Pago"
-                             />
-                           ) : (
-                             <img
-                               src={viewUrl}
-                               alt="Comprobante de Pago"
-                               className="w-full h-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-110"
-                               onError={(e) => {
-                                 (e.target as HTMLImageElement).style.display = 'none';
-                                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                               }}
-                             />
-                           )}
-                           <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 hidden`}>
-                             <FileText size={40} className="text-slate-800" />
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">Sin previsualización</p>
-                           </div>
-
-                           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/70 transition-all flex items-center justify-center">
-                             <div className="opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
-                               <div className="bg-slate-900/90 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-2xl border border-slate-800">
-                                 <Eye size={18} className="text-sky-400" />
-                                 <span className="text-[11px] font-black uppercase tracking-widest text-white">Ver Comprobante</span>
-                               </div>
-                             </div>
-                           </div>
-
-                           <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-                             {pago.verificado && (
-                               <span className="bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✓ Verificado</span>
-                             )}
-                             {isRejected && (
-                               <span className="bg-red-600/20 border border-red-600/30 text-red-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">✕ Rechazado</span>
-                             )}
-                             {!pago.verificado && !isRejected && (
-                               <span className="bg-[#0197D2]/10 border border-sky-600/20 text-sky-400 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm">⏳ Revisión</span>
-                             )}
-                           </div>
-                         </div>
-
-                           <div className="p-6">
-                             <div className="flex items-center justify-between mb-6">
-                               <div className="min-w-0 flex-1">
-                                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-200">COMPROBANTE DE PAGO</p>
-                                 <p className="text-[14px] font-black text-sky-400 mt-1.5">${pago.monto?.toLocaleString() || '0.00'}</p>
-                                 {isRejected && pago.motivo_rechazo && (
-                                   <p className="text-[10px] font-bold text-red-400 mt-2 bg-red-950/30 p-2 rounded-lg border border-red-900/20">↳ {pago.motivo_rechazo}</p>
-                                 )}
-                               </div>
-                               <button
-                                 onClick={() => setQuickViewUrl(viewUrl)}
-                                 className="w-10 h-10 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center text-sky-400 hover:bg-slate-800 transition-all shadow-xl ml-4 shrink-0"
-                               >
-                                 <Eye size={18} />
-                               </button>
-                             </div>
-                             
-                             {!pago.verificado && !isRejected && (
-                               <div className="grid grid-cols-1 gap-3 mt-4">
-                                 <button onClick={async () => {
-                                   if (!pago.id) {
-                                     toast.error('ID de pago no encontrado');
-                                     return;
-                                   }
-                                   try {
-                                     const { validarPagoAction } = await import('@/actions/directora');
-                                     const res = await validarPagoAction(pago.id, selectedExpediente.id, selectedExpediente.cliente_id);
-                                     if(res.success) { toast.success('Pago verificado'); router.refresh(); }
-                                     else throw new Error(res.error);
-                                   } catch(err: any) { toast.error(err.message); }
-                                 }} className="bg-[#0197D2] text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">Confirmar Recepción de Pago</button>
-                               </div>
-                             )}
-
-                             {pago.verificado && (
-                               <div className="mt-4 px-4 py-3 bg-emerald-950/10 border border-emerald-900/30 rounded-xl flex justify-center items-center gap-3 text-emerald-400">
-                                 <CheckCircle2 size={18}/>
-                                 <span className="text-[10px] font-black uppercase tracking-widest">Pago Validado</span>
-                               </div>
-                             )}
-                           </div>
-                       </div>
-                     );
-                   })}
-                 </div>
-                 
-                 {/* ASIGNACIÓN DE ABOGADA */}
-                 {activeTab === 'por_asignar' && !selectedExpediente.asesora_id && (
-                   <div className="mt-12 border-t border-slate-800 pt-10">
-                     {(() => {
-                       const docsValid = selectedExpediente.documentos?.length ? selectedExpediente.documentos.every(d => d.validado) : true;
-                       const pagosValid = selectedExpediente.pagos?.length ? selectedExpediente.pagos.every(p => p.verificado) : true;
-                       const allDocsValidated = docsValid && pagosValid && ((selectedExpediente.documentos?.length || 0) > 0 || (selectedExpediente.pagos?.length || 0) > 0);
-                       const hasDobleFirma = !!selectedExpediente.contratos?.[0]?.url_pdf_doble_firma;
-                       
-                       // Permitir asignación si es un registro de Excel/Manual (ya en_proceso) o si pasó el flujo digital completo
-                       const isLegacy = selectedExpediente.estatus === 'en_proceso';
-                       const isReadyToAssign = isLegacy || (allDocsValidated && hasDobleFirma);
-
-                       if (!isReadyToAssign) {
-                         return (
-                           <div className="bg-slate-950 p-8 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-inner">
-                             <div className="space-y-2 text-center md:text-left">
-                               <h3 className="text-sm font-black uppercase tracking-widest text-slate-300">Asignación Restringida</h3>
-                               <p className="text-[11px] font-bold text-slate-600 uppercase tracking-widest max-w-md">Valida toda la documentación y sube el contrato oficial firmado por CECANI para habilitar el equipo legal.</p>
-                             </div>
-                             <div className="flex gap-4">
-                               <div className={`text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl border-2 ${allDocsValidated ? 'bg-emerald-900/10 text-emerald-500 border-emerald-900/30' : 'bg-red-900/10 text-red-500 border-red-900/30 animate-pulse'}`}>
-                                 {allDocsValidated ? 'Docs Listos' : 'Validación Pendiente'}
-                               </div>
-                               <div className={`text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl border-2 ${hasDobleFirma ? 'bg-emerald-900/10 text-emerald-500 border-emerald-900/30' : 'bg-red-900/10 text-red-500 border-red-900/30 animate-pulse'}`}>
-                                 {hasDobleFirma ? 'CECANI Firma OK' : 'Falta Doble Firma'}
-                               </div>
-                             </div>
-                           </div>
-                         );
-                       }
-
-                       return (
-                         <div className="bg-sky-950/10 p-10 rounded-[2.5rem] border-4 border-sky-900/20 shadow-2xl">
-                           <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[#0197D2] mb-8 flex items-center gap-3">
-                             <UserPlus size={20}/> Designar Equipo Operativo (Abogada)
-                           </h3>
-                           <form action={async (formData) => {
-                             toast.loading('Procesando asignación...', { id: 'assign' });
-                             try {
-                               const { asignarAbogada } = await import('@/actions/directora');
-                               const res = await asignarAbogada(formData);
-                               if (!res.success) throw new Error(res.error);
-                               toast.success('Abogada asignada correctamente. El expediente ahora es visible en su panel.', { id: 'assign' });
-                               setIsValidationModalOpen(false);
-                               router.refresh();
-                             } catch (err: any) {
-                               toast.error(err.message, { id: 'assign' });
-                             }
-                           }} className="flex flex-col md:flex-row items-end gap-6">
-                             <input type="hidden" name="expediente_id" value={selectedExpediente.id} />
-                             <div className="flex-1 w-full space-y-3">
-                               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Seleccionar Abogada Responsable</label>
-                               <select name="asesora_id" required className="w-full p-4 bg-slate-950/80 border-2 border-slate-800 rounded-2xl text-sm font-black uppercase tracking-widest text-white outline-none focus:border-sky-600 transition-all appearance-none cursor-pointer shadow-inner">
-                                 <option value="">-- ELIGE UNA ABOGADA --</option>
-                                 {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
-                               </select>
-                             </div>
-                             <button type="submit" className="w-full md:w-auto py-4 px-10 bg-[#0197D2] text-white rounded-2xl font-black uppercase tracking-[0.25em] text-xs shadow-2xl shadow-sky-600/30 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-                               Confirmar Asignación <ArrowRight size={18}/>
-                             </button>
-                           </form>
-                         </div>
-                       );
-                     })()}
-                   </div>
-                 )}
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* --- MODAL 2: GESTIÓN Y CONCENTRADO --- */}
       <AnimatePresence>
         {isAssignModalOpen && selectedExpediente && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAssignModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-6xl w-full flex flex-col max-h-[95vh] overflow-hidden border border-slate-800">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-7xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
                <div className="bg-slate-950 p-8 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
                  <div className="flex items-center gap-5">
-                   <div className="w-14 h-14 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center shadow-lg"><ClipboardList size={28}/></div>
+                   <div className="w-14 h-14 bg-sky-600/10 border border-sky-600/20 text-sky-500 rounded-2xl flex items-center justify-center shadow-lg"><Building2 size={28}/></div>
                    <div>
-                     <h2 className="text-xl font-black uppercase tracking-tight">Gestión y Concentrado Operativo</h2>
-                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">{selectedExpediente.nombre_empresa}</p>
+                     <h2 className="text-xl font-black uppercase tracking-tight">{selectedExpediente.nombre_empresa}</h2>
+                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">ID: {selectedExpediente.numero_control || 'SIN CONTROL'}</p>
                    </div>
                  </div>
-                 <button onClick={() => setIsAssignModalOpen(false)} className="bg-slate-900 p-3 rounded-2xl text-slate-500 hover:text-white hover:bg-slate-800 transition-all shadow-xl"><X size={24}/></button>
+                 <div className="flex items-center gap-4">
+                   <button onClick={() => onEliminarExpediente(selectedExpediente.id, selectedExpediente.cliente_id)} className="bg-red-600/10 p-3 rounded-2xl text-red-500 hover:bg-red-600 hover:text-white transition-all border border-red-500/20" title="Eliminar Expediente"><Trash2 size={24}/></button>
+                   <button onClick={() => setIsAssignModalOpen(false)} className="bg-slate-900 p-3 rounded-2xl text-slate-500 hover:text-white transition-all"><X size={24}/></button>
+                 </div>
                </div>
-               
-               <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-10 bg-slate-900/50">
+
+               <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-10 bg-slate-900/50">
                   <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-                    
-                    {/* COLUMNA IZQUIERDA: PERFIL Y CONTACTO */}
+                    {/* COLUMNA IZQUIERDA: PERFIL Y ASIGNACIÓN */}
                     <div className="xl:col-span-5 space-y-8">
-                      <div className="bg-slate-950 p-8 rounded-[2rem] border border-slate-800 shadow-inner relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-sky-500/10 transition-all"></div>
-                        
-                        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
-                           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-sky-400 flex items-center gap-3">
-                              <UserCircle size={18}/> Perfil del Cliente
-                           </h3>
-                           <a 
-                             href={`https://wa.me/52${selectedExpediente.cliente?.telefono?.replace(/\D/g, '')}`} 
-                             target="_blank" 
-                             className="flex items-center gap-2.5 px-4 py-2 bg-emerald-600/10 text-emerald-400 border border-emerald-600/20 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-emerald-600 hover:text-white transition-all shadow-lg"
-                           >
-                             <MessageCircle size={14}/> WhatsApp
-                           </a>
-                        </div>
-                        
+                      <div className="bg-slate-950/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-sky-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8 flex items-center gap-3">
+                           <UserCircle size={18}/> Perfil del Cliente Titular
+                        </h3>
                         <div className="space-y-6">
                            <TextData label="Nombre Completo" value={selectedExpediente.cliente?.nombre_completo} />
                            <div className="grid grid-cols-2 gap-6">
@@ -1067,134 +684,184 @@ export default function DirectorDashboard({
                          <p className="text-5xl font-black text-white tracking-tighter relative drop-shadow-2xl">${selectedExpediente.contratos?.[0]?.monto_total?.toLocaleString() || '0.00'}</p>
                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-700 mt-5 relative">Pesos Mexicanos (M.N.)</p>
                       </div>
+
+                      {/* ASIGNACIÓN DE ABOGADA */}
+                      {activeTab === 'por_asignar' && (
+                        <div className="bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
+                          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-6 flex items-center gap-3"><Scale size={18}/> Selección de Asesora Legal</h3>
+                          <form onSubmit={handleAsignar} className="space-y-6">
+                             <select value={asesoraId} onChange={e => setAsesoraId(e.target.value)} required className="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl text-sm font-bold text-white outline-none focus:border-sky-600 transition-all uppercase tracking-widest">
+                               <option value="">Escoger abogada...</option>
+                               {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
+                             </select>
+                             <button type="submit" disabled={isPending} className="w-full py-4 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:bg-sky-500 transition-all shadow-xl shadow-sky-600/20 disabled:opacity-50">Confirmar Asignación</button>
+                          </form>
+                        </div>
+                      )}
                     </div>
 
-                    {/* COLUMNA DERECHA: DATOS OPERATIVOS */}
+                    {/* COLUMNA DERECHA: DOCUMENTACIÓN Y CONTRATOS */}
                     <div className="xl:col-span-7 space-y-8">
-                      <div className="bg-slate-950/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden h-full">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8 flex items-center gap-3">
-                           <FileText size={18}/> Información Operativa en Bitácora
-                        </h3>
-                        
-                        {(() => {
-                          const datos = Array.isArray(selectedExpediente.datos_concentrado) ? selectedExpediente.datos_concentrado[0] : (selectedExpediente.datos_concentrado as any);
-                          return (
-                            <div className="space-y-8">
-                              <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
-                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Objeto Social Transcrito</p>
-                                </div>
-                                <div className="bg-slate-950 border border-slate-800 p-6 rounded-xl text-slate-300 text-sm font-bold italic leading-relaxed whitespace-pre-wrap shadow-inner min-h-[120px] max-h-[250px] overflow-y-auto custom-scrollbar">{datos?.objeto_social_ventas || 'SIN TRANSCRIPCIÓN TODAVÍA'}</div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-10">
-                                <TextData label="Asesora Asignada" value={selectedExpediente.asesora?.nombre_completo || 'No asignada'} />
-                                <TextData label="Vendedora" value={datos?.vendedora} />
-                                <TextData label="Notaría" value={datos?.notaria} />
-                                <div className="md:col-span-3 h-px bg-slate-800/50 my-2"></div>
-                                <TextData label="Folio RPP" value={datos?.folio_rpp} />
-                                <TextData label="Libro" value={datos?.libro_rpp} />
-                                <TextData label="Volumen" value={datos?.volumen_rpp} />
-                                <TextData label="Estatus RPP" value={datos?.estatus_rpp} />
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
+                       <div className="bg-slate-950/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8 flex items-center gap-3"><FileSignature size={18}/> Formalización y Contratos</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_generado || '')}`)} className="flex items-center justify-between p-5 bg-slate-900 border border-slate-800 rounded-2xl hover:border-sky-600 transition-all group">
+                               <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center"><FileText size={24}/></div>
+                                 <div className="text-left"><p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Contrato Original</p><p className="text-xs font-black text-white group-hover:text-sky-400 transition-colors">Ver Borrador</p></div>
+                               </div>
+                               <ChevronRight size={18} className="text-slate-700 group-hover:text-sky-500"/>
+                            </button>
+
+                            {selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
+                              <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente || '')}`)} className="flex items-center justify-between p-5 bg-sky-600/5 border border-sky-600/20 rounded-2xl hover:bg-sky-600/10 transition-all group">
+                                 <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center"><CheckCircle2 size={24}/></div>
+                                   <div className="text-left"><p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Firma del Cliente</p><p className="text-xs font-black text-white group-hover:text-emerald-400 transition-colors">Validar Recibido</p></div>
+                                 </div>
+                                 <ExternalLink size={16} className="text-slate-700 group-hover:text-emerald-500"/>
+                              </button>
+                            )}
+                         </div>
+
+                         {/* DOBLE FIRMA */}
+                         {selectedExpediente.contratos?.[0]?.url_pdf_firmado_cliente && (
+                           <div className="mt-8 p-8 bg-slate-900/50 rounded-[2rem] border border-slate-800">
+                             <div className="flex justify-between items-center mb-6">
+                               <div><h4 className="text-xs font-black uppercase tracking-widest text-white">Doble Firma (CECANI)</h4><p className="text-[10px] font-black text-slate-600 uppercase mt-1">Cierre de formalización legal</p></div>
+                               {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma && <span className="px-3 py-1 bg-emerald-600/20 text-emerald-500 border border-emerald-600/20 rounded-full text-[9px] font-black uppercase">Completado</span>}
+                             </div>
+
+                             {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma ? (
+                               <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos?.[0]?.url_pdf_doble_firma || '')}`)} className="w-full py-4 bg-slate-950 border border-slate-800 rounded-xl text-sky-400 font-black uppercase tracking-widest text-[10px] hover:text-white transition-all flex items-center justify-center gap-3">
+                                 <Shield size={16}/> Ver Documento Final
+                               </button>
+                             ) : (
+                               <div className="space-y-4">
+                                  <div className="relative h-24 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center hover:border-sky-600 transition-all bg-slate-950/40 group">
+                                     {isUploadingDobleFirma ? <Loader2 className="animate-spin text-sky-500" /> : <UploadCloud className="text-slate-600 group-hover:text-sky-500" />}
+                                     <span className="text-[10px] font-black uppercase text-slate-500 mt-2">{dobleFirmaFile ? dobleFirmaFile.name : 'Subir contrato firmado por CECANI'}</span>
+                                     <input type="file" accept=".pdf" onChange={e => setDobleFirmaFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                  </div>
+                                  {dobleFirmaFile && (
+                                    <button 
+                                      onClick={async () => {
+                                        setIsUploadingDobleFirma(true);
+                                        const fd = new FormData(); fd.append('file', dobleFirmaFile);
+                                        const empresaFormat = selectedExpediente.nombre_empresa.replace(/[^a-zA-Z0-9]/g, '_');
+                                        const res = await subirArchivoR2Action(fd, `expedientes/${empresaFormat}/contratos`);
+                                        if(res.success && res.data) {
+                                          await subirContratoDobleFirma(selectedExpediente.contratos![0].id, res.data.url);
+                                          setDobleFirmaFile(null); toast.success('Doble firma vinculada');
+                                        } else toast.error(res.error);
+                                        setIsUploadingDobleFirma(false);
+                                      }}
+                                      className="w-full py-4 bg-sky-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-sky-600/20"
+                                    >Cargar Firma Final</button>
+                                  )}
+                               </div>
+                             )}
+                           </div>
+                         )}
+                       </div>
+
+                       <div className="bg-slate-950/80 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl">
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-8 flex items-center gap-3"><MapPin size={18}/> Soporte de Pagos y Depósitos</h3>
+                         <div className="space-y-4">
+                            {selectedExpediente.pagos?.map((p, i) => (
+                               <div key={i} className="flex items-center justify-between p-5 bg-slate-900 border border-slate-800 rounded-2xl">
+                                  <div className="flex items-center gap-4">
+                                     <div className="w-10 h-10 bg-sky-600/10 text-sky-500 rounded-xl flex items-center justify-center font-black text-xs">${(i+1)}</div>
+                                     <div><p className="text-sm font-black text-white">${p.monto.toLocaleString()}</p><p className="text-[10px] font-black text-slate-500 uppercase">{p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString('es-MX') : 'FECHA NO REGISTRADA'}</p></div>
+                                  </div>
+                                  <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(p.url_comprobante || '')}`)} className="p-3 bg-slate-950 border border-slate-800 text-slate-500 rounded-xl hover:text-sky-400 transition-all"><Eye size={18}/></button>
+                               </div>
+                            ))}
+                            {!selectedExpediente.pagos?.length && <div className="p-10 border border-dashed border-slate-800 rounded-3xl text-center"><p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Sin registros de pago verificados</p></div>}
+                         </div>
+                       </div>
                     </div>
                   </div>
                </div>
                
                <div className="bg-slate-950 p-6 px-10 flex items-center justify-between border-t border-slate-800 shrink-0">
                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">ID Expediente: {selectedExpediente.id}</p>
-                 <button onClick={() => setIsAssignModalOpen(false)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all border border-slate-800 shadow-xl">Cerrar Concentrado</button>
+                 <button onClick={() => setIsAssignModalOpen(false)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all border border-slate-800 shadow-xl">Cerrar Gestión</button>
                </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* --- MODAL 3: ALTA MAESTRA --- */}
+      {/* --- MODAL 2: VALIDACIÓN INICIAL --- */}
       <AnimatePresence>
-        {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetCreateState} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
-              <div className="bg-slate-950 p-8 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
-                <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-red-600/10 border border-red-600/20 text-red-500 rounded-2xl flex items-center justify-center shadow-lg"><UserPlus size={24}/></div>
-                  <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight">Alta Maestra</h2>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Paso {createStep} de 3</p>
-                  </div>
-                </div>
-                <button onClick={resetCreateState} className="text-slate-600 hover:text-white transition-colors"><X size={28}/></button>
-              </div>
+        {isValidationModalOpen && selectedExpediente && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsValidationModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-slate-800">
+               <div className="bg-slate-950 p-8 flex items-center justify-between text-slate-200 shrink-0 border-b border-slate-800">
+                 <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 bg-emerald-600/10 border border-emerald-600/20 text-emerald-500 rounded-2xl flex items-center justify-center shadow-lg"><ShieldCheck size={28}/></div>
+                   <div>
+                     <h2 className="text-xl font-black uppercase tracking-tight">Validación Documental</h2>
+                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">{selectedExpediente.nombre_empresa}</p>
+                   </div>
+                 </div>
+                 <button onClick={() => setIsValidationModalOpen(false)} className="bg-slate-900 p-3 rounded-2xl text-slate-500 hover:text-white transition-all"><X size={24}/></button>
+               </div>
 
-              <div className="flex bg-slate-950/30 border-b border-slate-800">
-                {[1,2,3].map(s => (
-                  <div key={s} className={`flex-1 py-4 text-center text-[9px] font-black uppercase tracking-[0.3em] transition-all ${ createStep === s ? 'bg-red-600/10 text-red-400 border-b-4 border-red-600' : createStep > s ? 'text-sky-400' : 'text-slate-700' }`}>
-                    {s === 1 ? 'Datos Cliente' : s === 2 ? 'Documentos' : 'Confirmado'}
+               <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-10 bg-slate-900/50">
+                  <div className="space-y-6">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 ml-2">Documentación del Cliente</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {selectedExpediente.documentos?.filter(d => ['ine_frente', 'ine_reverso', 'curp', 'comprobante_domicilio'].includes(d.tipo)).map(doc => (
+                         <div key={doc.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl flex items-center justify-between group">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-900 text-slate-500 rounded-xl flex items-center justify-center"><FileText size={20}/></div>
+                              <div><p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{doc.tipo.replace('_', ' ')}</p><p className="text-xs font-black text-white">Archivo Digital</p></div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)} className="p-2.5 bg-slate-900 text-slate-400 rounded-lg hover:text-sky-400 transition-all"><Eye size={18}/></button>
+                               <button onClick={async () => {
+                                 const res = await (await import('@/actions/documentos')).validarDocumentoAction(doc.id);
+                                 if(res.success) toast.success('Documento validado');
+                               }} className={`p-2.5 rounded-lg transition-all ${doc.validado ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-700 hover:text-emerald-500'}`}><CheckCircle2 size={18}/></button>
+                               <button onClick={async () => {
+                                 const mot = prompt('Motivo del rechazo:'); if(!mot) return;
+                                 const res = await (await import('@/actions/documentos')).rechazarDocumentoAction(doc.id, mot);
+                                 if(res.success) toast.error('Documento rechazado');
+                               }} className="p-2.5 bg-slate-900 text-slate-700 hover:text-red-500 rounded-lg transition-all"><Trash2 size={18}/></button>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-slate-900/50">
-                {/* PASO 1 */}
-                {createStep === 1 && (
-                  <form onSubmit={onInitManualRegistry} className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre Completo *</label><input required name="nombre_completo" placeholder="Nombre del cliente" className="w-full p-4 bg-slate-950/50 border-2 border-slate-800 rounded-2xl text-sm font-bold text-white outline-none focus:border-red-600 transition-all placeholder:text-slate-800" /></div>
-                      <div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Teléfono Móvil *</label><input required name="telefono" placeholder="10 dígitos" className="w-full p-4 bg-slate-950/50 border-2 border-slate-800 rounded-2xl text-sm font-bold text-white outline-none focus:border-red-600 transition-all placeholder:text-slate-800" /></div>
-                      <div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Nombre de la Asociación *</label><input required name="nombre_empresa" placeholder="Denominación o proyecto" className="w-full p-4 bg-slate-950/50 border-2 border-slate-800 rounded-2xl text-sm font-bold text-white outline-none focus:border-red-600 transition-all placeholder:text-slate-800" /></div>
-                      <div className="space-y-3"><label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">RFC del Titular</label><input name="rfc" placeholder="Opcional" className="w-full p-4 bg-slate-950/50 border-2 border-slate-800 rounded-2xl text-sm font-bold text-white outline-none focus:border-red-600 transition-all placeholder:text-slate-800" /></div>
-                      <div className="space-y-3 md:col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pre-asignar Abogada</label>
-                        <select name="asesora_id" className="w-full p-4 bg-slate-950/50 border-2 border-slate-800 rounded-2xl text-sm font-black uppercase tracking-widest text-white outline-none focus:border-red-600 transition-all appearance-none cursor-pointer">
-                          <option value="">-- Sin asignar todavía --</option>
-                          {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
-                        </select>
+                  <div className="bg-slate-950 p-8 rounded-[2.5rem] border border-slate-800">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-6 ml-2">Contrato del Sistema</h3>
+                    {selectedExpediente.contratos?.[0] ? (
+                      <div className="flex items-center justify-between bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                        <div className="flex items-center gap-5">
+                          <div className="w-14 h-14 bg-sky-600/10 text-sky-500 rounded-2xl flex items-center justify-center"><FileSignature size={28}/></div>
+                          <div><p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Borrador Legal</p><p className="text-sm font-black text-white">Contrato Generado</p></div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(selectedExpediente.contratos![0].url_pdf_generado || '')}`)} className="px-6 py-3 bg-slate-950 border border-slate-800 text-slate-400 rounded-xl font-black uppercase tracking-widest text-[10px] hover:text-white transition-all">Ver PDF</button>
+                          <button onClick={async () => {
+                            const res = await (await import('@/actions/directora')).aprobarContratoGeneradoCliente(selectedExpediente.id, selectedExpediente.contratos![0].id);
+                            if(res.success) { toast.success('Contrato enviado al cliente'); setIsValidationModalOpen(false); }
+                          }} className="px-8 py-3 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-sky-500 transition-all shadow-xl shadow-sky-600/20">Aprobar y Enviar</button>
+                        </div>
                       </div>
-                    </div>
-                    <button type="submit" disabled={isPending} className="w-full mt-6 py-5 bg-red-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-xl shadow-red-600/30 hover:bg-red-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                      {isPending ? <><Loader2 className="animate-spin" size={18}/>Creando Expediente...</> : <>Iniciar Proceso Legal <ArrowRight size={18}/></>}
-                    </button>
-                  </form>
-                )}
-
-                {/* PASO 2 */}
-                {createStep === 2 && newClientInfo && (
-                  <div className="space-y-8">
-                    <div className="bg-[#0197D2]/10 p-6 rounded-2xl border-2 border-sky-600/20 flex items-center gap-4 shadow-inner">
-                      <CheckCircle2 className="text-sky-400" size={24}/>
-                      <div><p className="text-[10px] font-black uppercase tracking-widest text-sky-400">Expediente Maestro Creado</p><p className="text-sm font-black text-white uppercase mt-1">{newClientInfo.nombre_empresa}</p></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FileUploader label="Contrato Firmado (PDF)" icon={<FileSignature size={32}/>} file={files.contrato} onChange={f => setFiles(p => ({...p, contrato: f}))}/>
-                      <FileUploader label="INE Frente" icon={<UserCircle size={32}/>} file={files.ine_frente} onChange={f => setFiles(p => ({...p, ine_frente: f}))}/>
-                      <FileUploader label="CURP" icon={<FileText size={32}/>} file={files.curp} onChange={f => setFiles(p => ({...p, curp: f}))}/>
-                      <FileUploader label="Comprobante Domicilio" icon={<MapPin size={32}/>} file={files.domicilio} onChange={f => setFiles(p => ({...p, domicilio: f}))}/>
-                    </div>
-                    {uploadProgress && <div className="text-center text-[10px] font-black uppercase tracking-widest text-sky-400 animate-pulse bg-sky-950 p-4 rounded-xl border border-sky-900/30">{uploadProgress}</div>}
-                    <button onClick={onUploadMasterDocs} disabled={isPending} className="w-full py-5 bg-[#0197D2] text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-xl shadow-sky-600/20 hover:bg-sky-500 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                      {isPending ? <><Loader2 className="animate-spin" size={18}/>Subiendo Archivos...</> : <>Confirmar Carga de Documentos <ArrowRight size={18}/></>}
-                    </button>
+                    ) : (
+                      <div className="p-10 border-2 border-dashed border-slate-800 rounded-3xl text-center"><p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Contrato no generado todavía</p></div>
+                    )}
                   </div>
-                )}
-
-                {/* PASO 3 */}
-                {createStep === 3 && (
-                  <div className="text-center py-12 space-y-8">
-                    <div className="w-20 h-20 bg-[#0197D2]/10 rounded-full flex items-center justify-center mx-auto border-4 border-sky-600/20 shadow-2xl shadow-sky-600/10"><CheckCircle2 className="text-sky-400" size={40}/></div>
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-black uppercase tracking-tight text-white">¡Alta Exitosa!</h3>
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">El expediente maestro está listo para ser asignado.</p>
-                    </div>
-                    <button onClick={resetCreateState} className="px-12 py-4 bg-slate-950 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs hover:bg-slate-800 transition-all border-2 border-slate-800 shadow-xl">Cerrar Panel</button>
-                  </div>
-                )}
-              </div>
+               </div>
+               
+               <div className="bg-slate-950 p-8 flex justify-end border-t border-slate-800 shrink-0">
+                 <button onClick={() => setIsValidationModalOpen(false)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 transition-all border border-slate-800">Cerrar Revisión</button>
+               </div>
             </motion.div>
           </div>
         )}
