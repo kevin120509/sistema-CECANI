@@ -56,6 +56,7 @@ export default async function AbogadaPage() {
       *,
       cliente:perfiles!cliente_id(nombre_completo, telefono, estado, rfc, curp, estado_civil, ocupacion, domicilio_completo),
       asesora:perfiles!asesora_id(nombre_completo),
+      expediente_asesoras(asesora_id, asesora:perfiles!asesora_id(id, nombre_completo)),
       figura:catalogo_figuras(*),
       contratos(*),
       documentos(*),
@@ -76,15 +77,18 @@ export default async function AbogadaPage() {
   
   if (!esAdmin) {
     // Si es abogada estándar: Solo ve sus propios expedientes asignados y validados
+    const { data: misAsignaciones } = await supabaseAdmin
+      .from('expediente_asesoras')
+      .select('expediente_id')
+      .eq('asesora_id', user.id);
+    const misExpIds = misAsignaciones?.map(a => a.expediente_id) || [];
+    
     query = query
-      .not('asesora_id', 'is', null)
-      .eq('asesora_id', user.id)
+      .or(`id.in.(${misExpIds.length > 0 ? misExpIds.join(',') : '00000000-0000-0000-0000-000000000000'}),asesora_id.eq.${user.id}`)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   } else {
     // Si es admin/directora en el panel legal: Ve TODOS los ASIGNADOS para supervisión.
-    // Los NO ASIGNADOS (como los de Excel) se gestionan desde el panel de Directora (/directora).
     query = query
-      .not('asesora_id', 'is', null)
       .not('estatus', 'in', '("en_registro","revision_directora")');
   }
 
@@ -107,7 +111,10 @@ export default async function AbogadaPage() {
     datos_concentrado: (datosConcentradoData || []).filter(d => d.expediente_id === exp.id),
   }));
 
-  const expedientes = expedientesConDatos as unknown as ExpedienteAbogada[];
+  let expedientes = expedientesConDatos as unknown as any[];
+  if (esAdmin) {
+    expedientes = expedientes.filter(exp => exp.asesora_id || (exp.expediente_asesoras && exp.expediente_asesoras.length > 0));
+  }
 
 
   // Lógica: Tareas de Hoy (Recordatorios)
@@ -117,7 +124,7 @@ export default async function AbogadaPage() {
   const expedientesConAlerta = expedientes.filter(exp => {
     if (!exp.bitacora || exp.bitacora.length === 0) return false;
     // Buscamos la fecha de próximo seguimiento más reciente (o iteramos todas)
-    return exp.bitacora.some(nota => {
+    return exp.bitacora.some((nota: any) => {
       // Comparar fechas como strings 'YYYY-MM-DD' es seguro
       return nota.fecha_proximo_seguimiento <= hoyStr;
     });

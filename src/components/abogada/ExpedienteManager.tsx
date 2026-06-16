@@ -65,6 +65,7 @@ import {
   Menu,
   X,
   Scale,
+  Share2,
 } from "lucide-react";
 import { PLANES_PAGO_LABELS } from "@/lib/constants";
 
@@ -445,7 +446,7 @@ export default function ExpedienteManager({
   >({});
   const [isSavingConcentrado, setIsSavingConcentrado] = useState(false);
   const [dashTab, setDashTab] = useState<
-    "clientes" | "tareas" | "agenda" | "bitacora"
+    "clientes" | "tareas" | "agenda" | "bitacora" | "compartidos"
   >("clientes");
   const [agendaView, setAgendaView] = useState<"lista" | "calendario">("lista");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -489,6 +490,9 @@ export default function ExpedienteManager({
 
   const filteredExpedientes = useMemo(() => {
     return expedientes.filter((exp) => {
+      if (dashTab === "compartidos") {
+        if (!exp.expediente_asesoras || exp.expediente_asesoras.length <= 1) return false;
+      }
       const search = searchTerm.toLowerCase();
       const nombreEmpresa = exp.nombre_empresa.toLowerCase();
       const nombreCliente =
@@ -545,7 +549,7 @@ export default function ExpedienteManager({
            estado: cliente?.estado || '',
            total_contrato: montoContrato > 0 ? `$${montoContrato.toLocaleString()}` : '',
            periodicidad_pagos: planPagosLabel || '',
-           asesora_encargada: (selectedExpediente as any).asesora?.nombre_completo || '',
+           asesora_encargada: (selectedExpediente as any).expediente_asesoras?.length ? (selectedExpediente as any).expediente_asesoras.map((r: any) => r.asesora?.nombre_completo).join(', ') : (selectedExpediente as any).asesora?.nombre_completo || '',
            num_pagos_realizados: totalPagosNum > 0 ? String(totalPagosNum) : '',
            cantidad_pagada_acumulada: totalPagado > 0 ? `$${totalPagado.toLocaleString()}` : '',
            saldo_cliente: (montoContrato > 0 && saldo >= 0) ? `$${saldo.toLocaleString()}` : '',
@@ -799,23 +803,7 @@ export default function ExpedienteManager({
       .filter((t) => t.hitoActual);
   }, [expedientes, hitosLegales]);
 
-  const bitacoraGlobal = useMemo(() => {
-    const notas: any[] = [];
-    expedientes.forEach((exp) => {
-      (exp.bitacora || []).forEach((b: any) => {
-        notas.push({
-          ...b,
-          empresa: exp.nombre_empresa,
-          clienteNombre: (exp as any).cliente?.nombre_completo || "",
-          expId: exp.id,
-        });
-      });
-    });
-    return notas.sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-  }, [expedientes]);
+
 
   if (!selectedExpediente) {
     return (
@@ -864,7 +852,16 @@ export default function ExpedienteManager({
                 isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("clientes");
-                  setIsSidebarOpen(false);
+                }}
+              />
+              <SidebarLink
+                icon={<Share2 size={18} />}
+                label="Compartidos"
+                badge={expedientes.filter((e: any) => e.expediente_asesoras?.length > 1).length}
+                active={dashTab === "compartidos"}
+                isSidebarOpen={isSidebarOpen}
+                onClick={() => {
+                  setDashTab("compartidos");
                 }}
               />
               <SidebarLink
@@ -875,19 +872,9 @@ export default function ExpedienteManager({
                 isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("tareas");
-                  setIsSidebarOpen(false);
                 }}
               />
-              <SidebarLink
-                icon={<Activity size={18} />}
-                label="Actividad Reciente"
-                active={dashTab === "bitacora"}
-                isSidebarOpen={isSidebarOpen}
-                onClick={() => {
-                  setDashTab("bitacora");
-                  setIsSidebarOpen(false);
-                }}
-              />
+
               <SidebarLink
                 icon={<Calendar size={18} />}
                 label="Agenda"
@@ -899,7 +886,6 @@ export default function ExpedienteManager({
                 isSidebarOpen={isSidebarOpen}
                 onClick={() => {
                   setDashTab("agenda");
-                  setIsSidebarOpen(false);
                 }}
               />
             </nav>
@@ -995,7 +981,7 @@ export default function ExpedienteManager({
             </div>
           )}
 
-          {dashTab === "clientes" && (
+          {(dashTab === "clientes" || dashTab === "compartidos") && (
             <div className="space-y-4">
               {filteredExpedientes.length === 0 ? (
                 <div className="bg-slate-900 rounded-2xl border border-slate-800 p-16 text-center shadow-sm">
@@ -1162,81 +1148,7 @@ export default function ExpedienteManager({
             </div>
           )}
 
-          {dashTab === "bitacora" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                  <Activity size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                    Actividad Reciente
-                  </h2>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                    Seguimiento cronológico de expedientes
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {bitacoraGlobal.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Activity
-                      size={48}
-                      className="mx-auto text-slate-700 mb-4"
-                    />
-                    <p className="text-slate-400 font-bold uppercase text-xs">
-                      Sin actividad registrada
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {bitacoraGlobal.map((nota) => (
-                      <div
-                        key={nota.id}
-                        className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-start gap-6 hover:border-emerald-500/30 transition-all group cursor-pointer"
-                        onClick={() => setSelectedExpedienteId(nota.expId)}
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center text-emerald-500 border border-slate-800 shrink-0">
-                          <MessageCircle size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-black text-white uppercase truncate">
-                              {nota.empresa}
-                            </h4>
-                            <span className="text-[10px] font-bold text-slate-500">
-                              {new Date(nota.created_at).toLocaleDateString()}{" "}
-                              {new Date(nota.created_at).toLocaleTimeString(
-                                [],
-                                { hour: "2-digit", minute: "2-digit" },
-                              )}
-                            </span>
-                          </div>
-                          <p className="text-slate-300 text-sm leading-relaxed mb-3">
-                            "{nota.nota}"
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
-                              <User size={12} />{" "}
-                              {nota.autor?.nombre_completo || "Abogada"}
-                            </p>
-                            {nota.fecha_proximo_seguimiento && (
-                              <span className="text-[10px] font-black text-amber-500 uppercase bg-amber-500/10 px-2 py-0.5 rounded">
-                                Próx:{" "}
-                                {new Date(
-                                  nota.fecha_proximo_seguimiento + "T12:00:00",
-                                ).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+
 
           {dashTab === "agenda" && (
             <div className="space-y-6">
@@ -1609,7 +1521,7 @@ export default function ExpedienteManager({
                            if (campo === 'domicilio_completo') defaultValue = (selectedExpediente as any).cliente?.domicilio_completo || '';
                            if (campo === 'total_contrato') defaultValue = contrato?.monto_total ? `$${contrato.monto_total.toLocaleString()}` : '';
                            if (campo === 'periodicidad_pagos') defaultValue = contrato?.plan_pagos || '';
-                           if (campo === 'asesora_encargada') defaultValue = (selectedExpediente as any).asesora?.nombre_completo || '';
+                           if (campo === 'asesora_encargada') defaultValue = (selectedExpediente as any).expediente_asesoras?.length ? (selectedExpediente as any).expediente_asesoras.map((r: any) => r.asesora?.nombre_completo).join(', ') : (selectedExpediente as any).asesora?.nombre_completo || '';
                            if (campo === 'num_pagos_realizados') {
                                const numPagos = ((selectedExpediente as any).pagos || []).length;
                                defaultValue = numPagos > 0 ? numPagos.toString() : '';
@@ -2198,7 +2110,7 @@ function ReminderForm({
   const [fecha, setFecha] = useState("");
   const [hora, setHora] = useState("");
   const abogadaNombre =
-    (expediente as any).asesora?.nombre_completo || "de CECANI";
+    (expediente as any).expediente_asesoras?.length ? (expediente as any).expediente_asesoras.map((r: any) => r.asesora?.nombre_completo).join(', ') : (expediente as any).asesora?.nombre_completo || "de CECANI";
   const template = useMemo(
     () =>
       getHitoTemplates(

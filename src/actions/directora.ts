@@ -299,17 +299,29 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
     const adminSupabase = createAdminClient();
 
     const expedienteId = formData.get('expediente_id') as string;
-    const asesoraId = formData.get('asesora_id') as string;
+    const asesorasIdStr = formData.get('asesoras_id') as string;
 
-    if (!expedienteId || !asesoraId) {
+    if (!expedienteId || !asesorasIdStr) {
       return { error: 'Faltan datos obligatorios para la asignación.' };
     }
 
+    let asesorasId: string[] = [];
+    try {
+      asesorasId = JSON.parse(asesorasIdStr);
+    } catch (e) {
+      asesorasId = [asesorasIdStr];
+    }
+
+    if (asesorasId.length === 0) {
+      return { error: 'Debes seleccionar al menos una abogada.' };
+    }
+
     // 1. PRIMERO ACTUALIZAR LEGACY (Asegura que el sistema funcione y el cliente se mueva de pestaña)
+    const primaryAsesoraId = asesorasId[0];
     const { error: expError } = await adminSupabase
       .from('expedientes')
       .update({
-        asesora_id: asesoraId, 
+        asesora_id: primaryAsesoraId, 
         estatus: 'en_proceso'
       })
       .eq('id', expedienteId);
@@ -320,27 +332,31 @@ export async function asignarAbogada(formData: FormData): Promise<{ success?: bo
     }
 
     // 2. SEGUNDO: Intentar insertar en la tabla relacional (Muchos a Muchos)
-    // No bloqueamos el éxito de la acción si esta tabla aún no está lista
     try {
+      const records = asesorasId.map(id => ({
+        expediente_id: expedienteId,
+        asesora_id: id
+      }));
+
+      // Primero borramos asignaciones previas
+      await adminSupabase.from('expediente_asesoras').delete().eq('expediente_id', expedienteId);
+
       const { error: relError } = await adminSupabase
         .from('expediente_asesoras')
-        .upsert({
-          expediente_id: expedienteId,
-          asesora_id: asesoraId
-        }, { onConflict: 'expediente_id,asesora_id' });
+        .insert(records);
 
       if (relError) {
-        console.warn('Relational table update failed (Non-critical):', relError.message);
+        console.warn('Relational table update failed:', relError.message);
       }
     } catch (e) {
-      console.warn('Relational update caught error (Non-critical)');
+      console.warn('Relational update caught error:', e);
     }
 
-    // NOTIFICACIÓN A LA ABOGADA
+    // NOTIFICACIÓN A LAS ABOGADAS
     await sendPushNotification({
-      userIds: [asesoraId],
+      userIds: asesorasId,
       title: 'Nuevo Expediente Asignado',
-      message: 'Se te ha asignado un nuevo caso. Revisa la información del cliente para iniciar el seguimiento.',
+      message: 'Se te ha asignado un nuevo caso (Seguimiento Compartido). Revisa la información del cliente para iniciar el seguimiento.',
       url: '/abogada'
     });
 
@@ -1050,5 +1066,41 @@ export async function validarDatosFaltantesManualAction(expedienteId: string, cl
     return { success: true };
   } catch (err: any) {
     return { error: err.message || 'Error al validar datos manualmente' };
+  }
+}
+
+export async function migrarAsignacionesAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const adminSupabase = createAdminClient();
+    const abogadaOrigenId = formData.get('abogada_origen') as string;
+    const abogadaDestinoId = formData.get('abogada_destino') as string;
+
+    if (!abogadaOrigenId || !abogadaDestinoId) {
+      return { error: 'Debes seleccionar ambas abogadas' };
+    }
+    if (abogadaOrigenId === abogadaDestinoId) {
+      return { error: 'Las abogadas de origen y destino deben ser distintas' };
+    }
+
+    const { data: rels } = await adminSupabase.from('expediente_asesoras').select('expediente_id').eq('asesora_id', abogadaOrigenId);
+    
+    if (rels && rels.length > 0) {
+      const newRels = rels.map(r => ({ expediente_id: r.expediente_id, asesora_id: abogadaDestinoId }));
+      await adminSupabase.from('expediente_asesoras').upsert(newRels, { onConflict: 'expediente_id, asesora_id' });
+      await adminSupabase.from('expediente_asesoras').delete().eq('asesora_id', abogadaOrigenId);
+    }
+
+    await adminSupabase.from('expedientes').update({ asesora_id: abogadaDestinoId }).eq('asesora_id', abogadaOrigenId);
+
+    const eliminarCuenta = formData.get('eliminar_origen') === 'true';
+    if (eliminarCuenta) {
+      await adminSupabase.from('perfiles').delete().eq('id', abogadaOrigenId);
+      await adminSupabase.auth.admin.deleteUser(abogadaOrigenId);
+    }
+
+    revalidatePath('/directora');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || 'Error al migrar asignaciones' };
   }
 }

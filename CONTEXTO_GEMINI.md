@@ -61,6 +61,42 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Estado**: Interfaz 100% coherente en todos los roles del sistema.
 
 ## 6. Bitácora de Sesión
+### [15 Junio 2026] - Plan de Migración Post-Registro (Asignación Automática)
+- **Acción**: Se acordó y documentó el flujo final para asignar a las abogadas sus clientes sin depender de un panel de migración en la UI.
+- **Acuerdo**: 
+    1. Las abogadas crearán sus propias cuentas reales (Registro normal).
+    2. Cuando el usuario indique que el registro masivo concluyó, Gemini (la IA) ejecutará un script en backend.
+    3. Dicho script cruzará el nombre registrado con el nombre provisorio/excel, migrando automáticamente los clientes (relaciones de `expediente_asesoras`) a las cuentas recién creadas.
+- **Cambios**: Se eliminó la pestaña de migración en `DirectorDashboard.tsx` para mantener el panel limpio según lo solicitado.
+
+### [15 Junio 2026] - Migración Final y Procesamiento de Reportes de Asignación Múltiple
+- **Acción**: Se procesaron los archivos `reporte_multiples_abogadas ya asognado.txt` y `reporte_asignacion_abogadas.txt` para hacer efectivas las asignaciones en la base de datos.
+- **Cambios**:
+    - **Creación de Cuentas**: Se generaron automáticamente las cuentas faltantes en Supabase Auth y perfiles para las abogadas extraídas de los reportes originales (p. ej., Sandra, Odette, Yara, Yael, etc.).
+    - **Asignación Múltiple**: Se leyó el texto original del Excel (como `"ABIGAIL-SANDRA"`) mapeándolo a los UUIDs correspondientes.
+    - **Poblado de Base de Datos**: Se insertaron un total de ~791 relaciones en la tabla `expediente_asesoras`, asegurando que las cuentas con clientes compartidos ya se conecten correctamente en el sistema.
+
+### [15 Junio 2026] - Sincronización Realtime y Vista de "Compartidos" (Panel Abogada)
+- **Acción**: Se amplió el sistema en tiempo real y se creó una vista dedicada para que las abogadas vean sus clientes compartidos.
+- **Cambios**:
+    - **Sincronización Total**: Se editaron los listeners en `RealtimeSyncProvider.tsx` para incluir las tablas `expediente_asesoras`, `bitacora`, `recordatorios` y `seguimiento_tareas`. Esto garantiza que si una abogada actualiza algo en un expediente compartido, la otra abogada vea los cambios sin recargar la página.
+    - **Pestaña "Compartidos"**: Se agregó una nueva sección en el sidebar de `ExpedienteManager.tsx` usando el ícono `Share2`. Filtra dinámicamente aquellos clientes que tienen más de una abogada asignada, mejorando la organización del trabajo en equipo.
+
+### [15 Junio 2026] - Implementación de Múltiples Abogadas (Seguimiento Compartido)
+- **Acción**: Se rediseñó el sistema de asignación para soportar múltiples abogadas por expediente (relación muchos a muchos), como solicitado por la Directora para los casos importados.
+- **Cambios**:
+    - **Base de Datos**: Se creó el archivo `01_expediente_asesoras.sql` con la estructura de la nueva tabla relacional `expediente_asesoras`.
+    - **Panel Directora**: Se modificó `DirectorDashboard.tsx` para permitir seleccionar múltiples abogadas con checkboxes y mostrarlas separadas por coma en el Concentrado.
+    - **Panel Abogada**: Se actualizó `ExpedienteManager.tsx` para mostrar a todas las abogadas asignadas al expediente.
+    - **Server Actions**: Se reescribió `asignarAbogada` en `directora.ts` para hacer inserts múltiples, actualizar notificaciones push y preservar compatibilidad legacy. También se actualizó la lógica de privacidad en `abogada/page.tsx` para usar la tabla relacional.
+- **Pendientes**:
+    - **IMPORTANTE**: El usuario debe ejecutar el script SQL `01_expediente_asesoras.sql` en el Dashboard de Supabase.
+
+### [15 Junio 2026] - Sincronización Inicial de Contexto
+- **Acción**: Lectura exhaustiva de la arquitectura (Clean Architecture), stack tecnológico (Next.js, Supabase, R2) y el estado actual del proyecto (Sistema CECANI) para estar al tanto del flujo de trabajo y reglas.
+- **Cambios**: Ninguno.
+- **Pendientes**: Esperando instrucciones del usuario para continuar con el desarrollo.
+
 ### [13 Junio 2026] - Restauración de Paneles y Política de Preservación
 - **Acción**: Se restauraron las vistas de validación en el panel de Directora y se estableció una regla de memoria para evitar regresiones.
 - **Cambios**:

@@ -1,0 +1,1295 @@
+
+
+#ERROR!
+Por favor, verifique estos clientes y decida qué abogada será la titular principal.
+
+Fila 4 | Cliente: ECO CASA DE APRENDIZAJE A.C. (ADAN PLATA)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail y Sandra
+
+Fila 5 | Cliente: PROYECTO LIGA A.C. (ADRIANA TORRES GAVILAN)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 8 | Cliente: MENCHU TUM, HACIA UNA CULTURA DE PAZ A.C. (ANITA MENCHU TUM )
+- Texto original Excel: "ABIGAIL-SANDRA"
+- Detectadas: Abigail 
+
+Fila 10 | Cliente: FUNDACIÓN CHI (JAZMÍN CHI AGUILLON)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 11 | Cliente: ROSBERT VA DE TU MANO (MARIA DEL ROSARIO RAMIREZ SALAZAR)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail y Sandra
+
+Fila 12 | Cliente: UN TOQUE DE AMOR (JESUS CARDENAS AMADOR)
+- Texto original Excel: "ABIGAIL-"
+- Detectadas: Abigail 
+
+Fila 15 | Cliente: COMUNICACIÓN, CAPACITACIÓN, CABILDEO Y CONSEJERÍA POR LA IGUALDAD (VICTOR MANUEL ESPINDOLA VILLEGAS)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 17 | Cliente: INTERNADO BINET (GABRIEL ELIZARRARAS LUNA )
+- Texto original Excel: "ABIGAIL-
+- Detectadas: Abigail 
+
+Fila 21 | Cliente: FUNDACIÓN NACIONAL PARA EL APOYO EMOCIONAL (MIGUEL ANGEL DIRZO (GRECIA))
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 22 | Cliente: ORGANIZACIÓN PARA EL APOYO DE ESCUELAS GEM (YANEL RUIZ MENDOZA)
+ASESORA ABIGAIL
+- Detectadas: Abigail 
+
+Fila 24 | Cliente: CONIBIO GLOBAL (JESUS ELIAS IBARRA RODRIGUEZ)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 27 | Cliente: SISTEMICO, REGENERACIÓN SOCIOAMBIENTAL (TRSITAN MARCO RODRIGO ARZATE QUINTANILLA)
+- Texto original Excel: "ABIGAIL-
+- Detectadas: Abigail 
+
+Fila 28 | Cliente: SENTIR, PENSAR Y AYUDAR A.C. (ALFREDO AGUSTIN RAMIREZ SAUCEDO)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 29 | Cliente: INSTITUTO MEXICANO PARA LA ALTA GERENCIA, ESPECIALIZACIÓN Y NORMALIZACIÓN (ALFREDO AGUSTIN RAMIREZ SAUCEDO)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 31 | Cliente: HUELLITAS FELINAS MID  (MARCO ANTONIO RODRIGUEZ CORTEZ)
+- Texto original Excel: "ALE CHAVIRA
+- Detectadas: Sandra 
+
+Fila 32 | Cliente: FUNDACIÓN CONCIENCIA Y VIRTUD
+(Efrén de Jesús Estrada Lagunas)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 102 | Cliente: GROW PESCADERO A.C. (DANIELA BAUDRY )
+- Texto original Excel: MIRTA"
+- Detectadas:Mirta
+
+Fila 103 | Cliente: ABRAZANDO AL FUTURO, NIÑOS DE LA CALLE| Constitutiva (MARIO ROSAS CHAVEZ)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 104 | Cliente: EXTRAORDINARIA (ALEJANDRA CLARISSA RODRIGUEZ FERNANDEZ)
+- Texto original Excel:LUIZA
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 105 | Cliente: ASCANT ASOCIACION CONCIENCIA ANIMAL TENOSIQUE| Extraodinaria (MARIA DE LOURDES OTEO TELLO)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 106 | Cliente: RESCATANDOG| Constitutiva (MARCO ANTONIO DELGADO MUÑOZ)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 107 | Cliente: ACTA CONSTITUTIVA (MARCOS MIGUEL GUTIERREZ VILLEGAS)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 108 | Cliente: CULTURA Y MISIÓN DE LA HUASTECA POTOSINA FRAY ANDRES DE OLMOS- Extraordinaria (JOSE HUMBERTO JUAREZ VILLEDA)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: YAEL
+
+Fila 109 | Cliente: SOCIAL FACTORY UNIVERSITY (FRANCISCO JAVIER SANABRIA MONDRAGÓN)
+- Texto original Excel: "YAEL
+- Detectadas: YAEL
+
+Fila 110 | Cliente: FUNDACIÓN SEREMOS SOLIDARIOS constitutiva (HILDA ROSA GUILLEN DOMINGUEZ)
+- Texto original Excel: "YAEL
+- Detectadas: YAEL
+
+Fila 111 | Cliente: AFINES AL CAMPO| Constitutiva (JOSE GUADALUPE CARDENAS JUAREZ)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 113 | Cliente: ASOCIACIÓN DE EXPLORADORES KARIS| Extraordinaria (RAFAEL HERRERA GARCIA)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 114 | Cliente: ESTACIÓN CULTURAL TAPACHULA (BEATRIZ LOPEZ SALINAS )
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 115 | Cliente: CAMINOS PARA TRASCENDER, CATAC (CLAUDIA INDIRA CONTRERAS CORDOVA )
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 116 | Cliente: ACCIONES INTEGRALES PARA MEJORAR A.C. (JUANA AVILES GUTIERREZ)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 117 | Cliente: FUNDACIÓN MONISA (MONICA OLMEDO PELAEZ  )
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 118 | Cliente: KALI COLHUACAN (RAQUEL DIAZ GUTIERREZ/RUBEN BARRERA)
+- Texto original Excel: YAEL
+- Detectadas:YAEL
+
+Fila 119 | Cliente: MANOS SOLIDARIAS DE LA HUASTECA (MARIA ALVARADO AGUSTIN)
+- Texto original Excel: "SANDRA-YAR"
+- Detectadas: Sandra y Yaraset Reyes
+
+Fila 122 | Cliente: CORAZÓN MERCEDARIO (ROSALBA CONCEPCIÓN PALOMA MACOCO MEJIA)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Sandra 
+
+Fila 123 | Cliente: DIVE & CLEAN ACTION CREW (ALBERTO GARCIA CASTELLANOS)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: YAEL
+
+Fila 125 | Cliente: CENTRO INFANTIL PARA LA ALIMENTACION EN YUCATAN EXTRAORDINARIA (FIBY LIDA LUGO ACHACH)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Sandra y Araceli
+
+Fila 126 | Cliente: JUNTOS POR UN FUTURO SIN ABANDONO A.C. (MARÍA AMANECER CASTAÑEDA GOBEL)
+- Texto original Excel: "YAEL
+- Detectadas: YAEL
+
+Fila 127 | Cliente: DESDE CERO (SANDRA LUZ ARELVALO ANLEHU)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 128 | Cliente: APOYO PSICOSOCIAL Y PSICOEMOCIONAL INTEGRAL (ISRAEL MARTINEZ GONZALEZ)
+- Texto original Excel: "YAEL
+- Detectadas:YAEL
+
+Fila 129 | Cliente: TRABAJO MULTIDICIPLINARIO POR LA RECONSTRUCCIÓN DE UN MEJOR FUTURO/CONST. (YAMIR ALEJANDRO LOPEZ CACARI)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 130 | Cliente: PAKINI CONSERVACION (CASTOR CANCINO CERVANTES)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 131 | Cliente: FUNDACIÓN CREA CREANDO UN GRAN FUTURO/CONST. (JESSICA TANIA OLGUIN VEGA)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 132 | Cliente: EXTRAORDINARIA (GENARO GUERRERO CRUZ)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 133 | Cliente: GALA DEJANDO HUELLA EN EL MUNDO (LILIA REYES CABRERA)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 134 | Cliente: FUNDACIÓN  SALUD EN EQUILIBRIO (MARIA GUADALUPE RODRIGUEZ RODRIGUEZ)
+- Texto original Excel: "ODETTE - SANDRA"
+- Detectadas: Odette y Sandra
+
+Fila 135 | Cliente: HUELLITAS Y RAÍCES SOSTENIBLES (GEORGINA ALAMEDA TELLO)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail y Sandra y Odette
+
+Fila 138 | Cliente: ASOCIACIÓN MEXICANA DE RESPONSABILIDAD Y EDUCACIÓN (CALIK IIHAMI )
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail y Sandra y Odette
+
+Fila 139 | Cliente: UNIFICANDO APOYO PARA TI (SUSANA MACIAS LARA)
+- Texto original Excel: "ABI-
+- Detectadas: Abigail y Sandra y Odette
+
+Fila 140 | Cliente: APOYO ALIMENTARIO POR AMOR A.C.  ( LUCY RIVAS--MARIO MORLAN RIVAS)
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Sandra y Odette
+
+Fila 141 | Cliente: DESEANDO VIDA (GLORIA LEDESMA VARGAS )
+- Texto original Excel: "YAEL
+- Detectadas: Sandra y Odette
+
+Fila 142 | Cliente: FUNDACIÓN DR. DONACIANO DEL ANGEL MORALES (CARLOS ORLANDO DEL ANGEL)
+- Texto original Excel: YAEL
+- Detectadas: YAEL
+
+Fila 143 | Cliente: FUNDACION BOKOBA (RAMÓN ALBERTO PÉREZ SILVAN)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Sandra y Odette
+
+Fila 144 | Cliente: OBSERVATORIO EDUCATIVO DE TECNOLOGÍAS APLICADAS (OSCAR MARTIN NORIEGA  )
+- Texto original Excel: "ABIGAIL
+- Detectadas: Sandra y Odette
+
+Fila 145 | Cliente: RESCATANDO HUELLITAS SIN AMOR (CLAUDIA ANDRADE MEZA )
+- Texto original Excel: "SANDRA-ODETTE"
+- Detectadas: Sandra y Odette
+
+Fila 146 | Cliente: ASOCIACIÓN MEXICANA DE MEDICINA COMPLEMENTARIA Y ESTÉTICA (MARCOS ADAN CHAVEZ MOLINA )
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Sandra y ODETTE ABY
+
+Fila 147 | Cliente: PUENTES PARA EL EXITO A.C. (CINTIA CALDERON BAUSTISTA )
+- Texto original Excel: "YAEL"
+- Detectadas: YAEL
+
+Fila 148 | Cliente: COMPLEXUS LAB CIENCIAS PARA EL BIENESTAR  VENCIDO (TANIA DE LA FUENTE CHAVEZ)
+- Texto original Excel: "YAEL"
+- Detectadas: YAEL
+
+Fila 149 | Cliente: INICIATIVA POR COATZACOALCOS (CARLOS ALBERTO ESQUIVEL OLVERA/ alfredo Sánchez)
+- Texto original Excel: YAEL
+- Detectadas: YAEL
+
+Fila 150 | Cliente: IMPULSAMOS PROYECTOS DE ÉXITO A.C. (Augusto César Martinez Núñez )
+- Texto original Excel: "YAEL"
+- Detectadas: YAEL
+
+Fila 151 | Cliente: UN SALTO ADELANTE (Salvador Rene Campuzano )
+- Texto original Excel: "ARACELI - SANDRA"
+- Detectadas: Araceli y Sandra
+
+Fila 152 | Cliente: ASOCIACION PARA LA INTEGRACION DE NIÑOS Y JOVENES   (Jorge Alberto Becerra Sánchez )
+- Texto original Excel: "ARACELI - SANDRA"
+- Detectadas: Araceli y Sandra
+
+Fila 189 | Cliente: NEEK SOLUCIONES AMBIENTALES INTERDISCIPLINARIAS (NIDIA IVONNE TOBON VELAZQUEZ)
+- Texto original Excel: "CHAVIRA7 NIZA GUERRA"
+- Detectadas: Alejandra Chavira y Niza Guerra
+
+Fila 253 | Cliente: ALIANZA POR UN MEXICO IGUALITARIO (JOSE CRISTIAN BARCENAS RAMIREZ )
+- Texto original Excel: "FLOR- VALERIA - NIZA"
+- Detectadas: Flor y Valeria y Niza Guerra
+
+Fila 255 | Cliente: MUJERES TRANSFORMANDO CON AMOR (70. MARGARITA BONILLA VARGAS)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 256 | Cliente: LA CASONA DEL ABUELO (antes Asilo de Ancianos Carmen)| Extraordinaria (MARIA VIRIDIANA ORTUÑO ALVAREZ|)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 257 | Cliente: CONSEJO ARTE Y CULTURA DE ZACATLAN| Constitutiva (CLAUDIA ALVAREZ ACOSTA)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 258 | Cliente: PROYECTO CON PASIÓN| Constitutiva (JHONATAN OBED LEDEZMA ESPINOZA)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 259 | Cliente: Asociación Mexicana de Discapacidad AMEDIS| Constitutiva (EDUARDO GARCIA GARCIA (GIOVANNA LORENZANA))
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 260 | Cliente: WILDLIFE RANGERS FOUNDATION| Extraordinaria (RAFAEL CUADROS PENICHE)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 261 | Cliente: AMOR POR TU SALUD| Constitutiva (NUBIA FABIOLA RODRIGUEZ GONZALEZ)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 262 | Cliente: PROMOTORA EDUCATIVA VISTA HERMOSA (JUDITH RIVERA RIVERA)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 263 | Cliente: CUMESI, A.C. |CONSTITUTIVA (MARÍA ANTONIA GONZÁLEZ
+ÁLVAREZ Y DULCE SOLEDAD HERNÁNDEZ TORREBLANCA
+Contacto:  GUSTAVO MALAGON MARIN)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 264 | Cliente: BÁLSAMO DE AMOR| EXTRAORDINARIA (ALEJANDRO HERNANDEZ MARTINEZ)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 265 | Cliente: CONECTANDO SUEÑOS A MANO| Constitutiva (ILIANA GENOVEVA VILLASEÑOR NAVARRO)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 266 | Cliente: MUSEO AL ORGULLO Y GRANDEZA MIGRANTE| Consitutiva (HECTOR HUGO BALDERAS MORENO)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 267 | Cliente: COLEGIO MEXICANO DE CIRUGIA REPRODUCTIVA  (FRANCISCO ALFREDO ARROYO)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 268 | Cliente: ALAS INTERNACIONALES  (MARIA ELENA GUADALUPE GAXIOLA QUIROZ)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 269 | Cliente: GRANJA EL MANDARIN  (ISRAEL RICARDO RASCÓN LARA)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 273 | Cliente: INTERÉSCUTURAL (ALFREDO MARTINEZ MONRROY)
+- Texto original Excel: "ODETTE - NIZA"
+- Detectadas: Odette y Niza Guerra
+
+Fila 274 | Cliente: GLOBASCOPE EL POZO MEXICO (COURTNEY RENEE WILSON)
+- Texto original Excel: "ODETTE - NIZA"
+- Detectadas: Odette y Niza Guerra
+
+Fila 275 | Cliente: YUTEIZA (HUMBERTO TANIZ VAZQUEZ)
+- Texto original Excel: "ODETTE - NIZA"
+- Detectadas: Odette y Niza Guerra
+
+Fila 276 | Cliente: Organización Intercultural TA’IWAMU’A XEINUIWARY (JUAN MANUEL ALCANTAR RODRIGUEZ)
+- Texto original Excel: "ODETTE - NIZA"
+- Detectadas: Odette y Niza Guerra
+
+Fila 277 | Cliente: CONSERVACION MARES Y SELVAS DE MEXICO A.C. (MARIA TERESA ROMELLON ORTEGA*)
+- Texto original Excel: "ODETTE - NIZA"
+- Detectadas: Odette y Niza Guerra
+
+Fila 278 | Cliente: MANOS QUE CUENTAN (ARELY GUADALUPE MONREAL LAZCANO)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 279 | Cliente: ASOCIACION DE DEFICIT DE ATENCION EL CAMINO DE ISAI (FLOR ADRIANA SAENZ SALDIVAR)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 280 | Cliente: CHALECOS BLANCOS (PEDRO BALDEMAR HERNANDEZ LOPEZ, EVA BALDEMAR)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 281 | Cliente: CONSEJO IBEROAMERICANO PARA LA CULTURA Y LAS ARTES A.C  (HELIOS XAVIER MORA MADRID)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 282 | Cliente: ASOCIACIÓN MEXICANA DE ENFERMEROS ESPECIALISTAS EN SALUD MENTAL, PROFESIONES AFINES Y PSQUIATRÍA (RIGOBERTO MARTÍNEZ OJEDA)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 283 | Cliente: HOMERO ESPINOSA  (HOMERO ESPINOZA RODRIGUEZ)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 284 | Cliente: ADULTOS NEURODIVERSOS (ERIKA PATRICIA GONZÁLEZ DE LUNA )
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 285 | Cliente: FUNDACION SALUD SIN LIMITES  (ANA AMERICA SANCHEZ PREN)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 286 | Cliente: YOLPALKIJ CULTURAL (ANGEL LUIS MARTINEZ MOTA)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 287 | Cliente: SANANDO PATITAS (MARÍA ALEJANDRA CAPETILLO)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 288 | Cliente: ASOCIACION FEMENINA VIDA Y CONCIENCIA  (PATRICIA MENDOZA ESCOBAR )
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 289 | Cliente: TU BONDAD NO TIENE FIN  (Arturo Mar )
+- Texto original Excel: "ARACELI/NIZA"
+- Detectadas: Araceli y Niza Guerra
+
+Fila 290 | Cliente: MOVIMIENTO YOLITIA CANAH (PAULINA GARCIA VILLA )
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 291 | Cliente: FUNDACIÓN FAMILIA CON EXITO (ELIAS ALVAREZ TORRES)
+- Texto original Excel: "NIZA-ODETTE"
+- Detectadas: Niza Guerra y Odette
+
+Fila 294 | Cliente: CENTRO DE NEURODESARROLLO Y NEUROENSEÑANZA  (OLGA LIDIA HERNÁNDEZ PICAZO)
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Alejandra Chavira
+
+Fila 295 | Cliente: GAIA GENERANDO ALIANZAS PARA LA INCLUSION Y EL AVANCE  (MARIA DEL ROSARIO ARIAS  UZZIEL)
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Alejandra Chavira
+
+Fila 296 | Cliente: POR UN EXCELENTE NIVEL DE VIDA  DE LOS BOMBEROS JUBILADOS DE MEXICO (RENE MARQUEZ LUNA )
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Alejandra Chavira
+
+Fila 297 | Cliente: DOWN CELAYA A.C. (MAYRA GUADALUPE ACOSTA JIMENEZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Alejandra Chavira
+
+Fila 298 | Cliente: JUVENTUD GENERO Y PRACTICAS AMBIENTALES  (CLARIBEL DEL CARMEN GOMEZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail y Alejandra Chavira
+
+Fila 299 | Cliente: FUNDACIÓN RAÚL SÁNCHEZ BARRALES Y REYES A.C.  CONSTITUTIVA  (ILIANA DELFINA REYES JARILLO)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 300 | Cliente: BIENESTAR EN CUATRO PATAS (ARLEN NATALIA NAVA RESÉNDIZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 301 | Cliente: FUNDACIÓN CONSTRUIMOS CONTIGO EL FUTURO (JORGE ALBERTO TORRES GARIBAY)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 302 | Cliente: UN ANGEL TE ACOMPAÑA (PABLO ALBERTO RODRÍGUEZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 303 | Cliente: COLEGIO DE INGENIEROS EN SISTEMAS Y PROFESIONES AFINES (JUAN LUIS BRINGAS RAMIREZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 304 | Cliente: ASOCIACIÓN PROVIDENCIAL ESTRELLA DE LA MAÑANA  (JORGE FERNANDO OJEDA )
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 305 | Cliente: PATRONATO DE TALENTOS DEPORTIVOS Y CULTURALES  (MISAEL  LOPEZ SANTIAGO)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 306 | Cliente: CENTRO INTEGRAL GLORIET TRAZANDO SUEÑOS  ( ISELA RODRIGUEZ)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 307 | Cliente: CULTRAMEX (IRVING LEONEL MARTINEZ)
+- Texto original Excel: "ABI-
+- Detectadas: Abigail 
+
+Fila 308 | Cliente: COLUMNAS DE AMOR Y PAZ (ANTONIO AVEITUA TAPIA)
+- Texto original Excel: "ABI-
+- Detectadas: Abigail 
+
+Fila 309 | Cliente: FUNDACIÓN HUELLAS DE PROGRESO (ALFREDO MORENO CASTILLO)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 310 | Cliente: EQUIPO DE RESPUESTA COMUNITARIA DE EMERGENCIAS Y DESASTRES (VICTOR HUGO TORRES OTERO)
+- Texto original Excel: "ABI-"
+- Detectadas: Abigail 
+
+Fila 311 | Cliente: ANEZEH SHRINE CENTER (LUIS GERARDO ORTIZ LÓPEZ)
+- Texto original Excel: "ABI-"
+- Detectadas: Abigail 
+
+Fila 313 | Cliente: FUNDACIÓN PRO NIÑOS Y JOVENES SIN VIOLENCIA A.C. (Hugo HernandeZ Harrel)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 314 | Cliente: FUNDACIÓN ZENREY (DORIS ZENDEJAS REYNOSO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 315 | Cliente: CRECIENDO CON EQUIDAD SOCIAL extraordinaria (SUSANA ROMERO NUÑEZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 316 | Cliente: OR GOYIM (ALBERTO ALFREDO ROSAS JUAREZ/ CRIS SOLORIO)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 317 | Cliente: ASOCIACIÓN DE PROTECCIÓN DE ANIMALES UNA MEJOR VIDA (BRENDA RODRIGUEZ AGUILAR)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 318 | Cliente: INTEGRA POR COATZACOALCOS (MIGUEL ALBERTO ROMERO)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 319 | Cliente: FUNDACION ENTUSIASMO 12 (ELI EBENEZER FLORES HERNÁNDEZ )
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 320 | Cliente: ASOCIACIÓN ISLÁMICA AL-SHIFA (NADIA ARGELIA HERNANDEZ CELIS)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 321 | Cliente: CONSEJO ESTATAL DE PRODUCTORES AGROPECUARIOS QUINTANARROENSES, CEPAQROO, A.C (JOSE ALFREDO RAMOS TESCUM (QUINTANA ROO))
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 322 | Cliente: FUNDACIÓN CREZCAMOS JUNTOS POR UN FUTURO MEJOR  (AYDEE LILIANA RAMIREZ)
+- Texto original Excel: "ABIGAIL-"
+- Detectadas: Abigail 
+
+Fila 323 | Cliente: IMAGINARIO COLECTIVO (RODRIGO CERVANTES SANCHEZ)
+- Texto original Excel: "ABIGAIL-"
+- Detectadas: ABIGAIL
+
+Fila 326 | Cliente: REVIVIENDO OAXACA ASISTENCIAL
+(REY DAVID VILLAGRANA)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 327 | Cliente: SHUSHUMNA A.C. (JOCELYN MARIA HERRERA RENDON)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 328 | Cliente: FUNDACION GAUTAMA (Adria Dominguez Parra)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 329 | Cliente: FUNDACION INTERNACIONAL VSCIENCE  (Carmina Isela Serna Garcia )
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 330 | Cliente: Instituto de Capacitación, Cultura y Deporte Para Todos. (RODOLFO SILERIO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 331 | Cliente: ZAMNA TULUM  (Silvia Margaria Molina Landeros )
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 332 | Cliente: DODIMA, CASA DE PARTOS (DINORA EDITH DEL PINO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 333 | Cliente: SOPHIA HUMANITIS (JAIME  ADRIAN VELASCO AMBRIZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 334 | Cliente: CENTRO DE ASISTENCIA SOCIAL RENASE (ESPERANZA CAROLINA GONZALEZ CASTRO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 335 | Cliente: TAFKIR ORGANIZACIÓN PARA EL DESARROLLO COMUNITARIO (VICTOR LÓPEZ VAZQUEZ )
+- Texto original Excel: "ABIGAIL"
+- Detectadas:Abigail
+
+Fila 336 | Cliente: ALPHA Y OMEGA COLABORADORES (TADEO DE JESUS LOPEZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 337 | Cliente: JUNTOS HACEMOS LA LUZ/EXTRA (BERNARDO DOMINGUEZ ESPINOSA )
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 338 | Cliente: RANCHO VOLUNTAD  (HECTOR ALEJANDRO TRIGUEROS FLORES)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:Abigail
+
+Fila 361 | Cliente: CAMBIO DE VIDA CENTRO HUMANITARIO |Extraordinaria (ABIGAIL ELIZABETH NIÑO ALVAREZ)
+- Texto original Excel: ABI"
+- Detectadas: Abigail
+
+Fila 362 | Cliente: FUNDACIÓN IMPULSO DENTAL PROYECT| Extraordinaria (FERNANDO ALVARADO SANCHEZ)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 363 | Cliente: FUNDACIÓN SUERTUDO; AMOR, VIDA Y ALEGRÍA|Constitutiva (ANA ELENA COREÑO MORAN y EVA MONTSSERRAT COREÑO MORAN)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 364 | Cliente: FUNDACIÓN VAM VOLVER A MI| Constitutiva (ANA LILIA LARA RAMOS |CLAUDIA LÓPEZ)
+- Texto original Excel: "ABI"
+- DeAbigail
+
+Fila 365 | Cliente: INTEGRACIÓN Y DESARROLLO FAMILIAR MORELENSE Extraordinaria (LAURA CERNAS SAYAVEDRA)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 366 | Cliente: FUNDACIÓN VILLA SANO (ALEJANDRO VALDOS PARRA )
+- Texto original Excel: "ABI"
+- Detectadas:  Abigail
+
+Fila 367 | Cliente: FUNDACIÓN VIGA Constitutiva (LEOBARDO GARCIA FERNANDEZ)
+- Texto original Excel: ABI"
+- Detectadas: Abigail
+
+Fila 368 | Cliente: FUNDACIÓN SER Y APRENDER, S.C.   Constitutiva (CRUZ ANAHY DÍAZ NUÑEZ Y JULIÁN BASTIA)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 369 | Cliente: COLECTIVO LAZOS DE AMOR A.C. (LEOVY GRISEL GARDUÑO HERNÁNDEZ)
+- Texto original Excel: "ABI"
+- Detectadas:  Abigail
+
+Fila 370 | Cliente: FUNDACIÓN PRO SALON| Constitutiva (MONICA PAOLA LOERA RUBIO)
+- Texto original Excel: "-ABI"
+- Detectadas: Abigail
+
+Fila 371 | Cliente: ASURMOR A.C. (SOCRATES SÁNCHEZ ORTIZ)
+- Texto original Excel: "ABI"
+- Detectadas:  Abigail
+
+Fila 372 | Cliente: TATE´I HARAMARA A.C. Constitutiva (SUHEIDI YADIRA DIAZ PANTALEON| GEORGINA ARCIGA)
+- Texto original Excel: "ABI"
+- Detectadas:  Abigail
+
+Fila 373 | Cliente: JUVENTUD PARA EL PROGRESO DEL GÉNERO HUMANO  (CLAUDIA ALCALA HERNANDEZ)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 374 | Cliente: A-MAR; AMOR, MENTE, ALIVIO Y RESTAURACIÓN| Constitutiva (CLAUDIA CIPRIAN BERBER ESPINOZA)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 380 | Cliente: FUNDACIÓN LOURDES LARA (LOURDES LARA THOMAS)
+- Texto original Excel: " ABIGAIL"
+- Detectadas: Abigail
+
+Fila 381 | Cliente: ORIGENES ARTE CULTURA ECOLOGICA A.C. (RICARDO BUSTOS RABADAN)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 382 | Cliente: POR U N SILAO UNIDO A.C./EXTRAORDINARIA (LUCIANA MARISOL CERVANTES TORRES)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 383 | Cliente: CONSEJO NACIONAL DEL FOLKLOR MEXICANO (JUAN JOSE PEREZ PARRA)
+- Texto original Excel: "- ABY"
+- Detectadas:  Abigail
+
+Fila 387 | Cliente: PROTECCION ANIMAL GATUNA (CARLOS IVAN MARTINEZ ESTEVEZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 388 | Cliente: HUMANISMO PARA UN MEXICO MEJOR (RAQUEL MEDINA BARRIOS)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 389 | Cliente: SALUD INTERDISCIPLINARIA PARA LA COMUNIDAD, C.I.S (HECTOR YOSHIEL SOTELO RIVAS)
+ABIGAIL
+- Detectadas: Abigail 
+
+Fila 390 | Cliente: AMIGOS DE LOS PERROS MORELOS (EDNA VIOLETA RIVERA DOMINGUEZ)
+- Texto original Excel: "ABIGAIL-"
+- Detectadas: Abigail 
+
+Fila 391 | Cliente: INVESTIGACION Y DESARROLLO DE PROYECTOS SUBMETROPOLITANOS, S.C. (MONICA LIZBETH TREJO MONTAÑEZ )
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 392 | Cliente: GRUPO AMBIENTAL KOAA (ANA KAREN HERNANDEZ IBARRA)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail 
+
+Fila 393 | Cliente: ÑANI MANI; HERMANO FIEL (AHUIZOTL ULISES CRUZ MONTES (ANGELICA CASTELLANOS))
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 394 | Cliente: HASTA LAS ESTRELLAS (ANA YURETZIN GARCÍA MARIN)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 395 | Cliente: ROJOS DE ATOCAN| Extraord (VICTOR MIGUEL VARELA VARELA)
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 396 | Cliente: PECES CON CAUSA A.C (JEMIMA REYES GUTIERREZ )
+- Texto original Excel: "ABIGAIL-
+- Detectadas: Abigail 
+
+Fila 397 | Cliente: COMENZAR DE NUEVO EN GUANAJUATO (Oscar Rivera Garcia )
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 398 | Cliente: FUNDACION HANMEXUS DEPORTE Y VIDA (Pedro Saul Garcia Moreno )
+- Texto original Excel: "ABIGAIL
+- Detectadas: Abigail 
+
+Fila 399 | Cliente: ENLAZANDO COMUNIDADES (SAÚL TOLEDANO)
+- Texto original Excel: " ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 400 | Cliente: CENTRO DE INVESTIGACIÓN CIENTIFICA SERENDIPIA (ALMA NELLY DIAZ HERREROS)
+- Texto original Excel: "- ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 401 | Cliente: FUNDACION DESARROLLO SOCIAL Y DE SALUD (EDGAR IVAN BAÑUELOS MATA)
+- Texto original Excel: "- ABIGAIL"
+- Detectadas: Abigail
+
+Fila 402 | Cliente: FUNDACIÓN OCTAVIO MAYÉN  (OCTAVIO MAYEN )
+- Texto original Excel: "- ABIGAIL"
+- Detectadas: Abigail
+
+Fila 403 | Cliente: CRECIENDO CON EL PUEBLO (MICHEL CRUZ APARICIO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 404 | Cliente: ALMA DE SEMILLA (SUSANA  ALEJANDRA CRUZ GUTIERREZ)
+- Texto original Excel: "- ABIGAIL"
+- Detectadas: Abigail
+
+Fila 405 | Cliente: NEKI ASISTENCIA SOCIAL (IVAN /ADRIANA LETICIA LOPEZ TELLO )
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 407 | Cliente: CONSTITUTIVA (GUADALUPE ESTELA MARTINEZ VAZQUEZ (LIC- ERWIN))
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 409 | Cliente: SENDA DE RETOS A.C. (IRENE ELIZABETH HERNANDEZ)
+- Texto original Excel: " ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 410 | Cliente: MD ATLETISMO (ADRÍAN MONJARAS ALEMÁN)
+- Texto original Excel: ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 411 | Cliente: jojuva sembrando amor y esperanza (JOSE JUAN VILLA ARIAS)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 412 | Cliente: CONSTITUTIVA (JONY BERMUNES RODAS (SERV. JHONY) EL AGUA TRANSFORMA VIDAS )
+- Texto original Excel: " ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 413 | Cliente: TRANSFORMAR NUESTRO MUNDO CON AMOR TNMA (MERCEDES GUADALUPE ESPADAS AVILÉS)
+- Texto original Excel: " ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 414 | Cliente: CONSTITUCION DE FUNDACIÓN XAHNI PARA LA EDUCACIÓN EN DIABETES (MANUEL SANTIAGO JIMÉNEZ ARENAS)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 415 | Cliente: BANCO DE ALIMENTOS A.C. (GUILLERMO ELIZONDO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:Abigail
+
+Fila 416 | Cliente: SON DE MADERA, A.C. (MELANIE SMIT ALFARO)
+- Texto original Excel: " ABIGAIL"
+- Detectadas: Abigail
+
+Fila 417 | Cliente: ASOCIACIÓN MEXICANA DE MEDICINA COMPLEMENTARIA Y ESTÉTICA (MARCOS ADAN CHAVEZ MOLINA )
+- Texto original Excel: " ABY"
+- Detectadas:  ABY
+
+Fila 508 | Cliente: FUNDACIÓN POR EL BIENESTAR PUBLICO (MARY CRUZ MARTINEZ DUARTE)
+- Texto original Excel: "KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 509 | Cliente: SAPIENTIA CORDIS (Sergio Alejandro González)
+- Texto original Excel: " KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 510 | Cliente: REGIONES UNIDAS DE GUERRERO A.C. (JUAN PABLO AGUSTINIANO FLORES)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 511 | Cliente: MAXKI (JUANA MELENDREZ COTA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 512 | Cliente: academia de arte y vida independiente (NILZA VANESSA CASTAÑEDA MORALES / ACADEMIA DE ARTE Y VIDA INDEPENDIENTE)
+- Texto original Excel: "KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 513 | Cliente: CULTURA ASISTENCIAL MORELOS (OSMARA SARAI DOMINGUEZ GALLEGOS)
+- Texto original Excel: " KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 514 | Cliente: MANOS QUE CUIDAN MX (MANUEL ATENOGENES CALLES RODRIGUEZ Y JORGE ENRIQUE PEÑA OZAETA)
+- Texto original Excel: "KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 515 | Cliente: extraordinaria Torre Azul por un futuro joven (VANESSA ARACELI ANGELES HERNANDEZ)
+- Texto original Excel: " KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 516 | Cliente: FUNDACIÓN CICLISMO URBANO  (RICARDO VILLALOBOS VILCHIS)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 517 | Cliente: AYUDA SEGURA A.C (PRISCILA IVETTE SEGURA GONZALEZ)
+- Texto original Excel: "KENIA-"
+- Detectadas: Kenia Nextle 
+
+Fila 518 | Cliente: astroturismo de mexico a.c. (PABLO LONNIE PACHECO RAILEY/JAIME HERRERA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 519 | Cliente: PROYECTO DE ASISTENCIA COMUNITARIA INTEGRAL (MARIA MAGDALENA LABASTIDA LUCERO/KARINA YEZCAS)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 520 | Cliente: constitutiva (LIDIA SANDRA RAMIREZ GUTIERREZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 521 | Cliente: constitutiva (JOSE DE JESUS DIAZ PEREZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 522 | Cliente: Educación Especial Capsi A.C. extraordinaria (JENNY GABRIELA HERNANDEZ CANALES)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 523 | Cliente: FUNDACION BAISA (GUILLERMO ROJAS ALFARO)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 524 | Cliente: CONSTITUTIVA (AXEL DOMINGUEZ MARQUEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 525 | Cliente: FUNDACION HOPS (LUIS JAVIER GOMEZ ROSAS / DIEGO CORDOVA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 526 | Cliente: FRUTO DEL ARBOL DE LA VIDA ETERNA ( MINERVA BRETON GONZALEZ GURRIA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 527 | Cliente: TODOS ENTENDIENDO EL AUTISMO (ROBERTO JAVIER MIRON QUEZADA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 528 | Cliente: INSTITUTO JURIDICO ALZATE. INJUA (FAUSTO RIOS VALENCIA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 529 | Cliente: IXCHEL LA CASA COMUN POR LOS DERECHOS SOCIALES, CULTURALES, EL ARTE Y LA SALUD A.C. (EVANGELINA SÁNCHEZ SÁNCHEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 530 | Cliente: SEGURIDAD Y CRECIMIENTO JUVENIL (ALFREDO ALEXANDRO MORENO HERNANDEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 531 | Cliente: RESTAURACION DE LA TIERRA Y EL AGUA PARA COMUNIDADES SUSTENTABLES (MARIA DEL ROSARIO NAVA ALANIZ)
+- Texto original Excel: "KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 532 | Cliente: Formación Integral para la Superación de Niños y AdoleScentes (MARCO ANTONIO LIMAS IBARRA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 533 | Cliente: FUNDACIÓN ANDARES FANAC,A.C. (GUILLERMO ZERMEÑO ALVAREZ )
+- Texto original Excel: " KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 534 | Cliente: PROYECTO SIERRA VIVA (ROCIO MEDINA RUIZ)
+- Texto original Excel: "KENIA"
+- Detectadas:Kenia Nextle
+
+Fila 535 | Cliente: LATINAS IN TECH  (LAURA VARONA AYALA)
+- Texto original Excel: "  KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 536 | Cliente: CONSTITUTIVA (ROCIO MEDINA RUIZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Araceli y Kenia Nextle
+
+Fila 538 | Cliente: QUIERO VIVIR PEGADO A TI A.C. (RICARDO SALAZAR GARMENDIA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 539 | Cliente: FUNDACION BMELITE, A.C. (BERNARDO RAFAEL MERCADO IBARRA )
+- Texto original Excel: " KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 540 | Cliente: LEKIL LUM (MATEA JIMENEZ LOPEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 541 | Cliente: PRO DANZA BJX (MARIA MERCEDES MEZA GONZALEZ)
+- Texto original Excel: KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 542 | Cliente: X LA PRIMAVERA J (MINERVA OLINDA PEREZ RODRIGUEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 543 | Cliente: ANACE INSTITUTO TÉCNICO DE CAPACITACIÓN, A.C. (MA JOSEFINA PÉREZ GUTIERREZ)
+- Texto original Excel: " KENIA"
+- Detectadas:  Kenia Nextle
+
+Fila 544 | Cliente: JUNTOS POR LA CASA COMÚN (MARCO ANTONIO ESCUDERO LORES)
+- Texto original Excel: " KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 545 | Cliente: EXTRAORDINARIA IKAL PARA LA NIÑEZ MEXICANA
+A.C. (YA TIENE CLUNI) (FERNANDO LÓPEZ GAITÁN)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 546 | Cliente: LA GRANJITA DE CHOPOS (ELIU BETZAVE LEMUS AGUILAR)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 547 | Cliente: PALAPA SOCIETY (ADRIANA GISELLE MARTÍN DEL CAMPO JENSEN)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 631 | Cliente: BENDECIMOS SIRVIENDO (JORGE IVAN GARCIA GOMEZ (DIANET MORENO))
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 632 | Cliente: MOVIMIENTO INDEPENDIENTE POPULAR ALTRUISTA  (Marcial Martinez Montes )
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 633 | Cliente: ASOCIACION LATINOAMERICANA DE ARCHIVOS (MARCO ANTONIO ENRIQUEZ OCHOA)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 634 | Cliente: RENESP (SAYDE GLAFIRA MARTINEZ HERNANDEZ )
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 635 | Cliente: FUNDACIÓN CONCIENCIA SIMA CONSTITUTIVA (SILVIA OROPEZA)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 636 | Cliente: FUNDACIÓN MUJERES HACIA EL CAMBIO (ROCÍO GARNICA MONTES )
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 637 | Cliente: FUNDACION AVANZA CONTIGO (ALEXIS JUAREZ CURIEL)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 638 | Cliente: ministerio doce cestas (NAYELI ACOSTA OCAMPO)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 639 | Cliente: CASA CLUB LA ESPERANZA A.C. (Jesus Roberto Betancourt Silva)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 640 | Cliente: YANHÉ, CENTRO DE ATENCIÓN A LA SALUD extraordinaria (ESMERALDA CONCEPCION VALERIO GUZMAN)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 641 | Cliente: constitucion (MICHAEL RODRÍGUEZ CISNEROS)
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette
+
+Fila 642 | Cliente: ASOCIACIÓN FRENTE MEXICO EN TUS MANOS (FREDDY MENESES CAMARGO)
+- Texto original Excel: "ARACELI- LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 643 | Cliente: FUNDACION NISAGUE XCAANDA (NANCY CLIMACO CRUZ)
+- Texto original Excel: "ODETTE - ARACELI-  LUIZA"
+- Detectadas: Odette y Araceli y Luisa Enríquez
+
+Fila 644 | Cliente: ÁGUILA DORADA DE SINALOA (JOEL REYES RIVERA/ BRICEIDA MONJARDIN)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 645 | Cliente: C/ RENOVACIÓN SALUDABLE (DANIA RUBELIA CASTRO HERRERA)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 646 | Cliente: FUNDACION FECREAR (EDGAR FRANCISCO MARQUEZ)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 647 | Cliente: CIIDPRO
+CENTRO DE INVESTIGACIÓN, INNOVACIÓN Y DESARROLLO DE PROYECTOS REGIÓN OLMECA (CORNELIS VERSTEEG CASTELLANOS)
+- Texto original Excel: "ARACELI- LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 648 | Cliente: ENDARACANÉ, ALIANZA DE PUEBLOS INDIGENAS (KARINA LOPEZ REGALADO/NORBERTO)
+- Texto original Excel: "ARACELI- LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 649 | Cliente: CONSTITUTIVA / DESTACA AC  (JESSI- JESÚS RAFAEL BARRAZA)
+- Texto original Excel: "ARECELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 650 | Cliente: ALAIA (AVRIL DANIEL CRAVIOTO)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 651 | Cliente: EXTRAORDINARIA /  THE VENUS PROJECT AC (ENRIQUE LEONARDO VARGAS ELIZONDO)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 652 | Cliente: FUNDACIÓN ANERIS,A.C. (ALEJANDRA ESTRADA DE LA CRUZ)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 653 | Cliente: FUNDACIÓN NIX-LAB A.C. (JESÚS GUADALUPE HERRERA VANOYE)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 654 | Cliente: FUNDACIÓN COMUNITARIA Y DE COOPERACIÓN SOCIAL (GUILLERMO ZANABRIA ANTONIO)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 655 | Cliente: FACILITADORA
+DE SUEÑOS A.C. (CARLOS JACOBO CAMARGO VIRAMONTES)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 656 | Cliente: FUNDACIÓN FRUTOS VERDES, A.C. (AXELL COOPER SUTTON ANTONIO Y JORGE MIGUEL GALINDO)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 657 | Cliente: EXTRAORDINARIA FUNDACION NUCLEO DB AC (JOSUE BRUNO RIVERA TORRES)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 658 | Cliente: MOVIMIENTO ANTIOBESIDAD A.C. (OSCAR DAVID CASTAÑEDA LERMA (AMBAR))
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 659 | Cliente: RAZÓN PARA MEJORAR,A.C. (ANABEL HERNÁNDEZ ATANACIO)
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 660 | Cliente: OMAXAL A.C. (OCTAVIO DOMINGUEZ ROSAS (ERIKA AGUILERA APOLINAR))
+- Texto original Excel: "ARACELI - LUIZA"
+- Detectadas: Araceli y Luisa Enríquez
+
+Fila 662 | Cliente: LA CONSULTORIA ARTE CONTEMPORÁNEO A.C. (JOSÉ LUIS GARCÍA MONDRAGÓN)
+- Texto original Excel: "ALEJANDRA-SANDRA"
+- Detectadas: Alejandra Chavira y Sandra
+
+Fila 683 | Cliente: ADELANTE MORELOS  (CESAR FLORES )
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 684 | Cliente: CHAVICOS A.C. (HUMBERTO ANTONIO CERVANTES TERAN/ SILVIA CORTINA/ MIGUEL AUGUSTO)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 685 | Cliente: PATRONATO CENTRO LEONARDO MURIALDO (JESUS RAMIREZ MORENO (sr. Pedro))
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 686 | Cliente: CENTRO DE ATENCION FAMILIAR ALMA  (MARCELA DOMINIQUE TORRES REYNOSO )
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 687 | Cliente: INCORPORACIÓN A LA FORMACIÓN EN LA CIENCIA Y TECNICA (JESUS HERRERA ARRIOLA)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 688 | Cliente: UNIÓN DE PRODUCTORES DE MAÍCES NATIVOS DE LOS ALTOS DE SINALOA A.C (MARTÍN SAGASTE BERRELLEZA)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 689 | Cliente: EXTRAORDINARIA (MARTHA ELENA DE COSS FLORES/ RODOLFO JUAN FLORES)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 690 | Cliente: FAMILIAS SANAS, SOCIEDAD SANA, A.C. (DANIEL GONZALEZ ARGUELLO)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 691 | Cliente: UNIÓN DE GESTORES DE LA SIERRA A.C. (JAVIER LÓPEZ TREJO)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 692 | Cliente: AXUSCO CO YOLISTLI (MOISES NORBERTO REYES FLORES)
+- Texto original Excel: "CHAVIRA-SANDRA"
+- Detectadas: Alejandra Chavira y Sandra
+
+Fila 693 | Cliente: GO ZOE INTERNACIONAL (MARIELA AMBROSIO LURIA)
+- Texto original Excel: "CHAVIRA- SANDRA-ODETTE"
+- Detectadas: Alejandra Chavira y Sandra y Odette
+
+Fila 694 | Cliente: BELDANIS (JOSE GREGORIO FRANCISCO SAAVEDRA PICAZO )
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 695 | Cliente: EXPANSIVA HABITAT CULTURAL (MARIA FERNANDA GALICIA GARCIA/scarlet galicia)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 696 | Cliente: CASA GERIÁTRICA DE AHOME A.C. (ABEL ORTIZ ORDUÑO)
+- Texto original Excel: "CHAVIRA-SANDRA-ARACELI"
+- Detectadas: Alejandra Chavira y Sandra y Araceli
+
+Fila 744 | Cliente: CONSTITUTIVA (MARIA NICOLASA GALINDO CASTILLO)
+- Texto original Excel: "NEREYDA/CHAVIRA"
+- Detectadas: Nereyda y Alejandra Chavira
+
+Fila 745 | Cliente: CONSTITUTIVA (JOSE LUIS GARCIA GALINDO )
+- Texto original Excel: "VALE/CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 746 | Cliente: SERIEDAD CREATIVA/CONST. (VERONICA DEL CARMEN SANCHEZ TORRES)
+- Texto original Excel: "VALE/CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 747 | Cliente: INE MEI KUU LANTU/CONS. (MARIA DE LOURDES GARCÍA CABALLERO)
+- Texto original Excel: "VALE/CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 748 | Cliente: GENERANDO IDEAS ALTERNATIVAS. GENIAL/CONSTITUTIVA (FABIOLA VEGA PARRALES)
+- Texto original Excel: "VALE/CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 757 | Cliente: FUNDACIÓN LA MIXTEQUITA (ANABEL CASTALAN ORDUÑA)
+- Texto original Excel: "SELENA-FLOR"
+- Detectadas: Selena y Flor
+
+Fila 758 | Cliente: CONSTITUTIVA ( IDALIA JOSEFINA VENEGAS SALAZAR)
+- Texto original Excel: "SELENA-FLOR"
+- Detectadas: Selena y Flor
+
+Fila 759 | Cliente: CAPPIOAX A.C. (FLORENTINO GARCIA GARCIA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 760 | Cliente: IN VERBO TUO (Humberto Hernandez Vasquez )
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 761 | Cliente: CASA HOGAR TUTU´ULI A.C. (MARIA PAULA GUILLOT MONTOYA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 762 | Cliente: BACK HOME (ALEJANDRA IRAIZ ROBLES contacto GABRIELA GARCIA)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 763 | Cliente: FUNDACIÓN SALUD Y EDUCACIÓN DÍGNA PARA TODOS (JULIO CESAR RUIZ BURGUETE)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 764 | Cliente: Calli Siuatl Atle Tsotsona  (MARÍA DEL CARMEN RIVERA )
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle 
+
+Fila 765 | Cliente: CONSTITUTIVA (SANTOS DOMINGUEZ HERNÁNDEZ)
+- Texto original Excel: "KENIA"
+- Detectadas: Kenia Nextle
+
+Fila 766 | Cliente: MAGISTRAL HUEHUECOYOTL (Carlos Guillermo Terrazas)
+- Texto original Excel: "FLOR- VALERIA"
+- Detectadas: Flor y Valeria
+
+Fila 767 | Cliente: EXTRAORDINARIA (FUNDACIÓN SUEÑOS DEL CORAZÓN) (ALINA DE LA ROSA BELLO (SÍ HAY DOCUMENTOS EN EL CORREO))
+- Texto original Excel: "VALERIA-CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 768 | Cliente: MEXA DIVERSA  (GABRIELA VALENZULA CONTRERAS )
+- Texto original Excel: "VALERIA-CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 769 | Cliente: FUNDACIÓN MATEA.AC (Gloria Aracely Reyna Flores )
+- Texto original Excel: "VALERIA-CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 773 | Cliente: BRAZOS FUERTES DE APOYO  (Cristina Martinez Ayala )
+- Texto original Excel: "VALERIA-CHAVIRA"
+- Detectadas: Valeria y Alejandra Chavira
+
+Fila 775 | Cliente: CONSTITUTIVA (SANDRA T.GOODWIN)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 776 | Cliente: RARAMURI KU'IROALA (TIRZA GONZALEZ CASTILLO)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 777 | Cliente: FUNDACIÓN CAMPAS (ITZEL CAMPOS NUÑEZ)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 778 | Cliente: EL AGUA TRANSFORMA VIDAS (JOHNY BERMUDEZ RODAS)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 779 | Cliente: TRES CERO SOCIAL (ROGELIO ANUAR MARTINEZ GONZALEZ)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 780 | Cliente: EXTRAORDINARIA (LORENZO ANTONIO CARRASCO)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 781 | Cliente: EXTRAORDINARIA (LORENZO ANTONIO CARRASCO)
+- Texto original Excel: "SELENA-VALERIA"
+- Detectadas: Selena y Valeria
+
+Fila 782 | Cliente: FUNDACION BREATHEDANCE (MONICA MUÑOZ ARELLANO)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 783 | Cliente: CONGREGACIÓN LORENZANA DE SALUD ASISTENCIA, A.C. (JOSE GUADALUPE  GONZALEZ VILLEGAS)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 784 | Cliente: EL LEON CAMINANDO (ISAIAS OLAGUE DE LA ROSA )
+- Texto original Excel: "ABI"
+- Detectadas: Abigail 
+
+Fila 785 | Cliente: PEPE LENTES  (JOSÉ MANUEL IBAÑEZ TOLEDO )
+- Texto original Excel: "ABI"
+- Detectadas: Abigail 
+
+Fila 786 | Cliente: FUNDACIÓN MISIÓN DE AMOR Y REFUGIO FAR (FRANCISCO CAMPOS RAMIREZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 787 | Cliente: CASA FÉNIX MONTERREY (YOLANDA LETICIA PALACIOS ÁVILA)
+- Texto original Excel: "ABIGAIL"
+- Detectadas:  Abigail
+
+Fila 788 | Cliente: FUNDACIÓN RECUPERACIÓN NIÑOS A.V.A.T.S/CONSTITUTIVA (BLANCA RITA BELTRAN CRUZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 790 | Cliente: RED DE SOCIOS QUE RESTAURAN VIDAS  (KARINA DE LA TORRE USCANGA | SR. ISRAEL)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 792 | Cliente: ODETTE (63)
+- Texto original Excel: "JORGE EDUARDO QUIZTIAN/BLANCA BRICEÑO"
+- Detectadas: Jorge Eduardo Quiztian y Blanca Briceño
+
+Fila 801 | Cliente: RETOS MEXICANOS A.C. (RUBÉN ESCOBAR SÁNCHEZ)
+- Texto original Excel: "YARASET REYES-NIZA"
+- Detectadas: Yaraset Reyes y Niza Guerra
+
+Fila 815 | Cliente: FUNDACIÓN ESPERANZA SIN FRONTERAS A.C. (COSME ZUÑIGA)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail 
+
+Fila 818 | Cliente: COOPERACIÓN Y VOLUNTAD PARA EL BIENESTAR SOCIAL, A.C. (JUAN CARLOS PECH CHAN)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 819 | Cliente: FUNDACION CANASTA OAXAQUEÑA (ANA GOMEZ/ audelio )
+- Texto original Excel: "ODETTE - ABIGAIL"
+- Detectadas: Odette y Abigail
+
+Fila 821 | Cliente: CENTRO DE DIFUSION Y CONSERVACION AMBIENTAL PARA EL DESARROLLO DE LAS COMUNIDADES PSM CONSTITUTIVA (JOSE PIERRE MEDINA ARJONA)
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 826 | Cliente: FUNDACIÓN NUSCAA (MARIA SOCORRO RAMIREZ CASTILLO )
+- Texto original Excel: "ODETTE - ARACELI"
+- Detectadas: Odette y Araceli
+
+Fila 827 | Cliente: COMUNIDAD CRISTIANA,UNIDOS POR LA FE  (ALFREDO RANFERI GOMEZ)
+- Texto original Excel: "ODETTE - ARACELI"
+- Detectadas: Odette y Araceli
+
+Fila 828 | Cliente: MÉDICOS SOBRE RUEDAS (SHEYLA  MARLENE NOLASCO)
+- Texto original Excel: "ODETTE - ARACELI"
+- Detectadas: Odette y Araceli
+
+Fila 829 | Cliente: ASOCIACIÓN PRO RESTAURACIÓN Y ACCIÓN SOCIAL DEL CARMEN (CISNEROS VÁZQUEZ ARTURO (JOSE LUIS MUÑOZ))
+- Texto original Excel: "ABI"
+ABIGAIL
+
+Fila 830 | Cliente: CENTRO DE PROTECCIÓN PARA LA SOCIEDAD  (SALVADOR BRISEÑO ALVAREZ)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail
+
+Fila 832 | Cliente: FUNDACION BAEZ POR AMOR A TI (LUIS BAEZ RIVERA)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 833 | Cliente: ANGEL DE LA GUARDA, TODOS SOMOS UNO. (ACTA EXTRAORDINARIA) (AURORA GUADALUPE ORTIZ QUIROZ)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail 
+
+Fila 834 | Cliente: COMUNIDAD TERAPEÚTICA CONEXIÓN A LA VIDA A.C. (ROBERTO MIGUEL ANGEL HERNANDEZ)
+- Texto original Excel: "ABI"
+- Detectadas: Abigail 
+
+Fila 836 | Cliente: ORIGEN TONAL (SILVIA PEREZ, PERO EL CONTRATO ESTA A NOMBRE DE DAVID ALONSO MARTÍNEZ ZUÑIGA )
+- Texto original Excel: "ABI
+- Detectadas: Abigail 
+
+Fila 837 | Cliente: FUERZA ROSA LAGUNA A.C. (ROSA SUSANA MEDRANO HERNÁNDEZ)
+- Texto original Excel: "ABIGAIL"
+- Detectadas: Abigail
+
+Fila 839 | Cliente: FELING FREE / AGAVE NEGRO  (MARIA CECILIA VAZQUEZ PIÑA (HUGO, YULIANA))
+- Texto original Excel: "LUISA-YARASET REYES-ODETTE"
+- Detectadas: Luisa Enríquez y Yaraset Reyes y Odette

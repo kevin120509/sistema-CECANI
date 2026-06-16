@@ -52,6 +52,22 @@ export default function RealtimeSyncProvider({ children }: { children: React.Rea
         console.log('🔄 Sync: Cambio en Contratos');
         router.refresh();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expediente_asesoras' }, (payload: any) => {
+        console.log('🔄 Sync: Cambio en expediente_asesoras');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bitacora' }, (payload: any) => {
+        console.log('🔄 Sync: Cambio en bitacora');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recordatorios' }, (payload: any) => {
+        console.log('🔄 Sync: Cambio en recordatorios');
+        router.refresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'seguimiento_tareas' }, (payload: any) => {
+        console.log('🔄 Sync: Cambio en seguimiento_tareas');
+        router.refresh();
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('📡 Sistema de Sincronización Global Activado');

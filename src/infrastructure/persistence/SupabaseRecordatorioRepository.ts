@@ -20,7 +20,15 @@ export class SupabaseRecordatorioRepository implements IRecordatorioRepository {
       .single();
 
     if (perfil && ['directora', 'admin'].includes(perfil.rol)) return true;
-    return exp.asesora_id === userId;
+
+    const { data: rel } = await supabase
+      .from('expediente_asesoras')
+      .select('id')
+      .eq('expediente_id', expedienteId)
+      .eq('asesora_id', userId)
+      .maybeSingle();
+
+    return exp.asesora_id === userId || !!rel;
   }
 
   async crear(form: CrearRecordatorioForm, creadoPor: string): Promise<Recordatorio> {

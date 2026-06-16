@@ -115,7 +115,7 @@ export default function DirectorDashboard({
   const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [asesoraId, setAsesoraId] = useState('');
+  const [asesorasId, setAsesorasId] = useState<string[]>([]);
   const [dobleFirmaFile, setDobleFirmaFile] = useState<File | null>(null);
   const [isUploadingDobleFirma, setIsUploadingDobleFirma] = useState(false);
   const [quickViewUrl, setQuickViewUrl] = useState<string | null>(null);
@@ -175,17 +175,17 @@ export default function DirectorDashboard({
   
   const handleAsignar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedExpediente || !asesoraId) return;
+    if (!selectedExpediente || asesorasId.length === 0) return;
     
     const formData = new FormData();
     formData.append('expediente_id', selectedExpediente.id);
-    formData.append('asesora_id', asesoraId);
+    formData.append('asesoras_id', JSON.stringify(asesorasId));
 
     startTransition(async () => {
       const res = await asignarAbogada(formData);
       if (res.success) {
         setIsAssignModalOpen(false);
-        setAsesoraId('');
+        setAsesorasId([]);
         toast.success('Abogada asignada correctamente');
         router.refresh();
       } else {
@@ -367,10 +367,10 @@ export default function DirectorDashboard({
         <div className={`py-4 flex-1 overflow-y-auto custom-scrollbar ${isSidebarOpen ? 'px-6' : 'px-2'}`}>
            {isSidebarOpen && <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4 px-2">Menú Principal</p>}
            <nav className="space-y-2">
-             <button onClick={() => { setActiveTab('por_asignar'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'por_asignar' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'} ${!isSidebarOpen ? 'lg:justify-center' : ''}`} title="Por Asignar"><UserPlus size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">Por Asignar</span>}</button>
-             <button onClick={() => { setActiveTab('concentrado'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'concentrado' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'} ${!isSidebarOpen ? 'lg:justify-center' : ''}`} title="Concentrado"><Building2 size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">Concentrado</span>}</button>
-             <button onClick={() => { setActiveTab('validacion'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'validacion' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'} ${!isSidebarOpen ? 'lg:justify-center' : ''}`} title="En Validación"><ShieldCheck size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">En Validación</span>}</button>
-             <button onClick={() => { setActiveTab('bajas_docs'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'bajas_docs' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'} ${!isSidebarOpen ? 'lg:justify-center' : ''}`} title="Bajas"><Trash2 size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide flex-1 text-left">Bajas</span>}{isSidebarOpen && solicitudesBaja.length > 0 && <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{solicitudesBaja.length}</span>}</button>
+              <button onClick={() => { setActiveTab('por_asignar'); }} className={`w-full flex items-center ${isSidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all ${activeTab === 'por_asignar' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`} title="Por Asignar"><UserPlus size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">Por Asignar</span>}</button>
+              <button onClick={() => { setActiveTab('concentrado'); }} className={`w-full flex items-center ${isSidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all ${activeTab === 'concentrado' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`} title="Concentrado"><Building2 size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">Concentrado</span>}</button>
+              <button onClick={() => { setActiveTab('validacion'); }} className={`w-full flex items-center ${isSidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all ${activeTab === 'validacion' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`} title="En Validación"><ShieldCheck size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide">En Validación</span>}</button>
+              <button onClick={() => { setActiveTab('bajas_docs'); }} className={`w-full flex items-center ${isSidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all ${activeTab === 'bajas_docs' ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`} title="Bajas"><Trash2 size={18} className="shrink-0"/>{isSidebarOpen && <span className="font-bold text-sm tracking-wide flex-1 text-left">Bajas</span>}{isSidebarOpen && solicitudesBaja.length > 0 && <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{solicitudesBaja.length}</span>}</button>
            </nav>
            {isSidebarOpen && activeTab === 'concentrado' && (<div className="mt-4 space-y-1 ml-4 border-l-2 border-slate-800 pl-4">{individualAsesoras.map(n => <SidebarFilterLink key={n} label={n} active={selectedAsesoraName === n} onClick={() => setSelectedAsesoraName(n)} />)}<SidebarFilterLink label="Todas" active={selectedAsesoraName === 'all'} onClick={() => setSelectedAsesoraName('all')} /></div>)}
         </div>
@@ -410,7 +410,7 @@ export default function DirectorDashboard({
         <div className="space-y-4">
           <h2 className="text-sm font-black uppercase tracking-widest text-slate-100 mb-4">{activeTab === 'por_asignar' ? 'Listos para Asignación' : activeTab === 'concentrado' ? 'Concentrado Operativo' : activeTab === 'validacion' ? 'En Proceso de Validación' : 'Solicitudes de Baja'}</h2>
           
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
              {activeTab === 'bajas_docs' ? (
                 solicitudesBaja.length === 0 ? (
                   <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 md:p-16 text-center shadow-sm">
@@ -454,10 +454,12 @@ export default function DirectorDashboard({
                         <h4 className="text-white font-black uppercase tracking-tight text-sm group-hover:text-sky-400 transition-colors truncate">{exp.nombre_empresa}</h4>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                           <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest truncate">{exp.cliente?.nombre_completo}</p>
-                          {exp.asesora?.nombre_completo && (
+                          {(exp.expediente_asesoras?.length ? exp.expediente_asesoras.map(r => r.asesora.nombre_completo).join(', ') : exp.asesora?.nombre_completo) && (
                             <>
                               <span className="hidden xs:inline text-[8px] text-slate-700">•</span>
-                              <p className="text-sky-600 text-[10px] font-black uppercase tracking-widest truncate">{exp.asesora.nombre_completo}</p>
+                              <p className="text-sky-600 text-[10px] font-black uppercase tracking-widest truncate max-w-[200px]" title={exp.expediente_asesoras?.length ? exp.expediente_asesoras.map(r => r.asesora.nombre_completo).join(', ') : exp.asesora?.nombre_completo}>
+                                {exp.expediente_asesoras?.length ? exp.expediente_asesoras.map(r => r.asesora.nombre_completo).join(', ') : exp.asesora?.nombre_completo}
+                              </p>
                             </>
                           )}
                         </div>
@@ -474,16 +476,7 @@ export default function DirectorDashboard({
                         </button>
                       )}
                       
-                      {activeTab === 'por_asignar' && (!exp.contratos?.[0]?.url_pdf_firmado_cliente || !exp.pagos || exp.pagos.length === 0) && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleValidarFaltantesManual(exp); }}
-                          disabled={isPending}
-                          className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600/10 border border-emerald-500/20 text-emerald-500 rounded-xl font-black uppercase tracking-widest text-[9px] hover:text-white hover:bg-emerald-600 transition-all text-center whitespace-nowrap"
-                          title="Validar Pago y Contrato Manualmente"
-                        >
-                          Validar (Manual)
-                        </button>
-                      )}
+
                       
                       <button 
                         onClick={() => { 
@@ -613,10 +606,25 @@ export default function DirectorDashboard({
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800 pb-2">Asignación de Abogada</h3>
                         {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma ? (
                           <form onSubmit={handleAsignar} className="space-y-4">
-                             <select value={asesoraId} onChange={e => setAsesoraId(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs font-bold text-white outline-none focus:border-sky-600">
-                                <option value="">Seleccionar Abogada...</option>
-                                {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}      
-                             </select>
+                             <div className="space-y-2">
+                               <p className="text-[10px] text-slate-500 uppercase font-black">Selecciona una o más abogadas:</p>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                                 {abogadas.map(a => (
+                                   <label key={a.id} className="flex items-center gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-sky-500/50 transition-all">
+                                     <input 
+                                       type="checkbox" 
+                                       checked={asesorasId.includes(a.id)}
+                                       onChange={(e) => {
+                                         if(e.target.checked) setAsesorasId([...asesorasId, a.id]);
+                                         else setAsesorasId(asesorasId.filter(id => id !== a.id));
+                                       }}
+                                       className="accent-sky-500 w-4 h-4"
+                                     />
+                                     <span className="text-xs font-bold text-white">{a.nombre_completo}</span>
+                                   </label>
+                                 ))}
+                               </div>
+                             </div>
                              <button type="submit" disabled={isPending} className="w-full py-4 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20">Confirmar Asignación</button>
                           </form>
                         ) : (

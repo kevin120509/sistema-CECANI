@@ -62,7 +62,6 @@ C:\Users\kevin\OneDrive\Desktop\sistema-CECANI\
 │   │
 │   └── 📂 types/               # 📝 Definiciones de TypeScript globales
 │
-├── 📂 scripts/                 # 📜 Utilidades para mantenimiento de la DB
 ├── 📂 public/                  # 🖼️ Imágenes y archivos estáticos
 └── 📄 package.json             # 📦 Dependencias del proyecto
 ```

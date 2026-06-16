@@ -61,6 +61,7 @@ export default async function DirectoraPage() {
       *,
       cliente:perfiles!cliente_id(*),
       asesora:perfiles!asesora_id(id, nombre_completo),
+      expediente_asesoras(asesora:perfiles(id, nombre_completo)),
       figura:catalogo_figuras(descripcion),
       documentos(*),
       contratos(*),

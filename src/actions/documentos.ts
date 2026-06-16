@@ -185,7 +185,7 @@ export async function aprobarBorradoAction(documentoId: string): Promise<ActionR
     // 1. Obtener información para la notificación
     const { data: doc } = await supabase
       .from('documentos')
-      .select('*, expedientes(nombre_empresa, asesora_id)')
+      .select('*, expedientes(nombre_empresa, asesora_id, expediente_asesoras(asesora_id))')
       .eq('id', documentoId)
       .single();
 
@@ -199,13 +199,21 @@ export async function aprobarBorradoAction(documentoId: string): Promise<ActionR
 
     if (error) throw error;
     
-    if (doc && (doc as any).expedientes?.asesora_id) {
-      await sendPushNotification({
-        userIds: [(doc as any).expedientes.asesora_id],
-        title: '✅ Baja Autorizada',
-        message: `Se ha autorizado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}. Ya puedes eliminarlo y subir el nuevo.`,
-        url: '/abogada'
-      });
+    if (doc && (doc as any).expedientes) {
+      let userIds: string[] = [];
+      if ((doc as any).expedientes.expediente_asesoras?.length) {
+        userIds = (doc as any).expedientes.expediente_asesoras.map((r: any) => r.asesora_id);
+      } else if ((doc as any).expedientes.asesora_id) {
+        userIds = [(doc as any).expedientes.asesora_id];
+      }
+      if (userIds.length > 0) {
+        await sendPushNotification({
+          userIds,
+          title: '✅ Baja Autorizada',
+          message: `Se ha autorizado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}. Ya puedes eliminarlo y subir el nuevo.`,
+          url: '/abogada'
+        });
+      }
     }
 
     revalidatePath('/directora');
@@ -226,7 +234,7 @@ export async function rechazarBorradoAction(documentoId: string): Promise<Action
 
     const { data: doc } = await supabase
       .from('documentos')
-      .select('*, expedientes(nombre_empresa, asesora_id)')
+      .select('*, expedientes(nombre_empresa, asesora_id, expediente_asesoras(asesora_id))')
       .eq('id', documentoId)
       .single();
 
@@ -240,13 +248,21 @@ export async function rechazarBorradoAction(documentoId: string): Promise<Action
 
     if (error) throw error;
 
-    if (doc && (doc as any).expedientes?.asesora_id) {
-      await sendPushNotification({
-        userIds: [(doc as any).expedientes.asesora_id],
-        title: '❌ Baja Rechazada',
-        message: `La directora ha declinado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}.`,
-        url: '/abogada'
-      });
+    if (doc && (doc as any).expedientes) {
+      let userIds: string[] = [];
+      if ((doc as any).expedientes.expediente_asesoras?.length) {
+        userIds = (doc as any).expedientes.expediente_asesoras.map((r: any) => r.asesora_id);
+      } else if ((doc as any).expedientes.asesora_id) {
+        userIds = [(doc as any).expedientes.asesora_id];
+      }
+      if (userIds.length > 0) {
+        await sendPushNotification({
+          userIds,
+          title: '❌ Baja Rechazada',
+          message: `La directora ha declinado la eliminación del documento "${doc.tipo.replace(/_/g, ' ')}" en el expediente ${(doc as any).expedientes.nombre_empresa}.`,
+          url: '/abogada'
+        });
+      }
     }
 
     revalidatePath('/directora');
