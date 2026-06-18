@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { asignarAbogada, subirContratoDobleFirma, crearClienteManualAction, eliminarExpedienteAction, validarDocumentoAction, validarPagoAction, validarContratoAction, rechazarDocumentoR2Action, rechazarPagoAction, rechazarContratoClienteAction, aprobarExpedienteAction, validarDatosFaltantesManualAction } from '@/actions/directora';
 import { subirArchivoR2Action } from '@/actions/r2-actions';
-import { registrarDocumento } from '@/actions/documentos';
+import { registrarDocumento, aprobarBorradoAction, rechazarBorradoAction } from '@/actions/documentos';
 import { logoutAbogada } from '@/actions/auth-abogada';
 import NotificationStatusIndicator from '@/components/NotificationStatusIndicator';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -455,9 +455,59 @@ export default function DirectorDashboard({
                   </div>
                 ) : (
                   solicitudesBaja.map(doc => (
-                    <div key={doc.id} className="bg-slate-900 border border-red-500/30 p-4 rounded-2xl flex items-center justify-between hover:bg-slate-900/80 transition-all">
-                      <div className="flex items-center gap-4"><div className="w-10 h-10 bg-red-600/10 text-red-500 rounded-xl flex items-center justify-center"><AlertTriangle size={18}/></div><div><h4 className="text-white font-bold text-sm uppercase tracking-tight">Baja: {doc.tipo.replace(/_/g, ' ')}</h4><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{doc.expediente?.nombre_empresa}</p></div></div>
-                      <div className="flex items-center gap-4"><button onClick={() => setQuickViewUrl(`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`)} className="px-4 py-2 bg-slate-950 border border-slate-800 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-white transition-all">Ver</button></div>
+                    <div key={doc.id} className="bg-slate-900 border border-red-500/30 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-900/80 transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-red-600/10 text-red-500 rounded-xl flex items-center justify-center shrink-0">
+                          <AlertTriangle size={18}/>
+                        </div>
+                        <div>
+                          <h4 className="text-white font-bold text-sm uppercase tracking-tight">Baja: {doc.tipo.replace(/_/g, ' ')}</h4>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{doc.expediente?.nombre_empresa}</p>
+                          {doc.motivo_borrado && (
+                            <p className="text-red-400/80 text-xs mt-1 italic">"{doc.motivo_borrado}"</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a 
+                          href={`/api/r2/download?url=${encodeURIComponent(doc.url_archivo)}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="px-4 py-2 bg-slate-950 border border-slate-800 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} /> Ver
+                        </a>
+                        <button 
+                          onClick={async () => {
+                            if (!confirm('¿Estás seguro de rechazar esta solicitud de baja?')) return;
+                            const res = await rechazarBorradoAction(doc.id);
+                            if (res.success) {
+                              toast.success('Solicitud rechazada');
+                              router.refresh();
+                            } else {
+                              toast.error(res.error);
+                            }
+                          }}
+                          className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-700 transition-all"
+                        >
+                          Rechazar
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (!confirm('¿Estás seguro de aprobar esta solicitud de baja? El documento será marcado como borrado y deberá subirse uno nuevo.')) return;
+                            const res = await aprobarBorradoAction(doc.id);
+                            if (res.success) {
+                              toast.success('Solicitud aprobada correctamente');
+                              router.refresh();
+                            } else {
+                              toast.error(res.error);
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                        >
+                          Aprobar
+                        </button>
+                      </div>
                     </div>
                   ))
                 )
