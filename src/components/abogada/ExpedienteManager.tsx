@@ -66,6 +66,7 @@ import {
   X,
   Scale,
   Share2,
+  Edit2,
 } from "lucide-react";
 import { PLANES_PAGO_LABELS } from "@/lib/constants";
 
@@ -73,6 +74,7 @@ interface ExpedienteManagerProps {
   expedientes: ExpedienteAbogada[];
   hitos: CatalogoHito[];
   alertasHoy: ExpedienteAbogada[];
+  userId: string;
 }
 
 const CECANI_EMAIL = "cecani.sc@gmail.com";
@@ -219,6 +221,7 @@ function DocumentItem({
   solicitud_borrado,
   motivo_borrado,
   estatus_borrado,
+  onRename,
 }: {
   label: string;
   url?: string | null;
@@ -231,7 +234,16 @@ function DocumentItem({
   solicitud_borrado?: boolean;
   motivo_borrado?: string | null;
   estatus_borrado?: string;
+  onRename?: (newName: string) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(label);
+  const [optimisticLabel, setOptimisticLabel] = useState(label);
+
+  useEffect(() => {
+    setEditValue(label);
+    setOptimisticLabel(label);
+  }, [label]);
   const isPending = solicitud_borrado && estatus_borrado === "pendiente";
   const isAuthorized = estatus_borrado === "autorizado";
   const isRejected = estatus_borrado === "rechazado";
@@ -259,10 +271,34 @@ function DocumentItem({
             <FileText size={20} />
           )}
         </div>
-        <div className="min-w-0">
-          <span className="text-xs md:text-sm font-black uppercase text-slate-200 tracking-tight block truncate">
-            {label}
-          </span>
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <input 
+              autoFocus 
+              value={editValue} 
+              onChange={e => setEditValue(e.target.value)} 
+              onBlur={() => {
+                setIsEditing(false);
+                if (editValue.trim() !== label && editValue.trim() !== '') {
+                  setOptimisticLabel(editValue.trim());
+                  onRename?.(editValue.trim());
+                } else {
+                  setEditValue(label);
+                }
+              }}
+              onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+              className="w-full bg-slate-950/50 border border-sky-500/50 rounded px-2 py-1 text-xs md:text-sm font-black uppercase text-sky-400 outline-none"
+            />
+          ) : (
+            <span className="text-xs md:text-sm font-black uppercase text-slate-200 tracking-tight block break-words whitespace-normal group/label">
+              {optimisticLabel}
+              {!url && onRename && (
+                <button onClick={() => setIsEditing(true)} className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 text-slate-400 hover:text-sky-400 hover:bg-[#0197D2]/20 border border-slate-700 hover:border-sky-500/50 rounded-md transition-all text-[9px] font-bold tracking-widest uppercase align-middle">
+                  <Edit2 size={10} /> Editar Nombre
+                </button>
+              )}
+            </span>
+          )}
           <span
             className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${isPending ? "text-sky-400" : isAuthorized ? "text-sky-400" : isRejected ? "text-red-400" : "text-slate-500"}`}
           >
@@ -352,6 +388,7 @@ function DocumentStage({
   uploadingType,
   integranteId,
   onDelete,
+  onRename,
 }: {
   title: string;
   docs: any[];
@@ -360,6 +397,7 @@ function DocumentStage({
   uploadingType: string | null;
   integranteId?: string;
   onDelete: (id: string, url: string, confirmed?: boolean) => void;
+  onRename?: (oldType: string, newName: string, integranteId?: string, oldName?: string) => void;
 }) {
   return (
     <div className="rounded-3xl border border-slate-800 p-5 md:p-6 space-y-4 md:space-y-6 shadow-xl h-full transition-all hover:border-sky-600/50 bg-slate-900">
@@ -369,7 +407,7 @@ function DocumentStage({
           {title}
         </h3>
         <div className="bg-[#0197D2]/20 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-tighter text-sky-300 border border-sky-600/20">
-          {docs.filter((d) => d.url).length} / {docs.length}
+          {docs.filter((d) => d.url && d.url !== 'PENDIENTE').length} / {docs.length}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 md:gap-4">
@@ -377,6 +415,7 @@ function DocumentStage({
           <DocumentItem
             key={i}
             {...doc}
+            url={doc.url === 'PENDIENTE' ? undefined : doc.url}
             onUpload={onUpload}
             isUploading={
               uploadingType ===
@@ -384,6 +423,7 @@ function DocumentStage({
             }
             integranteId={integranteId}
             onDelete={onDelete}
+            onRename={onRename ? (newName) => onRename(doc.type, newName, integranteId, doc.label) : undefined}
           />
         ))}
       </div>
@@ -395,6 +435,7 @@ export default function ExpedienteManager({
   expedientes,
   hitos,
   alertasHoy,
+  userId,
 }: ExpedienteManagerProps) {
   const router = useRouter();
 
@@ -488,11 +529,43 @@ export default function ExpedienteManager({
 
 
 
-  const filteredExpedientes = useMemo(() => {
-    return expedientes.filter((exp) => {
-      if (dashTab === "compartidos") {
-        if (!exp.expediente_asesoras || exp.expediente_asesoras.length <= 1) return false;
+  const myExpedientes = useMemo(() => {
+    return expedientes.map((exp) => {
+      const assignedSet = new Set();
+      
+      if (exp.asesora_id) {
+        assignedSet.add(exp.asesora_id);
       }
+      
+      if (exp.expediente_asesoras && exp.expediente_asesoras.length > 0) {
+        exp.expediente_asesoras.forEach((ea: any) => {
+          if (ea.asesora?.id) assignedSet.add(ea.asesora.id);
+          else if (ea.asesora_id) assignedSet.add(ea.asesora_id);
+        });
+      }
+      
+      return {
+        ...exp,
+        __isAssignedToMe: assignedSet.has(userId),
+        __totalAssignees: assignedSet.size,
+      };
+    }).filter(exp => exp.__isAssignedToMe);
+  }, [expedientes, userId]);
+
+  const misAlertasHoy = useMemo(() => {
+    return alertasHoy.filter((alerta) => 
+      myExpedientes.some((myExp) => myExp.id === alerta.id)
+    );
+  }, [alertasHoy, myExpedientes]);
+
+  const filteredExpedientes = useMemo(() => {
+    return myExpedientes.filter((exp: any) => {
+      if (dashTab === "compartidos") {
+        if (exp.__totalAssignees <= 1) return false;
+      } else if (dashTab === "clientes") {
+        if (exp.__totalAssignees > 1) return false;
+      }
+      
       const search = searchTerm.toLowerCase();
       const nombreEmpresa = exp.nombre_empresa.toLowerCase();
       const nombreCliente =
@@ -504,10 +577,10 @@ export default function ExpedienteManager({
         numControl.includes(search)
       );
     });
-  }, [expedientes, searchTerm]);
+  }, [myExpedientes, dashTab, searchTerm]);
 
   const selectedExpediente =
-    expedientes.find((e) => e.id === selectedExpedienteId) || null;
+    myExpedientes.find((e) => e.id === selectedExpedienteId) || null;
   useEffect(() => {
     if (
       selectedExpedienteId &&
@@ -684,6 +757,27 @@ export default function ExpedienteManager({
       setUploadingType(null);
     }
   };
+
+  const handleRenameDocument = async (oldType: string, newName: string, integranteId?: string, oldName?: string) => {
+    if (!selectedExpediente) return;
+    try {
+      const typeKey = DOCS_MAP[oldType] || oldType;
+      // Registrar como PENDIENTE, con el nuevo nombre
+      const res = await registrarDocumento(
+        selectedExpediente.id,
+        typeKey,
+        'PENDIENTE',
+        integranteId,
+        false,
+        newName,
+        oldName || oldType // Pass oldName to delete the specific old record
+      );
+      if (!res.success) throw new Error(res.error);
+      router.refresh();
+    } catch (err: any) {
+      alert(`Error al renombrar: ${err.message}`);
+    }
+  };
   const handleDeleteDocument = async (
     docId: string,
     url: string,
@@ -731,7 +825,7 @@ export default function ExpedienteManager({
     const list: Array<
       Recordatorio & { empresa: string; clienteNombre: string; expId: string }
     > = [];
-    expedientes.forEach((exp) => {
+    myExpedientes.forEach((exp) => {
       ((exp as any).recordatorios || []).forEach((r: Recordatorio) => {
         list.push({
           ...r,
@@ -782,11 +876,11 @@ export default function ExpedienteManager({
   }, [recordatoriosPendientes]);
 
   const tareasPendientes = useMemo(() => {
-    return expedientes
-      .map((exp) => {
+    return myExpedientes
+      .map((exp: any) => {
         let currentStep = 0;
         const hitoActual = hitosLegales.find((h, index) => {
-          const st = exp.seguimiento_tareas?.find((s) => s.hito_id === h.id);
+          const st = exp.seguimiento_tareas?.find((s: any) => s.hito_id === h.id);
           if (!st || st.estatus !== "completado") {
             currentStep = index + 1;
             return true;
@@ -801,13 +895,13 @@ export default function ExpedienteManager({
         };
       })
       .filter((t) => t.hitoActual);
-  }, [expedientes, hitosLegales]);
+  }, [myExpedientes, hitosLegales]);
 
 
 
   if (!selectedExpediente) {
     return (
-      <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden">
+      <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans">
         <AnimatePresence>
           {isSidebarOpen && (
             <motion.div
@@ -821,7 +915,7 @@ export default function ExpedienteManager({
         </AnimatePresence>
 
         <aside
-          className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 h-screen overflow-y-auto ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}
+          className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 h-screen ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}
         >
           <div className={`p-6 border-b border-slate-800 flex items-center justify-between ${!isSidebarOpen ? 'lg:justify-center lg:px-0' : ''}`}>
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
@@ -837,7 +931,7 @@ export default function ExpedienteManager({
               <X size={20} />
             </button>
           </div>
-          <div className={`py-6 flex-1 ${isSidebarOpen ? 'px-6' : 'px-2'}`}>
+          <div className={`py-6 flex-1 overflow-y-auto ${isSidebarOpen ? 'px-6' : 'px-2'}`}>
             {isSidebarOpen && (
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">
                 Panel Legal
@@ -847,7 +941,7 @@ export default function ExpedienteManager({
               <SidebarLink
                 icon={<Users size={18} />}
                 label="Mis Clientes"
-                badge={expedientes.length}
+                badge={myExpedientes.filter((e: any) => e.__totalAssignees === 1).length}
                 active={dashTab === "clientes"}
                 isSidebarOpen={isSidebarOpen}
                 onClick={() => {
@@ -857,7 +951,7 @@ export default function ExpedienteManager({
               <SidebarLink
                 icon={<Share2 size={18} />}
                 label="Compartidos"
-                badge={expedientes.filter((e: any) => e.expediente_asesoras?.length > 1).length}
+                badge={myExpedientes.filter((e: any) => e.__totalAssignees > 1).length}
                 active={dashTab === "compartidos"}
                 isSidebarOpen={isSidebarOpen}
                 onClick={() => {
@@ -941,7 +1035,7 @@ export default function ExpedienteManager({
                 </p>
                 <div className="flex items-end justify-between mt-1">
                   <h3 className="text-3xl font-bold text-white">
-                    {expedientes.length}
+                    {myExpedientes.filter((e: any) => e.__totalAssignees === 1).length}
                   </h3>
                   <Users size={32} className="text-sky-600/80" />
                 </div>
@@ -957,9 +1051,9 @@ export default function ExpedienteManager({
                 </p>
                 <div className="flex items-end justify-between mt-1">
                   <h3 className="text-3xl font-bold text-white">
-                    {alertasHoy.length}
+                    {misAlertasHoy.length}
                   </h3>
-                  <AlertTriangle size={32} className="text-red-600/80" />
+                  <Bell size={32} className="text-red-600/80" />
                 </div>
               </div>
               <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-sm border border-slate-800">
@@ -1002,7 +1096,7 @@ export default function ExpedienteManager({
                         )?.estatus === "completado",
                     ).length;
                     const totalExp = hitosLegales.length;
-                    const hasAlert = alertasHoy.some((a) => a.id === exp.id);
+                    const hasAlert = misAlertasHoy.some((a) => a.id === exp.id);
                     return (
                       <div
                         key={exp.id}
@@ -1109,14 +1203,14 @@ export default function ExpedienteManager({
                       >
                         <div className="flex items-center gap-6 flex-1">
                           <div className="w-14 h-14 rounded-2xl bg-slate-950 flex items-center justify-center font-black text-xl text-slate-400 border border-slate-800 group-hover:text-indigo-400 transition-colors">
-                            {t.exp.nombre_empresa.charAt(0)}
+                            {t.exp?.nombre_empresa?.charAt(0) || 'E'}
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-lg font-black text-white uppercase truncate">
-                              {t.exp.nombre_empresa}
+                              {t.exp?.nombre_empresa || 'Empresa Sin Nombre'}
                             </h4>
                             <p className="text-xs font-bold text-slate-500 uppercase">
-                              {t.exp.cliente?.nombre_completo}
+                              {t.exp?.cliente?.nombre_completo || 'Cliente Sin Nombre'}
                             </p>
                           </div>
                         </div>
@@ -1653,7 +1747,7 @@ export default function ExpedienteManager({
                     const found = docsGenerales.find((d) => d.tipo === dbType);
                     return {
                       type: t,
-                      label: t,
+                      label: found?.nombre_personalizado || t,
                       url: found?.url_archivo,
                       docId: found?.id,
                       validado: found?.validado,
@@ -1671,6 +1765,7 @@ export default function ExpedienteManager({
                       onUpload={handleFileUpload}
                       uploadingType={uploadingType}
                       onDelete={handleDeleteDocument}
+                      onRename={handleRenameDocument}
                     />
                   );
                 })()}
@@ -1684,7 +1779,7 @@ export default function ExpedienteManager({
                     const found = docsGenerales.find((d) => d.tipo === dbType);
                     return {
                       type: t,
-                      label: t,
+                      label: found?.nombre_personalizado || t,
                       url: found?.url_archivo,
                       docId: found?.id,
                       validado: found?.validado,
@@ -1702,6 +1797,7 @@ export default function ExpedienteManager({
                       onUpload={handleFileUpload}
                       uploadingType={uploadingType}
                       onDelete={handleDeleteDocument}
+                      onRename={handleRenameDocument}
                     />
                   );
                 })()}
@@ -1717,7 +1813,7 @@ export default function ExpedienteManager({
                     const found = susDocs.find((d) => d.tipo === dbType);
                     return {
                       type: t,
-                      label: t,
+                      label: found?.nombre_personalizado || t,
                       url: found?.url_archivo,
                       docId: found?.id,
                       validado: found?.validado,
@@ -1737,6 +1833,7 @@ export default function ExpedienteManager({
                       uploadingType={uploadingType}
                       integranteId={int.id}
                       onDelete={handleDeleteDocument}
+                      onRename={handleRenameDocument}
                     />
                   );
                 })}
@@ -1762,7 +1859,7 @@ export default function ExpedienteManager({
                       );
                       return {
                         type: t,
-                        label: t,
+                        label: found?.nombre_personalizado || t,
                         url: found?.url_archivo,
                         docId: found?.id,
                         validado: found?.validado,
@@ -1780,6 +1877,11 @@ export default function ExpedienteManager({
                         onUpload={handleFileUpload}
                         uploadingType={uploadingType}
                         onDelete={handleDeleteDocument}
+                        onRename={(old, newName, integranteId, oldName) => {
+                          // Update in local state to avoid "ghosting" if not fast enough
+                          setDocumentosExtrasDisponibles(prev => prev.map(p => p === old ? newName : p));
+                          handleRenameDocument('otro', newName, integranteId, oldName); // send 'otro' as type, newName as name
+                        }}
                       />
                     );
                   })()}
@@ -2109,6 +2211,7 @@ function ReminderForm({
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [fecha, setFecha] = useState("");
   const [hora, setHora] = useState("");
+  
   const abogadaNombre =
     (expediente as any).expediente_asesoras?.length ? (expediente as any).expediente_asesoras.map((r: any) => r.asesora?.nombre_completo).join(', ') : (expediente as any).asesora?.nombre_completo || "de CECANI";
   const template = useMemo(
@@ -2122,6 +2225,16 @@ function ReminderForm({
       ),
     [hito.nombre, expediente.nombre_empresa, abogadaNombre, fecha, hora],
   );
+
+  const computedDocs = useMemo(() => {
+    const defaultDocs = template?.sugerencias?.length > 0 ? template.sugerencias : DOCS_CATALOGO;
+    if (!expediente.documentos) return defaultDocs;
+    const customDocs = expediente.documentos
+      .map(d => d.nombre_personalizado)
+      .filter(Boolean) as string[];
+    const all = Array.from(new Set([...defaultDocs, ...customDocs]));
+    return all.filter(d => d !== 'otro' && d !== 'PAGO INICIAL');
+  }, [expediente.documentos, template?.sugerencias]);
   const generatedMessage = useMemo(() => {
     let msg = template.mensaje;
     if (selectedDocs.length > 0)
@@ -2193,10 +2306,7 @@ function ReminderForm({
             Documentación Requerida (Sugerencias del Paso)
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(template.sugerencias.length > 0
-              ? template.sugerencias
-              : DOCS_CATALOGO
-            ).map((doc) => (
+            {computedDocs.map((doc) => (
               <button
                 key={doc}
                 type="button"

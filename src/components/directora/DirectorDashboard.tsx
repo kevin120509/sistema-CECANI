@@ -122,6 +122,13 @@ export default function DirectorDashboard({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expedienteToDelete, setExpedienteToDelete] = useState<ExpedienteDirector | null>(null);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [isAltaModalOpen, setIsAltaModalOpen] = useState(false);
+  const [altaAssignmentMode, setAltaAssignmentMode] = useState<1 | 2>(1);
+  const [altaContratoFile, setAltaContratoFile] = useState<File | null>(null);
+  const [altaIneFrenteFile, setAltaIneFrenteFile] = useState<File | null>(null);
+  const [altaIneAtrasFile, setAltaIneAtrasFile] = useState<File | null>(null);
+  const [altaComprobanteFile, setAltaComprobanteFile] = useState<File | null>(null);
+  const [assignMode, setAssignMode] = useState<1 | 2>(1);
 
   // --- SYNC SELECTED EXPEDIENTE ---
   useEffect(() => {
@@ -292,6 +299,31 @@ export default function DirectorDashboard({
     });
   };
 
+  const handleAltaMaestra = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (altaIneFrenteFile) formData.append('ine_frente', altaIneFrenteFile);
+    if (altaIneAtrasFile) formData.append('ine_atras', altaIneAtrasFile);
+    if (altaComprobanteFile) formData.append('comprobante_domicilio', altaComprobanteFile);
+    if (altaContratoFile) formData.append('contrato_firmado', altaContratoFile);
+
+    startTransition(async () => {
+      const res = await crearClienteManualAction(formData);
+      if (res.success) {
+        toast.success('Cliente creado correctamente');
+        setIsAltaModalOpen(false);
+        setAltaIneFrenteFile(null);
+        setAltaIneAtrasFile(null);
+        setAltaComprobanteFile(null);
+        setAltaContratoFile(null);
+        setAsesorasId([]);
+        router.refresh();
+      } else {
+        toast.error(res.error || 'Error al crear cliente');
+      }
+    });
+  };
+
   const handleRechazarContratoCliente = async () => {
     const motivo = prompt('Motivo del rechazo del contrato firmado:');
     if (!motivo) return;
@@ -354,9 +386,9 @@ export default function DirectorDashboard({
   const onEliminarExpediente = async (id: string, cid: string) => { if (!confirm("¿Eliminar expediente por completo?")) return; startTransition(async () => { const res = await eliminarExpedienteAction(id, cid); if (res.error) alert(res.error); }); };
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-x-hidden">
+    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans">
       <AnimatePresence>{isSidebarOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" />}</AnimatePresence>
-      <aside className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 border-r border-slate-800 lg:sticky lg:top-0 h-screen ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20 w-72"}`}>
         <div className={`p-6 border-b border-slate-800 flex items-center justify-between ${!isSidebarOpen ? 'lg:justify-center lg:px-0' : ''}`}>
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold">D</div>
@@ -388,8 +420,12 @@ export default function DirectorDashboard({
             <button onClick={() => setIsSidebarOpen((prev) => !prev)} className="p-2.5 bg-slate-900 text-slate-300 rounded-lg hover:text-white lg:hidden">
               <Menu size={20}/>
             </button>
+            <h1 className="text-xl font-black uppercase tracking-widest text-white hidden md:block">Panel de Directora</h1>
           </div>
-
+          <button onClick={() => setIsAltaModalOpen(true)} className="flex items-center gap-2 bg-[#0197D2] hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-sky-600/20">
+            <UserPlus size={16} />
+            Alta de Clientes Manual
+          </button>
         </header>
 
         {/* OVERVIEW CARDS */}
@@ -539,7 +575,7 @@ export default function DirectorDashboard({
                            {(!selectedExpediente.pagos || selectedExpediente.pagos.length === 0) && (
                               <div className="text-center space-y-2 mt-4">
                                  <p className="text-[10px] text-slate-600 italic">No hay pagos registrados aún.</p>
-                                 <button onClick={handleValidarFaltantesManual} disabled={isPending} className="text-[9px] font-black uppercase text-sky-500 hover:text-sky-400 bg-sky-500/10 px-4 py-2 rounded-lg transition-all border border-sky-500/20">Validar Pago Manualmente (Alta Maestra)</button>
+                                 <button onClick={handleValidarFaltantesManual} disabled={isPending} className="text-[9px] font-black uppercase text-sky-500 hover:text-sky-400 bg-sky-500/10 px-4 py-2 rounded-lg transition-all border border-sky-500/20">Validar Pago Manualmente (Alta de Clientes)</button>
                               </div>
                            )}
                         </div>
@@ -568,7 +604,7 @@ export default function DirectorDashboard({
                            <div className="bg-slate-950/50 p-6 sm:p-8 rounded-3xl border border-dashed border-slate-800 text-center">
                               <Clock size={24} className="mx-auto text-slate-700 mb-2"/>
                               <p className="text-[10px] font-black text-slate-600 uppercase mb-4">Esperando firma del cliente</p>
-                              <button onClick={handleValidarFaltantesManual} disabled={isPending} className="text-[9px] font-black uppercase text-sky-500 hover:text-sky-400 bg-sky-500/10 px-4 py-2 rounded-lg transition-all border border-sky-500/20">Validar Contrato Manualmente (Alta Maestra)</button>
+                              <button onClick={handleValidarFaltantesManual} disabled={isPending} className="text-[9px] font-black uppercase text-sky-500 hover:text-sky-400 bg-sky-500/10 px-4 py-2 rounded-lg transition-all border border-sky-500/20">Validar Contrato Manualmente (Alta de Clientes)</button>
                            </div>
                         )}
                      </div>
@@ -607,25 +643,31 @@ export default function DirectorDashboard({
                         {selectedExpediente.contratos?.[0]?.url_pdf_doble_firma ? (
                           <form onSubmit={handleAsignar} className="space-y-4">
                              <div className="space-y-2">
-                               <p className="text-[10px] text-slate-500 uppercase font-black">Selecciona una o más abogadas:</p>
-                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                                 {abogadas.map(a => (
-                                   <label key={a.id} className="flex items-center gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-sky-500/50 transition-all">
-                                     <input 
-                                       type="checkbox" 
-                                       checked={asesorasId.includes(a.id)}
-                                       onChange={(e) => {
-                                         if(e.target.checked) setAsesorasId([...asesorasId, a.id]);
-                                         else setAsesorasId(asesorasId.filter(id => id !== a.id));
-                                       }}
-                                       className="accent-sky-500 w-4 h-4"
-                                     />
-                                     <span className="text-xs font-bold text-white">{a.nombre_completo}</span>
-                                   </label>
-                                 ))}
+                               <p className="text-[10px] text-slate-500 uppercase font-black mb-2">Modo de Asignación:</p>
+                               <div className="flex gap-4 mb-4">
+                                 <button type="button" onClick={() => { setAssignMode(1); setAsesorasId([]); }} className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all ${assignMode === 1 ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>1 Abogada</button>
+                                 <button type="button" onClick={() => { setAssignMode(2); setAsesorasId([]); }} className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all ${assignMode === 2 ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>2 Abogadas (Compartido)</button>
                                </div>
+
+                               {assignMode === 1 ? (
+                                 <select required value={asesorasId[0] || ''} onChange={(e) => setAsesorasId(e.target.value ? [e.target.value] : [])} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                                   <option value="">Selecciona la abogada...</option>
+                                   {abogadas.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
+                                 </select>
+                               ) : (
+                                 <div className="space-y-3">
+                                   <select required value={asesorasId[0] || ''} onChange={(e) => setAsesorasId([e.target.value, asesorasId[1]].filter(Boolean))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                                     <option value="">Selecciona abogada 1...</option>
+                                     {abogadas.map(a => <option key={a.id} value={a.id} disabled={a.id === asesorasId[1]}>{a.nombre_completo}</option>)}
+                                   </select>
+                                   <select required value={asesorasId[1] || ''} onChange={(e) => setAsesorasId([asesorasId[0], e.target.value].filter(Boolean))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                                     <option value="">Selecciona abogada 2...</option>
+                                     {abogadas.map(a => <option key={a.id} value={a.id} disabled={a.id === asesorasId[0]}>{a.nombre_completo}</option>)}
+                                   </select>
+                                 </div>
+                               )}
                              </div>
-                             <button type="submit" disabled={isPending} className="w-full py-4 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20">Confirmar Asignación</button>
+                             <button type="submit" disabled={isPending || (assignMode === 1 && asesorasId.length < 1) || (assignMode === 2 && asesorasId.length < 2)} className="w-full py-4 bg-[#0197D2] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20 disabled:opacity-50">Confirmar Asignación</button>
                           </form>
                         ) : (
                           <div className="bg-slate-950/50 p-6 rounded-3xl border border-dashed border-slate-800 text-center">
@@ -740,6 +782,97 @@ export default function DirectorDashboard({
       </AnimatePresence>
 
       <AnimatePresence>{quickViewUrl && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-6"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuickViewUrl(null)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" /><motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2rem] shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-800"><div className="bg-slate-950 p-4 flex justify-between border-b border-slate-800"><h2 className="text-[10px] font-black uppercase text-sky-500">Visor Digital</h2><button onClick={() => setQuickViewUrl(null)} className="text-slate-500 hover:text-white"><X size={24}/></button></div><div className="flex-1 bg-slate-950"><iframe src={quickViewUrl} className="w-full h-full border-none" /></div></motion.div></div>)}</AnimatePresence>
+      <AnimatePresence>
+        {isAltaModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAltaModalOpen(false)} className="fixed inset-0 bg-slate-950/95 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-800 p-6">
+              <div className="flex justify-between items-center mb-6 shrink-0">
+                <h2 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2"><UserPlus size={20} className="text-[#0197D2]"/> Alta de Clientes Manual</h2>
+                <button onClick={() => setIsAltaModalOpen(false)} className="text-slate-500 hover:text-white"><X size={20}/></button>
+              </div>
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <form onSubmit={handleAltaMaestra} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Nombre Completo</label>
+                  <input required name="nombre_completo" type="text" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none" placeholder="Nombre del cliente" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Nombre de la Empresa</label>
+                  <input required name="nombre_empresa" type="text" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none" placeholder="Mi Empresa S.A. de C.V." />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Teléfono</label>
+                    <input required name="telefono" type="text" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none" placeholder="10 dígitos" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">RFC (Opcional)</label>
+                    <input name="rfc" type="text" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none" placeholder="XAXX010101000" />
+                  </div>
+                <div className="mb-4">
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Tipo de Asociación</label>
+                    <select required name="tipo_asociacion" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                      <option value="">Seleccione...</option>
+                      <option value="SA de CV">SA de CV — Sociedad Anónima de Capital Variable</option>
+                      <option value="S de RL de CV">S de RL de CV — Sociedad de Responsabilidad Limitada de Capital Variable</option>
+                      <option value="SAS">SAS — Sociedad por Acciones Simplificada</option>
+                      <option value="SC">SC — Sociedad Civil</option>
+                      <option value="AC">AC — Asociación Civil</option>
+                      <option value="SAPI">SAPI — Sociedad Anónima Promotora de Inversión</option>
+                      <option value="S en C">S en C — Sociedad en Comandita Simple</option>
+                      <option value="SNC">SNC — Sociedad en Nombre Colectivo</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-800">
+                  <h3 className="text-[10px] font-black uppercase text-sky-500">Subir Documentación (Opcional en Alta)</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FileUploadBox label="INE Frente" file={altaIneFrenteFile} setFile={setAltaIneFrenteFile} />
+                    <FileUploadBox label="INE Atrás" file={altaIneAtrasFile} setFile={setAltaIneAtrasFile} />
+                    <FileUploadBox label="Comp. Domicilio" file={altaComprobanteFile} setFile={setAltaComprobanteFile} />
+                    <FileUploadBox label="Contrato Firmado" file={altaContratoFile} setFile={setAltaContratoFile} />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800">
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-2">Asignar Abogadas Inmediatamente</label>
+                  <div className="flex gap-4 mb-3">
+                    <button type="button" onClick={() => { setAltaAssignmentMode(1); setAsesorasId([]); }} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all ${altaAssignmentMode === 1 ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>1 Abogada</button>
+                    <button type="button" onClick={() => { setAltaAssignmentMode(2); setAsesorasId([]); }} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all ${altaAssignmentMode === 2 ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>2 Abogadas</button>
+                  </div>
+
+                  {altaAssignmentMode === 1 ? (
+                    <select name="asesoras_id" value={JSON.stringify(asesorasId)} onChange={(e) => setAsesorasId(e.target.value ? JSON.parse(e.target.value) : [])} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                      <option value="[]">(Sin asignar)</option>
+                      {abogadas.map(a => <option key={a.id} value={JSON.stringify([a.id])}>{a.nombre_completo}</option>)}
+                    </select>
+                  ) : (
+                    <div className="space-y-3">
+                      <select value={asesorasId[0] || ''} onChange={(e) => setAsesorasId([e.target.value, asesorasId[1]].filter(Boolean))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                        <option value="">Selecciona abogada 1...</option>
+                        {abogadas.map(a => <option key={a.id} value={a.id} disabled={a.id === asesorasId[1]}>{a.nombre_completo}</option>)}
+                      </select>
+                      <select value={asesorasId[1] || ''} onChange={(e) => setAsesorasId([asesorasId[0], e.target.value].filter(Boolean))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-sky-500 outline-none">
+                        <option value="">Selecciona abogada 2...</option>
+                        {abogadas.map(a => <option key={a.id} value={a.id} disabled={a.id === asesorasId[0]}>{a.nombre_completo}</option>)}
+                      </select>
+                      <input type="hidden" name="asesoras_id" value={JSON.stringify(asesorasId)} />
+                    </div>
+                  )}
+                </div>
+
+                <button type="submit" disabled={isPending || (altaAssignmentMode === 2 && asesorasId.length === 1)} className="w-full mt-4 py-3 bg-[#0197D2] hover:bg-sky-500 text-white font-black uppercase tracking-widest text-xs rounded-xl transition-all shadow-lg shadow-sky-600/20 disabled:opacity-50">
+                  {isPending ? 'Creando...' : 'Crear Expediente'}
+                </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -748,3 +881,18 @@ function SidebarLink({ icon, label, active, onClick, badge }: any) { return (<bu
 function SidebarFilterLink({ label, active, onClick }: any) { return <button onClick={onClick} className={"w-full text-left px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all " + (active ? "bg-slate-800 text-white" : "text-slate-600 hover:text-slate-300 hover:bg-slate-800/20")}>{label}</button>; }
 function SummaryCard({ icon, label, value, color }: any) { const colors: any = { amber: 'text-amber-500 bg-amber-500/10 border-amber-500/20', emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20', red: 'text-red-500 bg-red-500/10 border-red-500/20', sky: 'text-sky-500 bg-sky-500/10 border-sky-500/20' }; return (<div className={`bg-slate-900 p-6 rounded-3xl border ${colors[color].split(' ')[2]} shadow-xl flex items-center gap-6 transition-transform hover:-translate-y-1`}><div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colors[color].split(' ')[1]} ${colors[color].split(' ')[0]}`}>{icon}</div><div><p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{label}</p><h3 className="text-3xl font-black text-white mt-1">{value}</h3></div></div>); }
 function TextData({ label, value }: { label: string, value?: string }) { return (<div className="space-y-1"><p className="text-[9px] font-black uppercase tracking-widest text-slate-600">{label}:</p><p className="text-sm font-black uppercase text-white truncate">{value || '---'}</p></div>); }
+
+function FileUploadBox({ label, file, setFile }: { label: string, file: File | null, setFile: (f: File | null) => void }) {
+  return (
+    <div>
+      <label className="block text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">{label}</label>
+      <label className="block w-full cursor-pointer group">
+        <div className={`border border-dashed ${file ? 'border-sky-500 bg-sky-500/10' : 'border-slate-800 bg-slate-950 hover:border-sky-500/50'} rounded-xl p-3 transition-all text-center flex flex-col items-center justify-center gap-1 min-h-[4rem]`}>
+          {file ? <CheckCircle2 size={14} className="text-sky-500" /> : <UploadCloud size={14} className="text-slate-600 group-hover:text-sky-500" />}
+          <p className={`text-[8px] font-black uppercase truncate w-full px-2 ${file ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'}`}>{file ? file.name : 'Subir'}</p>
+          <input type="file" className="hidden" accept=".pdf,image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
+        </div>
+      </label>
+    </div>
+  );
+}

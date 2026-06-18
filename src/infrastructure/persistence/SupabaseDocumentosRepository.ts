@@ -9,7 +9,8 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
     urlArchivo: string,
     integranteId?: string | null,
     nombrePersonalizado?: string,
-    validado: boolean = false
+    validado: boolean = false,
+    oldName?: string
   ): Promise<string> {
     const supabase = createAdminClient();
 
@@ -21,8 +22,11 @@ export class SupabaseDocumentoRepository implements IDocumentoRepository {
     } else {
       query = query.is('integrante_id', null);
     }
-    // Si tiene nombre_personalizado, borramos solo los que coinciden
-    if (nombrePersonalizado) {
+    // Si tiene oldName, borramos la fila vieja con ese nombre
+    if (oldName) {
+      query = query.eq('nombre_personalizado', oldName);
+    } else if (nombrePersonalizado) {
+      // Compatibilidad hacia atras
       query = query.eq('nombre_personalizado', nombrePersonalizado);
     }
 

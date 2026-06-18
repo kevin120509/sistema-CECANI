@@ -61,6 +61,32 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 - **Estado**: Interfaz 100% coherente en todos los roles del sistema.
 
 ## 6. Bitácora de Sesión
+
+### [18 Junio 2026] - Corrección de Bugs en Paneles de Abogada y Directora
+- **Acción**: Se resolvieron múltiples reportes de UI y lógica de asignación en los paneles operativos.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`: Se reintrodujo el botón de "Alta Maestra" en la cabecera, añadiendo el modal y conectándolo a `crearClienteManualAction`.
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se corrigió la estructura del sidebar (`overflow-y-auto`) para que el botón de "Salir" se mantenga siempre visible al fondo, evitando un scroll excesivo.
+        - Se añadió una verificación segura (`?.charAt(0)`) para prevenir que la sección "Mis Tareas" cierre la interfaz abruptamente si falta información de la empresa.
+    - `src/app/abogada/page.tsx` y `ExpedienteManager.tsx`: Se implementó un filtro estricto por `userId`. Ahora la pestaña "Mis Clientes" solo muestra expedientes asignados *exclusivamente* al usuario logueado, y "Compartidos" los asignados a él y a otras abogadas, corrigiendo la visualización cruzada en cuentas administrativas.
+- **Pendientes**: Ninguno inmediato para estos flujos.
+
+### [18 Junio 2026] - Sincronización UI y Backend para Renombrado Optimista
+- **Acción**: Se implementó una actualización optimista en el renombrado de documentos y se ajustó el repositorio de base de datos para borrar el récord correcto usando el nombre viejo.
+- **Cambios**:
+    - `src/components/abogada/ExpedienteManager.tsx`: Se implementó un estado `optimisticLabel` y un `useEffect` en `DocumentItem` para que el cambio visual del nombre del documento sea instantáneo al presionar "Enter", eliminando la sensación de "no se guardó". Se modificó `handleRenameDocument` para enviar el nombre anterior.
+    - `src/infrastructure/persistence/SupabaseDocumentosRepository.ts`: Se actualizó `registrarDocumento` para aceptar `oldName` y usarlo explícitamente en la query `.delete()`, evitando duplicidad de slots vacíos.
+    - `src/core/services/DocumentoService.ts` y `src/actions/documentos.ts`: Se ajustaron las firmas para pasar `oldName` a la persistencia.
+- **Estado**: Funcionalidad de renombrado 100% estable y reactiva al usuario.
+
+### [16 Junio 2026] - Fix: Error de Compilación en Vercel por Suspense
+- **Acción**: Se corrigió un error que impedía a Vercel construir la aplicación (`useSearchParams() should be wrapped in a suspense boundary`).
+- **Cambios**:
+    - `src/app/actualizar-password/page.tsx`: Se importó `Suspense` y se envolvió el componente `<ActualizarPasswordClient />` para cumplir con las reglas de componentes de cliente de Next.js en el App Router.
+- **Pendientes**:
+    - Confirmar que Vercel termine el nuevo despliegue correctamente.
+
 ### [15 Junio 2026] - Plan de Migración Post-Registro (Asignación Automática)
 - **Acción**: Se acordó y documentó el flujo final para asignar a las abogadas sus clientes sin depender de un panel de migración en la UI.
 - **Acuerdo**: 
@@ -129,6 +155,32 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 ## 6. Bitácora de Sesión
 ### [13 Junio 2026] - Formalización de Flujo Secuencial y Bloqueo de Asignación
 - **Acción**: Se estableció un flujo obligatorio entre Cliente y Directora para garantizar la integridad legal del expediente.
+### [18 Junio 2026] - Renombrado Dinámico de Documentos y Programación de WhatsApp
+- **Acción**: Se implementó la capacidad para que la Abogada renombre los documentos pendientes y esos nombres se reflejen en la solicitud de documentos por WhatsApp.
+- **Cambios**:
+    - `src/actions/documentos.ts`: Se actualizó `registrarDocumento` para aceptar el parámetro `customNameOverride` saltándose las reglas estrictas de ENUM cuando es necesario.
+    - `src/components/abogada/ExpedienteManager.tsx`:
+        - Se rediseñó `DocumentItem` para incluir funcionalidad de edición inline (renombrado de etiquetas de documentos sin subir).
+        - Se actualizaron las funciones `handleRenameDocument` para guardar los "slots" vacíos con la URL "PENDIENTE" y su nombre en DB.
+        - Se unificó el listado `computedDocs` en la lógica de Programación del Hito (Modal WhatsApp), integrando el catálogo base con los documentos extras y nombres personalizados del expediente en cuestión.
+- **Pendientes**: Probar exhaustivamente el flujo de comunicación de WhatsApp desde la vista de abogada.
+
+### [13 Junio 2026] - Refactorización de Alta Maestra y Validación
+- **Acción**: Ajustes al modal de Alta Maestra, renombrado y optimización.
+- **Cambios**:
+    - `src/components/directora/DirectorDashboard.tsx`: Se ensanchó el modal (`max-w-3xl`) de "Alta de Clientes Manual", se habilitó el scroll interno y se agregaron las descripciones completas al combo de "Tipo de Asociación".
+    - Se eliminó la captura del monto de contrato y lógicas asociadas.
+- **Estado**: Funcional.
+
+### [13 Junio 2026] - Privacidad de Expedientes para Abogadas
+- **Acción**: Reescritura del backend para que cada abogada vea únicamente sus propios clientes.
+- **Cambios**:
+    - `src/actions/abogada.ts` y SQL subyacente: El dashboard ahora solo carga expedientes en los cuales la abogada está referenciada como `asesora_id` (Dueña) o en `expediente_asesoras` (Compartidos).
+    - `src/components/abogada/ExpedienteManager.tsx`: El listado total muestra correctamente el contador real filtrado.
+- **Estado**: Operativo y corrigiendo el problema de los 650 clientes ajenos visibles.
+
+### [13 Junio 2026] - Refactorización de Modales por Pestañas (Validación vs Por Asignar)
+- **Acción**: Implementación estricta de las reglas de visibilidad del flujo de validación en la interfaz de Directora.
 - **Cambios**:
     - `FLUJO_PROCESO.md`: Creación del manual de flujo (Integración -> Formalización -> Operatividad).
     - `src/components/directora/DirectorDashboard.tsx`: Se implementó un bloqueo lógico; el botón de "Asignar Abogada" ahora es invisible hasta que se carga el **Contrato con Doble Firma**.

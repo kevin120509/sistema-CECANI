@@ -137,6 +137,7 @@ export default async function AbogadaPage() {
         expedientes={expedientes}
         hitos={hitos}
         alertasHoy={expedientesConAlerta}
+        userId={user.id}
       />
     </main>
   );

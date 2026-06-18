@@ -7,7 +7,8 @@ export interface IDocumentoRepository {
     urlArchivo: string,
     integranteId?: string | null,
     nombrePersonalizado?: string,
-    validado?: boolean
+    validado?: boolean,
+    oldName?: string
   ): Promise<string>;
 }
 

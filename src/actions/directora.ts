@@ -39,23 +39,80 @@ export async function crearClienteManualAction(formData: FormData): Promise<{ su
     );
 
     if (result.success && result.data) {
-      const asesoraId = formData.get('asesora_id') as string;
-      if (asesoraId) {
-        const adminSupabase = createAdminClient();
-        await adminSupabase
-          .from('expedientes')
-          .update({ 
-            asesora_id: asesoraId,
-            estatus: 'en_proceso' // Importante para que aparezca en el panel legal de la abogada
-          })
-          .eq('id', result.data.expediente_id);
+      const adminSupabase = createAdminClient();
+      const expId = result.data.expediente_id;
+      const contratoId = result.data.contrato_id;
+
+      // Tipo de asociación
+      const tipoAsociacion = formData.get('tipo_asociacion') as string;
+      if (tipoAsociacion) {
+        await adminSupabase.from('datos_concentrado').insert({
+          expediente_id: expId,
+          tipo_asociacion: tipoAsociacion
+        });
+      }
+
+      // Asignación de abogadas (1 o 2)
+      const asesorasIdStr = formData.get('asesoras_id') as string;
+      if (asesorasIdStr) {
+        let asesorasId: string[] = [];
+        try {
+          asesorasId = JSON.parse(asesorasIdStr);
+        } catch {
+          asesorasId = [asesorasIdStr];
+        }
+
+        if (asesorasId.length > 0) {
+          const primaryAsesoraId = asesorasId[0];
+          await adminSupabase
+            .from('expedientes')
+            .update({ 
+              asesora_id: primaryAsesoraId,
+              estatus: 'en_proceso'
+            })
+            .eq('id', expId);
+            
+          const rels = asesorasId.map(id => ({
+            expediente_id: expId,
+            asesora_id: id
+          }));
           
-        await adminSupabase
-          .from('expediente_asesoras')
-          .insert({
-            expediente_id: result.data.expediente_id,
-            asesora_id: asesoraId
-          });
+          await adminSupabase.from('expediente_asesoras').insert(rels);
+        }
+      }
+
+      // Subida de archivos (documentación e INE)
+      const ineFrente = formData.get('ine_frente') as File | null;
+      const ineAtras = formData.get('ine_atras') as File | null;
+      const compDom = formData.get('comprobante_domicilio') as File | null;
+      const contratoFile = formData.get('contrato_firmado') as File | null;
+
+      const uploadAndSave = async (file: File | null, tipo: string) => {
+        if (!file || file.size === 0) return;
+        const url = await subirArchivoR2(file, `expedientes/${expId}/documentos`);
+        await adminSupabase.from('documentos').insert({
+          expediente_id: expId,
+          tipo: tipo,
+          url_archivo: url,
+          validado: true
+        });
+      };
+
+      await Promise.all([
+        uploadAndSave(ineFrente, 'ine_frente'),
+        uploadAndSave(ineAtras, 'ine_reverso'),
+        uploadAndSave(compDom, 'comprobante_domicilio')
+      ]);
+
+      if (contratoFile && contratoFile.size > 0) {
+        const url = await subirArchivoR2(contratoFile, `expedientes/${expId}/contratos`);
+        await adminSupabase.from('contratos').update({ url_pdf_firmado_cliente: url, url_pdf_doble_firma: url }).eq('id', contratoId);
+        await adminSupabase.from('documentos').insert({
+          expediente_id: expId,
+          tipo: 'contrato_firmado',
+          url_archivo: url,
+          validado: true
+        });
       }
 
       revalidatePath('/directora');
