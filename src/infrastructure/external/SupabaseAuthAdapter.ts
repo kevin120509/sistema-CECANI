@@ -32,23 +32,25 @@ export class SupabaseAuthAdapter implements IAuthService {
   }
 
   async registrarDirectora(email: string, password: string, nombre: string): Promise<void> {
-    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          nombre_completo: nombre,
-          rol: 'directora'
-        }
+      email_confirm: true,
+      user_metadata: {
+        nombre_completo: nombre,
+        rol: 'directora'
       }
     });
 
     if (authError) throw new Error('Error al registrar: ' + authError.message);
     if (!authData.user) throw new Error('No se pudo crear el usuario.');
 
-    const adminSupabase = createAdminClient();
+    // Autologin after registration
+    const supabase = await createClient();
+    await supabase.auth.signInWithPassword({ email, password });
+
     const { error: perfilError } = await adminSupabase
       .from('perfiles')
       .upsert({

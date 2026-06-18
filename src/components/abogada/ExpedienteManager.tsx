@@ -491,6 +491,27 @@ export default function ExpedienteManager({
   >("clientes");
   const [agendaView, setAgendaView] = useState<"lista" | "calendario">("lista");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [viewedExpedientes, setViewedExpedientes] = useState<string[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`viewed_expedientes_${userId}`);
+    if (stored) {
+      try {
+        setViewedExpedientes(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [userId]);
+
+  const handleGestionarClick = (expId: string) => {
+    setSelectedExpedienteId(expId);
+    if (!viewedExpedientes.includes(expId)) {
+      const updated = [...viewedExpedientes, expId];
+      setViewedExpedientes(updated);
+      localStorage.setItem(`viewed_expedientes_${userId}`, JSON.stringify(updated));
+    }
+  };
 
   const CAMPOS_CONCENTRADO = [
     "nombre_completo",
@@ -559,7 +580,7 @@ export default function ExpedienteManager({
   }, [alertasHoy, myExpedientes]);
 
   const filteredExpedientes = useMemo(() => {
-    return myExpedientes.filter((exp: any) => {
+    const arr = myExpedientes.filter((exp: any) => {
       if (dashTab === "compartidos") {
         if (exp.__totalAssignees <= 1) return false;
       } else if (dashTab === "clientes") {
@@ -577,7 +598,17 @@ export default function ExpedienteManager({
         numControl.includes(search)
       );
     });
-  }, [myExpedientes, dashTab, searchTerm]);
+
+    return arr.sort((a, b) => {
+      const aNew = !viewedExpedientes.includes(a.id);
+      const bNew = !viewedExpedientes.includes(b.id);
+      if (aNew && !bNew) return -1;
+      if (!aNew && bNew) return 1;
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
+  }, [myExpedientes, dashTab, searchTerm, viewedExpedientes]);
 
   const selectedExpediente =
     myExpedientes.find((e) => e.id === selectedExpedienteId) || null;
@@ -1097,11 +1128,19 @@ export default function ExpedienteManager({
                     ).length;
                     const totalExp = hitosLegales.length;
                     const hasAlert = misAlertasHoy.some((a) => a.id === exp.id);
+                    const isNew = !viewedExpedientes.includes(exp.id);
                     return (
                       <div
                         key={exp.id}
-                        className={`bg-slate-900 rounded-2xl border p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors shadow-sm ${hasAlert ? "border-red-500/50 hover:border-red-500" : "border-slate-800 hover:border-slate-700"}`}
+                        className={`bg-slate-900 rounded-2xl border p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-sm ${isNew ? "border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] relative overflow-hidden" : hasAlert ? "border-red-500/50 hover:border-red-500" : "border-slate-800 hover:border-slate-700"}`}
                       >
+                        {isNew && (
+                          <div className="absolute top-0 right-0">
+                            <span className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl shadow-sm">
+                              ¡Nuevo Asignado!
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-start gap-4 min-w-[250px] min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold uppercase shrink-0 border border-slate-700 mt-1">
                             {exp.nombre_empresa.charAt(0)}
@@ -1154,7 +1193,7 @@ export default function ExpedienteManager({
                             {exp.documentos?.length || 0} Docs
                           </span>
                           <button
-                            onClick={() => setSelectedExpedienteId(exp.id)}
+                            onClick={() => handleGestionarClick(exp.id)}
                             className="bg-[#0197D2]/10 text-sky-400 border border-sky-600/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#0197D2] hover:text-white transition-all shadow-lg"
                           >
                             Gestionar
