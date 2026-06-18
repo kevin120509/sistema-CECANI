@@ -24,15 +24,18 @@ export async function loginAbogada(formData: FormData) {
   }
 
   // Verificar si es asesora
-  const { data: perfilData } = await supabase
+  const supabaseAdmin = createAdminClient();
+  const { data: perfilData, error: perfilError } = await supabaseAdmin
     .from('perfiles')
     .select('rol')
     .eq('id', data.user.id)
     .single();
+    
+  if (perfilError) console.error("Error fetching perfil:", perfilError);
 
-  if (!perfilData || perfilData.rol !== 'asesora') {
+  if (!perfilData || !['asesora', 'abogada', 'admin', 'directora'].includes(perfilData.rol)) {
     await supabase.auth.signOut();
-    return { error: 'Esta cuenta no tiene permisos de Abogada/Asesora.' };
+    return { error: 'Esta cuenta no tiene permisos para acceder al panel.' };
   }
 
   revalidatePath('/abogada');
