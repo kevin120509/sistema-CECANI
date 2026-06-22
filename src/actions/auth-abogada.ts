@@ -51,52 +51,26 @@ export async function registerAbogada(formData: FormData) {
     return { error: 'Todos los campos son requeridos.' };
   }
 
-  const supabaseAdmin = createAdminClient();
+  const supabase = await createClient();
 
-  // 1. Crear el usuario en Auth con metadata para que el trigger de la DB cree el perfil automáticamente
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+  const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
-    email_confirm: true,
-    user_metadata: {
-      nombre_completo: nombre,
-      rol: 'asesora',
+    options: {
+      data: {
+        nombre_completo: nombre,
+        rol: 'asesora',
+      }
     }
   });
 
-  if (authError || !authData.user) {
-    return { error: authError?.message || 'Error al crear el usuario en Auth.' };
+  if (authError) {
+    return { error: authError.message || 'Error al crear el usuario.' };
   }
 
-  // El perfil ya debería estar creado por el trigger 'on_auth_user_created'
-  // pero podemos hacer un upsert por si acaso o para asegurar que los datos sean correctos
-  const { error: profileError } = await supabaseAdmin
-    .from('perfiles')
-    .upsert({
-      id: authData.user.id,
-      nombre_completo: nombre,
-      rol: 'asesora',
-    });
+  // Ya no iniciamos sesión automáticamente ni revalidamos para redirigir
+  // porque el usuario debe confirmar su correo electrónico primero.
 
-  if (profileError) {
-    console.error('Error upsert perfil:', profileError);
-    // No borramos el usuario aquí porque el trigger podría haber fallado por otra razón
-    // pero el usuario de auth ya existe.
-    return { error: 'Usuario creado pero hubo un problema con el perfil.' };
-  }
-
-  // Iniciar sesión automáticamente después de registrar
-  const supabase = await createClient();
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (signInError) {
-    return { error: 'Usuario creado pero no se pudo iniciar sesión. Por favor, inicia sesión manualmente.' };
-  }
-
-  revalidatePath('/abogada');
   return { success: true };
 }
 

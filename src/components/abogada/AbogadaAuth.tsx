@@ -41,6 +41,12 @@ export default function AbogadaAuth() {
     const res = isRegister ? await registerAbogada(formData) : await loginAbogada(formData);
     if (res?.error) {
       setError(res.error);
+    } else if (res?.success && isRegister) {
+      setSuccess('Registro exitoso. Por favor, revisa tu correo electrónico para verificar tu cuenta antes de iniciar sesión.');
+      setIsRegister(false);
+      // Limpiamos el formulario para que vuelvan a poner sus datos o simplemente dejamos la vista de login limpia
+      const form = document.querySelector('form') as HTMLFormElement;
+      if (form) form.reset();
     }
   };
 

@@ -62,6 +62,12 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
 
 ## 6. Bitácora de Sesión
 
+### [18 Junio 2026] - Fix: Cierre de Sesión al Asignar Cliente Manual
+- **Acción**: Se solucionó un bug crítico donde la Directora y/o Abogadas perdían su sesión al ejecutar un Server Action como "Alta Maestra" y "Asignar Abogada".
+- **Cambios**:
+    - `src/lib/supabase/client.ts`: Se eliminó el uso forzado de `storage: window.sessionStorage` en `@supabase/ssr` `createBrowserClient`. Al usar Next.js App Router, el manejo de sesión y persistencia de cookies debe delegarse al servidor (a través de `server.ts` sin `maxAge`). Sobreescribir el adaptador de almacenamiento en el cliente provocaba un desajuste estado cliente-servidor que Next.js interpretaba como sesión expirada en el re-renderizado (`router.refresh()`).
+- **Estado**: Sesiones estables post-asignación. Cambios subidos a Vercel.
+
 ### [18 Junio 2026] - Corrección de Bugs en Paneles de Abogada y Directora
 - **Acción**: Se resolvieron múltiples reportes de UI y lógica de asignación en los paneles operativos.
 - **Cambios**:
@@ -153,6 +159,14 @@ Para que las "Declaraciones" del contrato sean válidas, se capturan: RFC (con h
     - Se añadió una verificación específica para `planPagos` en el `step === 3`.
 - **Estado**: El flujo del cliente es ahora fluido y permite avanzar correctamente tras configurar la empresa.
 ## 6. Bitácora de Sesión
+
+### [22 Junio 2026] - Habilitación de Confirmación de Correo para Abogadas
+- **Acción**: Se modificó el registro de abogadas para utilizar el flujo estándar de Supabase, de modo que ahora envía un correo de confirmación obligatorio antes de permitir el inicio de sesión.
+- **Cambios**:
+    - `src/actions/auth-abogada.ts`: Se reemplazó `supabaseAdmin.auth.admin.createUser` por `supabase.auth.signUp`. Se eliminó el auto-login después del registro.
+    - `src/components/abogada/AbogadaAuth.tsx`: Se añadió lógica para mostrar el mensaje de éxito instruyendo al usuario a revisar su bandeja de entrada.
+- **Pendientes**: Ninguno.
+
 ### [13 Junio 2026] - Formalización de Flujo Secuencial y Bloqueo de Asignación
 - **Acción**: Se estableció un flujo obligatorio entre Cliente y Directora para garantizar la integridad legal del expediente.
 ### [18 Junio 2026] - Renombrado Dinámico de Documentos y Programación de WhatsApp
